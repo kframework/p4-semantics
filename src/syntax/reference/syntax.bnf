@@ -44,7 +44,7 @@
     decimal_digit ::= binary_digit | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
     hexadecimal_digit ::= decimal_digit | a | A | b | B | c | C | d | D | e | E | f | F
 
-    width_spec ::=  decimal_digit+
+    width_spec ::=  decimal_digit+ '
         //decimal_digit+ w | decimal_digit+ s
 
     field_value ::= const_value

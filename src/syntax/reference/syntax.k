@@ -63,7 +63,7 @@ module P4-SYNTAX
     syntax HexadecimalValue ::= _HexadecimalValue
 
 
-    syntax WidthSpec ::= _DecimalValue // WS
+    syntax WidthSpec ::= _DecimalValue "'" // WS
     //syntax WS ::= "w" | "s"
 
     syntax  FieldValue ::= ConstValue
@@ -175,7 +175,7 @@ module P4-SYNTAX
                 "}"
 // [ field_list_entry ; ] +
     //todo
-    syntax FieldListEntries ::= FieldListEntry | FieldListEntries FieldListEntries
+    syntax FieldListEntries ::= FieldListEntry ";" | FieldListEntries FieldListEntries
 
     //syntax FieldListEntry ::= ObjectRef | FieldValue
     syntax FieldListEntry ::= FieldRef | HeaderRef | FieldValue | FieldListName | Payload //payload?
