@@ -1,19 +1,35 @@
+module HEADER
+
+endmodule
+
 module HEADER-SYNTAX
+    syntax HeaderTypeName ::= Id
+    syntax InstanceName ::= Id
+    syntax FieldName ::= Id
+    syntax HeaderInstanceName ::= Id
+    syntax FieldListName ::= Id
+    syntax None ::= ""
+
+    //todo: temp - fix this
+    syntax ConstValue ::= Int
+    syntax FieldValue ::= ConstValue
+
 // 2.1 HeaderTypeDeclarations
     syntax HeaderTypeDeclaration ::= "header_type" HeaderTypeName "{" HeaderDecBody "}"
 
     syntax HeaderDecBody ::= "fields" "{" FieldDecs "}" OptionalLengthDec OptionalMaxLengthDec
 
+
     syntax OptionalLengthDec ::= None | "length" ":" LengthExp ";"
     syntax OptionalMaxLengthDec ::= None | "max_length" ":" ConstValue ";"
 
-
-    syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMode ";"
+    syntax FieldDecs ::= NeList{FieldDec,""}
+    syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMod ";"
     syntax OptionalFieldMod ::= None | FieldMod
     syntax FieldMod ::= "signed" | "saturating" | FieldMod "," FieldMod
     syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>"
     syntax LengthExp ::=
-                  ConstExpr
+                  ConstValue
                 | FieldName
                 | LengthExp LengthBinOp LengthExp
                 | "(" LengthExp ")"
@@ -35,9 +51,9 @@ module HEADER-SYNTAX
 
 
     syntax MetadataInitializer ::= "{" FieldValueAssignments "}"
-    //todo: nonempty list ?
-    syntax FieldValueAssignments ::= FieldValueAssignment | FieldValueAssignments FieldValueAssignments
-    syntax FieldValueAssignment ::= FieldName ":" FieldValue ":"
+
+    syntax FieldValueAssignments ::= NeList{FieldValueAssignment,""}
+    syntax FieldValueAssignment ::= FieldName ":" FieldValue ";"
 
 
 // 2.3 HeaderandFieldReferences
@@ -68,6 +84,9 @@ module HEADER-SYNTAX
 endmodule
 
 module CHECKSUM-SYNTAX
+imports HEADER-SYNTAX
+    syntax FieldListCalculationName ::= Id
+    syntax StreamFunctionAlgorithmName ::= Id
 // 3 Checksums and Hash-value generators
    syntax FieldListCalculationDeclaration ::=
             "field_list_calculation" FieldListCalculationName "{"
@@ -83,8 +102,8 @@ module CHECKSUM-SYNTAX
 
 // 3.1 Checksums
     syntax CalculatedFieldDeclaration ::= "calculated_field" FieldRef "{" UpdateVerifySpecs "}"
-    //todo: non-empty list
-    syntax UpdateVerifySpecs ::= UpdateVerifySpec | UpdateVerifySpecs UpdateVerifySpecs
+
+    syntax UpdateVerifySpecs ::= NeList{UpdateVerifySpec,""}
 
     syntax UpdateVerifySpec ::= UpdateOrVerify FieldListCalculationName OptionalIfCond ";"
     syntax OptionalIfCond ::= None | IfCond
