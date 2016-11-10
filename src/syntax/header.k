@@ -73,6 +73,7 @@ module HEADER-SYNTAX
 
 endmodule
 
+
 module CHECKSUM-SYNTAX
 imports HEADER-SYNTAX
     syntax FieldListCalculationName ::= Id
@@ -100,12 +101,15 @@ imports HEADER-SYNTAX
                 "algorithm" ":" StreamFunctionAlgorithmName ";"
                 "output_width" ":" ConstValue ";"
             "}"
-    syntax FieldListNameItems :: NeList{FieldListNameItem,""}
+    syntax FieldListNameItems ::= NeList{FieldListNameItem,""}
     syntax FieldListNameItem ::= FieldListName ";"
 
 
 // 3.1 Checksums
-    syntax CalculatedFieldDeclaration ::= "calculated_field" FieldRef "{" UpdateVerifySpecs "}"
+    syntax CalculatedFieldDeclaration ::=
+            "calculated_field" FieldRef "{"
+                UpdateVerifySpecs
+            "}"
 
     syntax UpdateVerifySpecs ::= NeList{UpdateVerifySpec,""}
 
