@@ -19,18 +19,22 @@ module HEADER-SYNTAX
 
     syntax HeaderDecBody ::= "fields" "{" FieldDecs "}" OptionalLengthDec OptionalMaxLengthDec
 
-
-    syntax OptionalLengthDec ::= None | "length" ":" LengthExp ";"
+    //length is in bytes
+    //The length attribute specifies an expression whose evaluation gives the length of the header in bytes for variable length headers.
+    // It must be present if the header has variable length
+    syntax OptionalLengthDec ::= None | "length" ":" LengthExp ";"  //TODO ISSUE: why lengthexp here and constvalue for the other one?
+    // If, at run time, the calculated length exceeds this value, it is considered a parser exception.
     syntax OptionalMaxLengthDec ::= None | "max_length" ":" ConstValue ";"
 
     syntax FieldDecs ::= NeList{FieldDec,""}
-    syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMod ";"
-    syntax OptionalFieldMod ::= None | FieldMod
-    syntax FieldMod ::= "signed" | "saturating" | FieldMod "," FieldMod
+    syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMods ";"
+    syntax OptionalFieldMods ::= None | "(" FieldMods ")"
+    syntax FieldMods ::= NeList{FieldMod, ","}
+    syntax FieldMod ::= "signed" | "saturating"
     syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>"
     syntax LengthExp ::=
                   ConstValue
-                | FieldName
+                | FieldName //TODO ISSUE: what does it mean?
                 | LengthExp LengthBinOp LengthExp
                 | "(" LengthExp ")"
     syntax BitWidth ::= ConstValue | "*"
