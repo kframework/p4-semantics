@@ -31,11 +31,11 @@ module HEADER-SYNTAX
     syntax OptionalFieldMods ::= None | "(" FieldMods ")"
     syntax FieldMods ::= NeList{FieldMod, ","}
     syntax FieldMod ::= "signed" | "saturating"
-    syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>"
+    syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>" //TODO: priorities according to C
     syntax LengthExp ::=
                   ConstValue
                 | FieldName //TODO ISSUE: what does it mean?
-                | LengthExp LengthBinOp LengthExp
+                | LengthExp LengthBinOp LengthExp //TODO: associativity according to C
                 | "(" LengthExp ")"
     syntax BitWidth ::= ConstValue | "*"
 
@@ -47,9 +47,10 @@ module HEADER-SYNTAX
     syntax ArrayInstance ::= "header" HeaderTypeName InstanceName "[" ConstValue "]" ";"
 
     syntax MetadataInstance ::=
-                      "metadata" HeaderTypeName ";"
+                       "metadata" HeaderTypeName  InstanceName ";"
                     |  "metadata" HeaderTypeName  InstanceName OptionalMetadataInitializer
-    //?????
+    //If an initializer is present,the named fields are initialized to the indicated values;  unspecified values are initialized to 0.
+    //TODO ISSUE: what if inilializer is not specified
 
     syntax OptionalMetadataInitializer ::= None | MetadataInitializer
 
@@ -70,39 +71,39 @@ module HEADER-SYNTAX
     syntax FieldRef ::= HeaderRef "." FieldName
 
 
-
-
-// 2.4 FieldLists
-    syntax FieldListDeclaration ::=
-                "field_list" FieldListName "{"
-                    FieldListEntries
-                "}"
-// [ field_list_entry ; ] +
-    //todo
-    syntax FieldListEntries ::= FieldListEntry ";" | FieldListEntries FieldListEntries
-
-    //syntax FieldListEntry ::= ObjectRef | FieldValue
-    syntax FieldListEntry ::= FieldRef | HeaderRef | FieldValue | FieldListName | "payload"
-
-
 endmodule
 
 module CHECKSUM-SYNTAX
 imports HEADER-SYNTAX
     syntax FieldListCalculationName ::= Id
     syntax StreamFunctionAlgorithmName ::= Id
+// 2.4 FieldLists
+    syntax FieldListDeclaration ::=
+                "field_list" FieldListName "{"
+                    FieldListEntryItems
+                "}"
+    syntax FieldListEntryItems ::= NeList{FieldListEntryItem,""}
+    syntax FieldListEntryItem ::= FieldListEntry ";"
+
+    //syntax FieldListEntry ::= ObjectRef | FieldValue
+    syntax FieldListEntry ::= FieldRef | HeaderRef | FieldValue | FieldListName | "payload"
+    //The identifier payload indicates that the contents of the packet following the header of the previously mentioned field is included in the field list
+    //TODO ISSUE: what if no field was previously mentioned? what does previously exactly mean?
+
+
 // 3 Checksums and Hash-value generators
    syntax FieldListCalculationDeclaration ::=
             "field_list_calculation" FieldListCalculationName "{"
                 "input" "{"
-                    FieldListNames
+                    FieldListNameItems
                 "}"
                 "algorithm" ":" StreamFunctionAlgorithmName ";"
                 //"output_width" ":" ConstExpr ";"
                 "output_width" ":" ConstValue ";"
             "}"
-    //todo: non-empty list
-    syntax FieldListNames ::= FieldListName | FieldListNames FieldListNames
+    syntax FieldListNameItems :: NeList{FieldListNameItem,""}
+    syntax FieldListNameItem ::= FieldListName ";"
+
 
 // 3.1 Checksums
     syntax CalculatedFieldDeclaration ::= "calculated_field" FieldRef "{" UpdateVerifySpecs "}"
