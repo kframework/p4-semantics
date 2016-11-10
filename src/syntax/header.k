@@ -50,7 +50,7 @@ module HEADER-SYNTAX
                        "metadata" HeaderTypeName  InstanceName ";"
                     |  "metadata" HeaderTypeName  InstanceName OptionalMetadataInitializer
     //If an initializer is present,the named fields are initialized to the indicated values;  unspecified values are initialized to 0.
-    //TODO ISSUE: what if inilializer is not specified
+    //TODO ISSUE: what if inilializer is not specified?
 
     syntax OptionalMetadataInitializer ::= None | MetadataInitializer
 
@@ -98,7 +98,6 @@ imports HEADER-SYNTAX
                     FieldListNameItems
                 "}"
                 "algorithm" ":" StreamFunctionAlgorithmName ";"
-                //"output_width" ":" ConstExpr ";"
                 "output_width" ":" ConstValue ";"
             "}"
     syntax FieldListNameItems :: NeList{FieldListNameItem,""}
