@@ -1,43 +1,47 @@
+require "action.k"
+
+
+module TABLE
+
+endmodule
+
 module TABLE-SYNTAX
+imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, HeaderRef, FieldRef
+    syntax TableName ::= Id
 //11 Table Declarations
     syntax TableDeclaration ::=
             "table" TableName "{"
                 OptionalReads
                 TableActions
-                OptionalSize
+                OptionalMinSize
+                OptionalMaxSize
                 OptionalSupportTimeout
             "}"
 
     syntax OptionalReads ::= None | "reads" "{" FieldMatchs "}"
 
-    //todo
-    syntax FieldMatchs ::= FieldMatch | FieldMatchs FieldMatchs
+    syntax FieldMatchs ::= NeList{FieldMatch,""}
 
-    //syntax OptionalSize ::= None |  Size ":" ConstExpr ";"
-    syntax OptionalSize ::= None |  Size ":" ConstValue ";"
-    syntax Size ::= "min_size" | "max_size" | "size"
-
-    syntax OptionalSupportTimeout ::= "support_timeout" ":" BoolValue ";"
+    syntax OptionalMinSize ::= None |  "min_size" ":" ConstValue ";"
+    syntax OptionalMaxSize ::= None |  "max_size" ":" ConstValue ";"
+    syntax OptionalSupportTimeout ::= None | "support_timeout" ":" BoolValue ";"
 
     syntax FieldMatch ::= FieldOrMaskedRef ":" FieldMatchType ";"
-    syntax FieldOrMaskedRef ::= HeaderRef | FieldRef | FieldRef "mask" ConstExpr
+    syntax FieldOrMaskedRef ::= HeaderRef | FieldRef | FieldRef "mask" ConstValue
 
     syntax FieldMatchType ::=
                   "exact"
                  | "ternary"
                  | "lpm"
-                 //| "index"
                  | "range"
                  | "valid"
 
     syntax TableActions ::= ActionSpecification | ActionProfileSpecification
 
-    syntax ActionSpecification ::= "actions" "{" ActionNames "}"
-    //todo
-    syntax ActionNames ::= ActionName | ActionNames ActionNames
 
-    //syntax ActionProfileSpecification ::= "action_profile" ":" ActionProfileName ";"
-    syntax ActionProfileSpecification ::= "action_profile" ":" ActionProfileName
+    syntax ActionProfileSpecification ::= "action_profile" ":" ActionProfileName ";"
+    //syntax ActionProfileSpecification ::= "action_profile" ":" ActionProfileName
+    //TODO ISSUE does it have semi-colon or not?
 
 
 endmodule
