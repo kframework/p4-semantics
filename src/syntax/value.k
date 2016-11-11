@@ -1,4 +1,9 @@
+module VALUE
+
+endmodule
+
 module VALUE-SYNTAX
+syntax None ::= ""
 // 1.5.1 Value Specifications
     syntax ConstValue ::= OptionalSign OptionalWidthSpec UnsignedValue
 
@@ -11,15 +16,15 @@ module VALUE-SYNTAX
 
     syntax BoolValue ::= "true" | "false"
 
-    syntax _BinaryValue ::= Token{("0b" | "0B")[0-9]+} [notInRules]
-    syntax _DecimalValue ::= Token{[0-9_]+} [notInRules]
-    syntax _HexadecimalValue ::= Token{("0x" | "0X")[0-9]+} [notInRules]
+    syntax BinaryValueToken ::= r"(0b|0B)[0-1\\_]+" [token, notInRules] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
+    syntax DecimalValueToken ::= r"[0-9\\_]+" [token, notInRules] //Token{[0-9\\_]+} [notInRules]
+    syntax HexadecimalValueToken ::= r"(0x|0X)[0-9a-fA-F\\_]+" [token, notInRules] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
 
-    syntax BinaryValue ::= _BinaryValue
-    syntax DecimalValue ::= _DecimalValue
-    syntax HexadecimalValue ::= _HexadecimalValue
+    syntax BinaryValue ::= BinaryValueToken
+    syntax DecimalValue ::= DecimalValueToken
+    syntax HexadecimalValue ::= HexadecimalValueToken
 
-    syntax WidthSpec ::= _DecimalValue "'"
+    syntax WidthSpec ::= DecimalValueToken "'"
 
     // The node field_value is used in this specification to emphasize that the width of the representation may be relevant;
     syntax FieldValue ::= ConstValue
