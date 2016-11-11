@@ -1,4 +1,12 @@
+require "table.k"
+
+module CONTROL
+
+endmodule
+
 module CONTROL-SYNTAX
+imports TABLE-SYNTAX //for VALUE-SYNTAX and HeaderRef and TableName
+    syntax ControlFnName ::= Id
 // 12 Packet Processing and Control Flow
     syntax ControlFunctionDeclaration ::= "control" ControlFnName ControlBlock
     syntax ControlBlock ::= "{" ControlStatements "}"
@@ -15,10 +23,9 @@ module CONTROL-SYNTAX
 
     syntax ApplyAndSelectBlock ::= "apply" "(" TableName ")" "{"  CaseList "}"
     syntax CaseList ::= ActionCases | HitMissCases
-    //todo
-    syntax ActionCases ::= ActionCase | ActionCases ActionCases
-    //todo
-    syntax HitMissCases ::= HitMissCase | HitMissCases HitMissCases
+
+    syntax ActionCases ::= NeList{ActionCase,""}
+    syntax HitMissCases ::= NeList{HitMissCase,""}
 
     syntax ActionCase ::= ActionOrDefault ControlBlock
     syntax ActionOrDefault ::= ActionName | "default"
@@ -32,16 +39,19 @@ module CONTROL-SYNTAX
     syntax ElseBlock ::= "else" ControlBlock | "else" IfElseStatement
 
     syntax BoolExpr ::=
-                      "valid" "(" ObjectRef ")"
-                    | BoolExpr BoolOp BoolExpr
+                      "valid" "(" HeaderRef ")"
+                    | BoolExpr BoolOp BoolExpr //TODO: assoc according to C
                     | "not" BoolExpr
                     | "(" BoolExpr ")"
-                    | Exp ReOp Exp
+                    | Exp RelOp Exp  //TODO: assoc according to C
                     | BoolValue
-    syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | Value | "(" Exp ")"
+    //syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | Value | "(" Exp ")"
+    syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | ConstValue | "(" Exp ")"
+    //TODO ISSUE: what is Value ?
 
+    //TODO: priorities according to C
     syntax BinOp ::= "+" | "*" | "-" | "<<" | ">>" | "&" | "|" | "^"
     syntax UnOp ::= "~"  | "-"
     syntax BoolOp ::= "or" | "and"
-    syntax Relop ::= ">" | ">=" | "==" | "<=" | "<" | "!="
+    syntax RelOp ::= ">" | ">=" | "==" | "<=" | "<" | "!="
 endmodule
