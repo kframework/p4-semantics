@@ -104,6 +104,7 @@ imports HEADER-SYNTAX
 
 
 // 3.1 Checksums
+    //Note that although this declaration may occur anywhere in the P4 program, the decla- ration should be placed immediately after the header instance declaration for the field referenced.
     syntax CalculatedFieldDeclaration ::=
             "calculated_field" FieldRef "{"
                 UpdateVerifySpecs
