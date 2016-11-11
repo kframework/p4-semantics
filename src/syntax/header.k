@@ -1,18 +1,16 @@
+require "value.k"
+
 module HEADER
 
 endmodule
 
 module HEADER-SYNTAX
+imports VALUE-SYNTAX
     syntax HeaderTypeName ::= Id
     syntax InstanceName ::= Id
     syntax FieldName ::= Id
     syntax HeaderInstanceName ::= Id
     syntax FieldListName ::= Id
-    syntax None ::= ""
-
-    //todo: temp - fix this
-    syntax ConstValue ::= Int
-    syntax FieldValue ::= ConstValue
 
 // 2.1 HeaderTypeDeclarations
     syntax HeaderTypeDeclaration ::= "header_type" HeaderTypeName "{" HeaderDecBody "}"
