@@ -52,9 +52,9 @@ imports CHECKSUM-SYNTAX // for FieldListCalculationName
     syntax OptionalSize ::= None | "size" ":" ConstValue ";"
     syntax OptionalDynamicActionSelection ::= "dynamic_action_selection" ":" SelectorName ";"
 
-    syntax ActionSpecification ::= "actions" "{" ActionNames "}"
-    syntax ActionNames ::= NeList{ActionName," "}
-
+    syntax ActionSpecification ::= "actions" "{" ActionNameItems "}"
+    syntax ActionNameItems ::= NeList{ActionNameItem,""}
+    syntax ActionNameItem ::= ActionName ";"
 
     syntax ActionSelectorDeclaration ::=
             "action_selector" SelectorName "{"
