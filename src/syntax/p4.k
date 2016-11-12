@@ -1,6 +1,6 @@
 require "value.k"
 require "table.k"
-//require "stateful.k" //TODO
+require "stateful.k"
 require "parser.k"
 require "header.k"
 require "control.k"
@@ -14,7 +14,7 @@ endmodule
 module P4-SYNTAX
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
-    //STATEFUL-SYNTAX //TODO
+    imports STATEFUL-SYNTAX
     imports CHECKSUM-SYNTAX
     imports PARSER-SYNTAX
     imports PARSER-EXCEPTION-SYNTAX
@@ -36,9 +36,9 @@ module P4-SYNTAX
                 | ValueSetDeclaration
                 | ParserFunctionDeclaration
                 | ParserExceptionDeclaration
-                //| CounterDeclaration  //TODO
-                //| MeterDeclaration    //TODO
-                //| RegisterDeclaration //TODO
+                | CounterDeclaration
+                | MeterDeclaration
+                | RegisterDeclaration
                 | ActionFunctionDeclaration
                 | ActionProfileDeclaration
                 | ActionSelectorDeclaration
