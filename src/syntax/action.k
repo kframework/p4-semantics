@@ -18,17 +18,17 @@ imports HEADER-SYNTAX //only for header reference
     //P4 assumes parallel semantics for the application of all the primitive actions executing as a result of a match in a given table. The execution of actions across different tables assumes sequential semantics where the sequence is determined by the control flow,
     //TODO ISSUE parallel at which level of granularity?
 
-    syntax ActionStatements ::= List{ActionStatement,""}
+    syntax ActionStatements ::= List{ActionStatement,""}    [klabel('ActionStatements)]
 
     syntax ActionHeader ::= ActionName "(" ParamList ")"
 
-    syntax ParamList ::= List{ParamName,","}
+    syntax ParamList ::= List{ParamName,","}                [klabel('ParamList)]
 
     syntax ActionStatement ::=
                   ActionName "(" Args ")" ";"
 
 
-    syntax Args ::= List{Arg, ","}
+    syntax Args ::= List{Arg, ","}                          [klabel('Args)]
 
     syntax Arg ::= ParamName | FieldValue | FieldRef | HeaderRef
 
@@ -53,7 +53,7 @@ imports CHECKSUM-SYNTAX // for FieldListCalculationName
     syntax OptionalDynamicActionSelection ::= "dynamic_action_selection" ":" SelectorName ";"
 
     syntax ActionSpecification ::= "actions" "{" ActionNameItems "}"
-    syntax ActionNameItems ::= NeList{ActionNameItem,""}
+    syntax ActionNameItems ::= NeList{ActionNameItem,""}                [klabel('ActionNameItems)]
     syntax ActionNameItem ::= ActionName ";"
 
     syntax ActionSelectorDeclaration ::=

@@ -24,10 +24,10 @@ imports VALUE-SYNTAX
     // If, at run time, the calculated length exceeds this value, it is considered a parser exception.
     syntax OptionalMaxLengthDec ::= None | "max_length" ":" ConstValue ";"
 
-    syntax FieldDecs ::= NeList{FieldDec,""}
+    syntax FieldDecs ::= NeList{FieldDec,""}                [klabel('FieldDecs)]
     syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMods ";"
     syntax OptionalFieldMods ::= None | "(" FieldMods ")"
-    syntax FieldMods ::= NeList{FieldMod, ","}
+    syntax FieldMods ::= NeList{FieldMod, ","}              [klabel('FieldMods)]
     syntax FieldMod ::= "signed" | "saturating"
     syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>" //TODO: priorities according to C
     syntax LengthExp ::=
@@ -55,7 +55,7 @@ imports VALUE-SYNTAX
 
     syntax MetadataInitializer ::= "{" FieldValueAssignments "}"
 
-    syntax FieldValueAssignments ::= NeList{FieldValueAssignment,""}
+    syntax FieldValueAssignments ::= NeList{FieldValueAssignment,""}    [klabel('FieldValueAssignments)]
     syntax FieldValueAssignment ::= FieldName ":" FieldValue ";"
 
 
@@ -81,7 +81,7 @@ imports HEADER-SYNTAX
                 "field_list" FieldListName "{"
                     FieldListEntryItems
                 "}"
-    syntax FieldListEntryItems ::= NeList{FieldListEntryItem,""}
+    syntax FieldListEntryItems ::= NeList{FieldListEntryItem,""}        [klabel('FieldListEntryItems)]
     syntax FieldListEntryItem ::= FieldListEntry ";"
 
     //syntax FieldListEntry ::= ObjectRef | FieldValue
@@ -99,7 +99,7 @@ imports HEADER-SYNTAX
                 "algorithm" ":" StreamFunctionAlgorithmName ";"
                 "output_width" ":" ConstValue ";"
             "}"
-    syntax FieldListNameItems ::= NeList{FieldListNameItem,""}
+    syntax FieldListNameItems ::= NeList{FieldListNameItem,""}          [klabel('FieldListNameItems)]
     syntax FieldListNameItem ::= FieldListName ";"
 
 
@@ -110,7 +110,7 @@ imports HEADER-SYNTAX
                 UpdateVerifySpecs
             "}"
 
-    syntax UpdateVerifySpecs ::= NeList{UpdateVerifySpec,""}
+    syntax UpdateVerifySpecs ::= NeList{UpdateVerifySpec,""}            [klabel('UpdateVerifySpecs)]
 
     syntax UpdateVerifySpec ::= UpdateOrVerify FieldListCalculationName OptionalIfCond ";"
     syntax OptionalIfCond ::= None | IfCond

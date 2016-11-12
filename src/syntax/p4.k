@@ -25,7 +25,7 @@ module P4-SYNTAX
 
     syntax P4Program ::= P4Declarations
 
-    syntax P4Declarations ::= NeList{P4Declaration,""}
+    syntax P4Declarations ::= NeList{P4Declaration,""}  [klabel('P4Declarations)]
 
     syntax P4Declaration ::=
                   HeaderTypeDeclaration

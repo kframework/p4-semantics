@@ -53,7 +53,7 @@ imports VALUE-SYNTAX
                 | "return" ControlFunctionName ";"
                 | "parse_error" ParserExceptionName ";"
 
-    syntax CaseEntries ::= NeList{CaseEntry,""}
+    syntax CaseEntries ::= NeList{CaseEntry,""}     [klabel('CaseEntries)]
     syntax CaseEntry ::= ValueList ":" CaseReturnValueType ";"
 
     syntax ValueList ::= ValueOrMaskeds | "default"
@@ -63,7 +63,7 @@ imports VALUE-SYNTAX
             | ControlFunctionName
             | "parse_error" ParserExceptionName
 
-    syntax ValueOrMaskeds ::= NeList{ValueOrMasked,","}
+    syntax ValueOrMaskeds ::= NeList{ValueOrMasked,","} [klabel('ValueOrMaskeds)]
     syntax ValueOrMasked ::=
                   FieldValue
                 | FieldValue "mask" FieldValue
@@ -72,7 +72,7 @@ imports VALUE-SYNTAX
 
     syntax SelectExp ::= FieldOrDataRefs
 
-    syntax FieldOrDataRefs ::= NeList{FieldOrDataRef,","}
+    syntax FieldOrDataRefs ::= NeList{FieldOrDataRef,","}   [klabel('FieldOrDataRefs)]
     syntax FieldOrDataRef ::=
                   FieldRef
                 | "latest" "." FieldName
@@ -91,7 +91,7 @@ imports PARSER-SYNTAX
                         SetStatements
                         ReturnOrDrop ";"
                     "}"
-    syntax SetStatements ::= List{SetStatement,""}
+    syntax SetStatements ::= List{SetStatement,""}    [klabel('SetStatements)]
 
     syntax ReturnOrDrop ::= ReturnToControl | "parser_drop"
     syntax ReturnToControl ::= "return" ControlFunctionName

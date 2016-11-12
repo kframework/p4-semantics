@@ -20,7 +20,7 @@ imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, 
 
     syntax OptionalReads ::= None | "reads" "{" FieldMatchs "}"
 
-    syntax FieldMatchs ::= NeList{FieldMatch,""}
+    syntax FieldMatchs ::= NeList{FieldMatch,""}                    [klabel('FieldMatchs)]
 
     syntax OptionalMinSize ::= None |  "min_size" ":" ConstValue ";"
     syntax OptionalMaxSize ::= None |  "max_size" ":" ConstValue ";"

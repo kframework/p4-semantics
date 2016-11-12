@@ -24,8 +24,8 @@ imports TABLE-SYNTAX //for VALUE-SYNTAX and HeaderRef and TableName
     syntax ApplyAndSelectBlock ::= "apply" "(" TableName ")" "{"  CaseList "}"
     syntax CaseList ::= ActionCases | HitMissCases
 
-    syntax ActionCases ::= NeList{ActionCase,""}
-    syntax HitMissCases ::= NeList{HitMissCase,""}
+    syntax ActionCases ::= NeList{ActionCase,""}         [klabel('ActionCases)]
+    syntax HitMissCases ::= NeList{HitMissCase,""}       [klabel('HitMissCases)]
 
     syntax ActionCase ::= ActionOrDefault ControlBlock
     syntax ActionOrDefault ::= ActionName | "default"
