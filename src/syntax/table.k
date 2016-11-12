@@ -15,6 +15,7 @@ imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, 
                 TableActions
                 OptionalMinSize
                 OptionalMaxSize
+                OptionalSize
                 OptionalSupportTimeout
             "}"
 
@@ -24,6 +25,7 @@ imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, 
 
     syntax OptionalMinSize ::= None |  "min_size" ":" ConstValue ";"
     syntax OptionalMaxSize ::= None |  "max_size" ":" ConstValue ";"
+    //syntax OptionaSize ::= None |  "size" ":" ConstValue ";" //already defined in action-profile-syntax
     syntax OptionalSupportTimeout ::= None | "support_timeout" ":" BoolValue ";"
 
     syntax FieldMatch ::= FieldOrMaskedRef ":" FieldMatchType ";"
