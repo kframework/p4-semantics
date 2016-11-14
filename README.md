@@ -18,7 +18,7 @@ At the current moment, only the parser part is ready, which converts p4 source c
 You first need to compile (kompile) the P4 language definition using K. In order to do so run:
 ```
   cd p4k/
-  scripts/kompile-syntax.sh
+  script/kompile-syntax.sh
 ```
 
 ### Using the parser
@@ -26,12 +26,12 @@ You first need to compile (kompile) the P4 language definition using K. In order
 In order to parse P4 programs run:
 
 ```
-  scripts/parse.sh path/to/source.p4
+  script/parse.sh path/to/source.p4
 ```
 
 If your code contains preprocessing directives (e.g include, define, etc), you first need to preprocess it:
 ```
-  scripts/preproc.sh path/to/source.p4 > some_file.p4
+  script/preproc.sh path/to/source.p4 > some_file.p4
 ```
 
 And then feed the output file into the parser.
@@ -40,7 +40,7 @@ And then feed the output file into the parser.
 ### Examples
 
 ```
-  scripts/parse.sh test/syntax/unit/mtag-edge-program.p4
+  script/parse.sh test/syntax/unit/mtag-edge-program.p4
   `'P4Declarations`(`header_type_{_}`(#token("ethernet_t","Id@ID"),...
 ```
 
