@@ -1,6 +1,6 @@
 # P4K: Formal Semantics of P4 in K
 
-This is an attempt to give formal semantics to  [P4](http://p4.org/) language using K framework.
+This is an ongoing attempt to give formal semantics to  [P4](http://p4.org/) language using K framework.
 
 ## Using P4K:
 
