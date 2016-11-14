@@ -1,0 +1,1 @@
+kast -d src/syntax/ $@
