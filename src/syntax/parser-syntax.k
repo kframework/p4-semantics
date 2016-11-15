@@ -1,4 +1,4 @@
-require "header.k"
+require "header-syntax.k"
 
 module PARSER
 

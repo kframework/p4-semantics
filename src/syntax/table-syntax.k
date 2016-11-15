@@ -1,4 +1,4 @@
-require "action.k"
+require "action-syntax.k"
 
 
 module TABLE

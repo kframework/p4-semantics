@@ -1,4 +1,4 @@
-require "header.k"
+require "header-syntax.k"
 
 module ACTION
 
@@ -30,7 +30,11 @@ imports HEADER-SYNTAX //only for header reference
 
     syntax Args ::= List{Arg, ","}                          [klabel('Args)]
 
-    syntax Arg ::= ParamName | FieldValue | FieldRef | HeaderRef
+    syntax Arg ::=
+          ParamName         [klabel('ArgParamName)]
+        | FieldValue        [klabel('ArgFieldValue)]
+        | FieldRef          [klabel('ArgFieldRef)]
+        | HeaderRef         [klabel('ArgHeaderRef)]
 
 endmodule
 

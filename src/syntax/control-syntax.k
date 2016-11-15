@@ -1,4 +1,4 @@
-require "table.k"
+require "table-syntax.k"
 
 module CONTROL
 
@@ -12,10 +12,10 @@ imports TABLE-SYNTAX //for VALUE-SYNTAX and HeaderRef and TableName
     syntax ControlBlock ::= "{" ControlStatements "}"
     syntax ControlStatements ::= List{ControlStatement,""}
     syntax ControlStatement ::=
-                  ApplyTableCall
-                | ApplyAndSelectBlock
-                | IfElseStatement
-                | ControlFnName "(" ")" ";"
+                  ApplyTableCall            [klabel('ContStmApp)]
+                | ApplyAndSelectBlock       [klabel('ContStmAppSel)]
+                | IfElseStatement           [klabel('ContStmIf)]
+                | ControlFnName "(" ")" ";" [klabel('ContStmFn)]
                 //| "return" ";"
 
 
@@ -39,14 +39,19 @@ imports TABLE-SYNTAX //for VALUE-SYNTAX and HeaderRef and TableName
     syntax ElseBlock ::= "else" ControlBlock | "else" IfElseStatement
 
     syntax BoolExpr ::=
-                      "valid" "(" HeaderRef ")"
-                    | BoolExpr BoolOp BoolExpr //TODO: assoc according to C
-                    | "not" BoolExpr
-                    | "(" BoolExpr ")"
-                    | Exp RelOp Exp  //TODO: assoc according to C
-                    | BoolValue
+                      "valid" "(" HeaderRef ")"         [klabel('BExpValid)]
+                    | BoolExpr BoolOp BoolExpr          [klabel('BExpBinBoolOp)]//TODO: assoc according to C
+                    | "not" BoolExpr                    [klabel('BExpBinNot)]
+                    | "(" BoolExpr ")"                  [braket, klabel('BExpBinNot)]
+                    | Exp RelOp Exp                     [klabel('BExpBinRelOp)]//TODO: assoc according to C
+                    | BoolValue                         [klabel('BExpVal)]
     //syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | Value | "(" Exp ")"
-    syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | ConstValue | "(" Exp ")"
+    syntax  Exp ::=
+          Exp BinOp Exp [klabel('ExpBinOp)]
+        | UnOp Exp      [klabel('BExpUnOp)]
+        | FieldRef      [klabel('BExpFieldRef)]
+        | ConstValue    [klabel('BExpConst)]
+        | "(" Exp ")"   [klabel('BExpUnOp)]
     //TODO ISSUE: what is Value ?
 
     //TODO: priorities according to C

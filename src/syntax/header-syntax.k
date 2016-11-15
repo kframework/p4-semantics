@@ -1,4 +1,4 @@
-require "value.k"
+require "value-syntax.k"
 
 module HEADER
 

@@ -1,17 +1,13 @@
-require "value.k"
-require "table.k"
-require "stateful.k"
-require "parser.k"
-require "header.k"
-require "control.k"
+require "value-syntax.k"
+require "table-syntax.k"
+require "stateful-syntax.k"
+require "parser-syntax.k"
+require "header-syntax.k"
+require "control-syntax.k"
 
 // based on P4 Language Spec Version 1.0.3 Nov. 2016
 
-module P4
-
-endmodule
-
-module P4-SYNTAX
+module P4-COMMON
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
     imports STATEFUL-SYNTAX
@@ -46,4 +42,10 @@ module P4-SYNTAX
                 | ControlFunctionDeclaration
 
 
+endmodule
+
+module P4-SYNTAX
+    imports P4-COMMON
+
+    syntax None ::= ""
 endmodule
