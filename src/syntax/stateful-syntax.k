@@ -1,4 +1,4 @@
-require "table.k"
+require "table-syntax.k"
 
 module STATEFUL
 
