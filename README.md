@@ -16,7 +16,7 @@ At the current moment, only the parser part is ready, which converts p4 source c
 ### Building the parser
 
 You first need to compile (kompile) the P4 language definition using K. 
-In order to do so get the source code ([this release](https://github.com/kframework/p4-semantics/releases)) and run:
+In order to do so get the source code ([this release](https://github.com/kframework/p4-semantics/releases/tag/parser)) and run:
 ```
   cd p4k/
   script/kompile-syntax.sh
