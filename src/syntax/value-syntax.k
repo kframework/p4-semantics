@@ -19,7 +19,7 @@ module VALUE-SYNTAX
 
     syntax UnsignedValue ::= BinaryValue | DecimalValue | HexadecimalValue
 
-    syntax BoolValue ::= "true" | "false"
+    syntax BoolValue ::= Bool//"true" | "false"
 
     syntax BinaryValueToken //::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel('BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
     syntax DecimalValueToken //::= r"[0-9\\_]+" [token, notInRules, klabel('DecimalValueToken)] //Token{[0-9\\_]+} [notInRules]

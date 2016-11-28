@@ -26,8 +26,8 @@ module P4-COMMON
 
     syntax P4Declaration ::=
                   HeaderTypeDeclaration
-    /*            | InstanceDeclaration
-                | FieldListDeclaration
+                | InstanceDeclaration
+    /*            | FieldListDeclaration
                 | FieldListCalculationDeclaration
                 | CalculatedFieldDeclaration
                 | ValueSetDeclaration
