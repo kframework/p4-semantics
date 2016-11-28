@@ -15,18 +15,31 @@ imports VALUE-SYNTAX
 // 2.1 HeaderTypeDeclarations
     syntax HeaderTypeDeclaration ::= "header_type" HeaderTypeName "{" HeaderDecBody "}"
 
-    syntax HeaderDecBody ::= "fields" "{" FieldDecs "}" OptionalLengthDec OptionalMaxLengthDec
+    //syntax HeaderDecBody ::= "fields" "{" FieldDecs "}" OptionalLengthDec OptionalMaxLengthDec
+    syntax HeaderDecBody ::=
+              "fields" "{" FieldDecs "}"                [klabel('HeaderDecBody)]
+            | "fields" "{" FieldDecs "}" LengthDec      [klabel('HeaderDecBodyLen)]
+            | "fields" "{" FieldDecs "}" MaxLengthDec   [klabel('HeaderDecBodyMaxLen)]
+            | "fields" "{" FieldDecs "}" LengthDec MaxLengthDec [klabel('HeaderDecBodyLenMaxLen)]
+
+
 
     //length is in bytes
     //The length attribute specifies an expression whose evaluation gives the length of the header in bytes for variable length headers.
     // It must be present if the header has variable length
-    syntax OptionalLengthDec ::= None | "length" ":" LengthExp ";"  //TODO ISSUE: why lengthexp here and constvalue for the other one?
+    //syntax OptionalLengthDec ::= None | "length" ":" LengthExp ";"  //TODO ISSUE: why lengthexp here and constvalue for the other one?
+    syntax LengthDec ::= "length" ":" LengthExp ";"
     // If, at run time, the calculated length exceeds this value, it is considered a parser exception.
-    syntax OptionalMaxLengthDec ::= None | "max_length" ":" ConstValue ";"
+    //syntax OptionalMaxLengthDec ::= None | "max_length" ":" ConstValue ";"
+    syntax MaxLengthDec ::= "max_length" ":" ConstValue ";"
 
     syntax FieldDecs ::= NeList{FieldDec,""}                [klabel('FieldDecs)]
-    syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMods ";"
-    syntax OptionalFieldMods ::= None | "(" FieldMods ")"
+    //syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMods ";"
+    syntax FieldDec ::=
+              FieldName ":" BitWidth ";"
+            | FieldName ":" BitWidth  "(" FieldMods ")" ";"
+
+    //syntax OptionalFieldMods ::= None | "(" FieldMods ")"
     syntax FieldMods ::= NeList{FieldMod, ","}              [klabel('FieldMods)]
     syntax FieldMod ::= "signed" | "saturating"
     syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>" //TODO: priorities according to C
@@ -46,17 +59,18 @@ imports VALUE-SYNTAX
 
     syntax MetadataInstance ::=
                        "metadata" HeaderTypeName  InstanceName ";"
-                    |  "metadata" HeaderTypeName  InstanceName OptionalMetadataInitializer
+                    //|  "metadata" HeaderTypeName  InstanceName OptionalMetadataInitializer //TODO ISSUE: not sure about the syntax
+                      | "metadata" HeaderTypeName  InstanceName MetadataInitializer
     //If an initializer is present,the named fields are initialized to the indicated values;  unspecified values are initialized to 0.
     //TODO ISSUE: what if inilializer is not specified?
 
-    syntax OptionalMetadataInitializer ::= None | MetadataInitializer
+    //syntax OptionalMetadataInitializer ::= None | MetadataInitializer
 
 
     syntax MetadataInitializer ::= "{" FieldValueAssignments "}"
 
     syntax FieldValueAssignments ::= NeList{FieldValueAssignment,""}    [klabel('FieldValueAssignments)]
-    syntax FieldValueAssignment ::= FieldName ":" FieldValue ";"
+    syntax FieldValueAssignment ::= FieldName ":" FieldValue ";"    [klabel('FieldValAsgn)]
 
 
 // 2.3 HeaderandFieldReferences
@@ -112,8 +126,12 @@ imports HEADER-SYNTAX
 
     syntax UpdateVerifySpecs ::= NeList{UpdateVerifySpec,""}            [klabel('UpdateVerifySpecs)]
 
-    syntax UpdateVerifySpec ::= UpdateOrVerify FieldListCalculationName OptionalIfCond ";"
-    syntax OptionalIfCond ::= None | IfCond
+    //syntax UpdateVerifySpec ::= UpdateOrVerify FieldListCalculationName OptionalIfCond ";"
+    syntax UpdateVerifySpec ::=
+              UpdateOrVerify FieldListCalculationName  ";"
+            | UpdateOrVerify FieldListCalculationName IfCond ";"
+
+    //syntax OptionalIfCond ::= None | IfCond
 
     syntax UpdateOrVerify ::= "update" | "verify"
     syntax IfCond ::= "if" "(" CalcBoolCond ")"

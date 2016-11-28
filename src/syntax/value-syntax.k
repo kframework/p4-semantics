@@ -3,12 +3,17 @@ module VALUE
 endmodule
 
 module VALUE-SYNTAX
-    syntax None
+    //syntax None
 // 1.5.1 Value Specifications
-    syntax ConstValue ::= OptionalSign OptionalWidthSpec UnsignedValue
+    //syntax ConstValue ::= OptionalSign OptionalWidthSpec UnsignedValue
+    syntax ConstValue ::=
+              UnsignedValue
+            | Sign UnsignedValue
+            | WidthSpec UnsignedValue
+            | Sign WidthSpec UnsignedValue
 
-    syntax OptionalWidthSpec ::= None | WidthSpec
-    syntax OptionalSign ::= None | Sign
+    //syntax OptionalWidthSpec ::= None | WidthSpec
+    //syntax OptionalSign ::= None | Sign
 
     syntax Sign ::= "+" | "-"
 
@@ -16,9 +21,9 @@ module VALUE-SYNTAX
 
     syntax BoolValue ::= "true" | "false"
 
-    syntax BinaryValueToken ::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel('BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
-    syntax DecimalValueToken ::= r"[0-9\\_]+" [token, notInRules, klabel('DecimalValueToken)] //Token{[0-9\\_]+} [notInRules]
-    syntax HexadecimalValueToken ::= r"(0x|0X)[0-9a-fA-F\\_]+" [token, notInRules, klabel('HexadecimalValueToken)] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
+    syntax BinaryValueToken //::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel('BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
+    syntax DecimalValueToken //::= r"[0-9\\_]+" [token, notInRules, klabel('DecimalValueToken)] //Token{[0-9\\_]+} [notInRules]
+    syntax HexadecimalValueToken //::= r"(0x|0X)[0-9a-fA-F\\_]+" [token, notInRules, klabel('HexadecimalValueToken)] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
 
     syntax BinaryValue ::= BinaryValueToken
     syntax DecimalValue ::= DecimalValueToken
