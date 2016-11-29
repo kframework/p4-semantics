@@ -63,43 +63,40 @@ configuration
 
 
 
-rule <k> (H:HeaderTypeDeclaration Rest:P4Declarations) => Rest ... </k>
-     <headers> ... (.Bag => <header> H </header>) ... </headers>
-
-
 syntax KItem ::=
-          "@processInstanceDec" "(" K ")"
-        | "@processParserDec" "(" K ")"
-        | "@processActionDec" "(" K ")"
+          "@processDec" "(" K ")"
 
-rule <k> (I:InstanceDeclaration Rest:P4Declarations) => @processInstanceDec(I) ~> Rest ... </k>
-rule <k> (P:ParserFunctionDeclaration Rest:P4Declarations) => @processParserDec(P) ~> Rest ... </k>
-rule <k> (A:ActionFunctionDeclaration Rest:P4Declarations) => @processActionDec(A) ~> Rest ... </k>
+rule <k> (Dec:P4Declaration Rest:P4Declarations) => @processDec(Dec) ~> Rest ... </k>
 
 rule <k> (.P4Declarations => .) ... </k>
 
+// @processDec
 
-//  @processInstanceDec
+rule <k> @processDec(Header:HeaderTypeDeclaration) => . ... </k>
+    <headers> ... (.Bag => <header> Header </header>) ... </headers>
 
-rule <k> @processInstanceDec(metadata Type:HeaderTypeName Name:InstanceName ;) => . ... </k>
+
+
+
+rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName ;) => . ... </k>
     <instances> ... (.Bag =>
         <instance>
             ... <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name>   ...
         </instance>
     ) ... </instances>
-rule <k> @processInstanceDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => . ... </k>
+rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => . ... </k>
     <instances> ... (.Bag =>
         <instance>
             ... <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <init> Asgn </init>  ...
         </instance>
     ) ... </instances>
-rule <k> @processInstanceDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... </k>
+rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... </k>
     <instances> ... (.Bag =>
         <instance>
             ... <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  ...
         </instance>
     ) ... </instances>
-rule <k> @processInstanceDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstValue ] ; ) => . ... </k>
+rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstValue ] ; ) => . ... </k>
     <instances> ... (.Bag =>
         <instance>
             ... <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name> <arraysize> Size </arraysize>   ...
@@ -108,9 +105,7 @@ rule <k> @processInstanceDec(header Type:HeaderTypeName Name:InstanceName [ Size
 
 
 
-// @processParserDec
-
-rule <k> @processParserDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
+rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
     <parserStates>... (.Bag =>
           <state>
             <name> Name </name> <body> Body </body>
@@ -118,14 +113,22 @@ rule <k> @processParserDec(parser Name:ParserStateName { Body:ParserFunctionBody
     ) ... </parserStates>
 
 
-// @processActionDec
 
-
-rule <k> @processActionDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements } ) => . ... </k>
+rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements } ) => . ... </k>
     <actions>... (.Bag =>
           <action>
             <name> Name </name> <params> Params </params> <body> Body </body>
           </action>
     ) ... </actions>
+
+rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements } ) => . ... </k>
+         <actions>... (.Bag =>
+               <action>
+                 <name> Name </name> <params> Params </params> <body> Body </body>
+               </action>
+         ) ... </actions>
+
+
+
 
 endmodule
