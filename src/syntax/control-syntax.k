@@ -28,13 +28,17 @@ imports TABLE-SYNTAX //for VALUE-SYNTAX and HeaderRef and TableName
     syntax HitMissCases ::= NeList{HitMissCase,""}       [klabel('HitMissCases)]
 
     syntax ActionCase ::= ActionOrDefault ControlBlock
-    syntax ActionOrDefault ::= ActionName | "default"
+    syntax ActionOrDefault ::=
+              ActionName
+            | "default" [klabel('Default)]
 
     syntax HitMissCase ::= HitOrMiss ControlBlock
     syntax HitOrMiss ::= "hit" | "miss"
 
-    syntax IfElseStatement ::= "if" "(" BoolExpr ")" ControlBlock OptionalElseBlock
-    syntax OptionalElseBlock ::= None | ElseBlock
+    syntax IfElseStatement ::=
+          "if" "(" BoolExpr ")" ControlBlock //OptionalElseBlock
+        | "if" "(" BoolExpr ")" ControlBlock ElseBlock
+    //syntax OptionalElseBlock ::= None | ElseBlock
 
     syntax ElseBlock ::= "else" ControlBlock | "else" IfElseStatement
 

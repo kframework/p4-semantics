@@ -55,6 +55,13 @@ configuration
         </table>
     </tables>
 
+    <controlFlows>
+        <control multiplicity="*">
+            <name> .K </name>
+            <body> .K </body>
+        </control>
+    </controlFlows>
+
 
     <input>
         .K
@@ -80,7 +87,7 @@ rule <k> @processDec(Header:HeaderTypeDeclaration) => . ... </k>
     <headers> ... (.Bag => <header> Header </header>) ... </headers>
 
 
-
+// header
 
 rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName ;) => . ... </k>
     <instances> ... (.Bag =>
@@ -108,6 +115,7 @@ rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstVa
     ) ... </instances>
 
 
+//parser
 
 rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
     <parserStates>... (.Bag =>
@@ -117,6 +125,7 @@ rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) =>
     ) ... </parserStates>
 
 
+//action
 
 rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>
     <actions>... (.Bag =>
@@ -126,6 +135,7 @@ rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionSt
     ) ... </actions>
 
 
+//table
 
 rule <k> @processDec(table Name:TableName { Read:Reads Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
@@ -140,6 +150,18 @@ rule <k> @processDec(table Name:TableName {Act:TableActions Opt:TableOptionals }
                  ...<name> Name </name> <acts> Act </acts> <opts> Opt </opts>...
                </table>
          ) ... </tables>
+
+// control
+
+rule <k> @processDec(control Name:ControlFnName { Body:ControlStatements } ) => . ... </k>
+         <controlFlows>... (.Bag =>
+               <control>
+                    <name> Name </name> <body> Body </body>
+               </control>
+         ) ... </controlFlows>
+
+
+
 
 
 

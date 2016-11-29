@@ -4,21 +4,21 @@ require "table-syntax.k"
 require "action-syntax.k"
 require "parser-syntax.k"
 require "header-syntax.k"
-//require "control-syntax.k"
+require "control-syntax.k"
 
 // based on P4 Language Spec Version 1.0.3 Nov. 2016
 
 module P4-COMMON
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
-   // imports STATEFUL-SYNTAX
-   // imports CHECKSUM-SYNTAX
+   // imports STATEFUL-SYNTAX //TODO
+   // imports CHECKSUM-SYNTAX //TODO
     imports PARSER-SYNTAX
-    //imports PARSER-EXCEPTION-SYNTAX
+    //imports PARSER-EXCEPTION-SYNTAX //TODO
     imports ACTION-SYNTAX
-    //imports ACTION-PROFILE-SYNTAX
+    //imports ACTION-PROFILE-SYNTAX //TODO
     imports TABLE-SYNTAX
-    //imports CONTROL-SYNTAX
+    imports CONTROL-SYNTAX
 
     syntax P4Program ::= P4Declarations
 
@@ -28,20 +28,20 @@ module P4-COMMON
     syntax P4Declaration ::=
                   HeaderTypeDeclaration
                 | InstanceDeclaration
-    //            | FieldListDeclaration
-    //            | FieldListCalculationDeclaration
-    //            | CalculatedFieldDeclaration
-    //            | ValueSetDeclaration
+    //            | FieldListDeclaration //TODO
+    //            | FieldListCalculationDeclaration //TODO
+    //            | CalculatedFieldDeclaration //TODO
+    //            | ValueSetDeclaration //TODO
                 | ParserFunctionDeclaration
-    //            | ParserExceptionDeclaration
-    //            | CounterDeclaration
-    //            | MeterDeclaration
-    //            | RegisterDeclaration
+    //            | ParserExceptionDeclaration //TODO
+    //            | CounterDeclaration //TODO
+    //            | MeterDeclaration //TODO
+    //            | RegisterDeclaration //TODO
                 | ActionFunctionDeclaration
-    //            | ActionProfileDeclaration
-    //            | ActionSelectorDeclaration
+    //            | ActionProfileDeclaration //TODO
+    //            | ActionSelectorDeclaration //TODO
                 | TableDeclaration
-    //            | ControlFunctionDeclaration*/
+                | ControlFunctionDeclaration
 
 
 endmodule
