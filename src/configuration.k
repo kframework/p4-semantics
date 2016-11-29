@@ -43,6 +43,14 @@ configuration
     </parserStates>
 
 
+    <actions>
+        <action multiplicity="*">
+            <name> .K </name>
+            <params> .K </params>
+            <body> .K </body>
+        </action>
+    </actions>
+
 
     <input>
         .K
@@ -62,9 +70,11 @@ rule <k> (H:HeaderTypeDeclaration Rest:P4Declarations) => Rest ... </k>
 syntax KItem ::=
           "@processInstanceDec" "(" K ")"
         | "@processParserDec" "(" K ")"
+        | "@processActionDec" "(" K ")"
 
 rule <k> (I:InstanceDeclaration Rest:P4Declarations) => @processInstanceDec(I) ~> Rest ... </k>
 rule <k> (P:ParserFunctionDeclaration Rest:P4Declarations) => @processParserDec(P) ~> Rest ... </k>
+rule <k> (A:ActionFunctionDeclaration Rest:P4Declarations) => @processActionDec(A) ~> Rest ... </k>
 
 rule <k> (.P4Declarations => .) ... </k>
 
@@ -108,8 +118,14 @@ rule <k> @processParserDec(parser Name:ParserStateName { Body:ParserFunctionBody
     ) ... </parserStates>
 
 
+// @processActionDec
 
 
-
+rule <k> @processActionDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements } ) => . ... </k>
+    <actions>... (.Bag =>
+          <action>
+            <name> Name </name> <params> Params </params> <body> Body </body>
+          </action>
+    ) ... </actions>
 
 endmodule

@@ -48,13 +48,14 @@ imports CHECKSUM-SYNTAX // for FieldListCalculationName
     syntax ActionProfileDeclaration ::=
             "action_profile" ActionProfileName "{"
                 ActionSpecification
-                OptionalSize
-                OptionalDynamicActionSelection
+                //OptionalSize
+                //OptionalDynamicActionSelection
+                //TODO: add the optionals in a clean way
             "}"
 
 
-    syntax OptionalSize ::= None | "size" ":" ConstValue ";"
-    syntax OptionalDynamicActionSelection ::= "dynamic_action_selection" ":" SelectorName ";"
+    //syntax OptionalSize ::= None | "size" ":" ConstValue ";"
+    //syntax OptionalDynamicActionSelection ::= "dynamic_action_selection" ":" SelectorName ";"
 
     syntax ActionSpecification ::= "actions" "{" ActionNameItems "}"
     syntax ActionNameItems ::= NeList{ActionNameItem,""}                [klabel('ActionNameItems)]
