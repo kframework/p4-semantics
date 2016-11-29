@@ -1,7 +1,7 @@
 require "value-syntax.k"
 //require "table-syntax.k"
 //require "stateful-syntax.k"
-//require "parser-syntax.k"
+require "parser-syntax.k"
 require "header-syntax.k"
 //require "control-syntax.k"
 
@@ -10,14 +10,14 @@ require "header-syntax.k"
 module P4-COMMON
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
-   /* imports STATEFUL-SYNTAX
-    imports CHECKSUM-SYNTAX
+   // imports STATEFUL-SYNTAX
+   // imports CHECKSUM-SYNTAX
     imports PARSER-SYNTAX
-    imports PARSER-EXCEPTION-SYNTAX
-    imports ACTION-SYNTAX
-    imports ACTION-PROFILE-SYNTAX
-    imports TABLE-SYNTAX
-    imports CONTROL-SYNTAX*/
+    //imports PARSER-EXCEPTION-SYNTAX
+    //imports ACTION-SYNTAX
+    //imports ACTION-PROFILE-SYNTAX
+    //imports TABLE-SYNTAX
+    //imports CONTROL-SYNTAX
 
     syntax P4Program ::= P4Declarations
 
@@ -27,20 +27,20 @@ module P4-COMMON
     syntax P4Declaration ::=
                   HeaderTypeDeclaration
                 | InstanceDeclaration
-    /*            | FieldListDeclaration
-                | FieldListCalculationDeclaration
-                | CalculatedFieldDeclaration
-                | ValueSetDeclaration
+    //            | FieldListDeclaration
+    //            | FieldListCalculationDeclaration
+    //            | CalculatedFieldDeclaration
+    //            | ValueSetDeclaration
                 | ParserFunctionDeclaration
-                | ParserExceptionDeclaration
-                | CounterDeclaration
-                | MeterDeclaration
-                | RegisterDeclaration
-                | ActionFunctionDeclaration
-                | ActionProfileDeclaration
-                | ActionSelectorDeclaration
-                | TableDeclaration
-                | ControlFunctionDeclaration*/
+    //            | ParserExceptionDeclaration
+    //            | CounterDeclaration
+    //            | MeterDeclaration
+    //            | RegisterDeclaration
+    //            | ActionFunctionDeclaration
+    //            | ActionProfileDeclaration
+    //            | ActionSelectorDeclaration
+    //            | TableDeclaration
+    //            | ControlFunctionDeclaration*/
 
 
 endmodule

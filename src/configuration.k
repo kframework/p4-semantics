@@ -35,9 +35,14 @@ configuration
         </instance>
     </instances>
 
-    <parser>
-        .K
-    </parser>
+    <parserStates>
+        <state multiplicity="*">
+            <name> .K </name>
+            <body> .K </body>
+        </state>
+    </parserStates>
+
+
 
     <input>
         .K
@@ -54,8 +59,12 @@ rule <k> (H:HeaderTypeDeclaration Rest:P4Declarations) => Rest ... </k>
      <headers> ... (.Bag => <header> H </header>) ... </headers>
 
 
-syntax KItem ::= "@processInstanceDec" "(" K ")"
+syntax KItem ::=
+          "@processInstanceDec" "(" K ")"
+        | "@processParserDec" "(" K ")"
+
 rule <k> (I:InstanceDeclaration Rest:P4Declarations) => @processInstanceDec(I) ~> Rest ... </k>
+rule <k> (P:ParserFunctionDeclaration Rest:P4Declarations) => @processParserDec(P) ~> Rest ... </k>
 
 rule <k> (.P4Declarations => .) ... </k>
 
@@ -86,6 +95,17 @@ rule <k> @processInstanceDec(header Type:HeaderTypeName Name:InstanceName [ Size
             ... <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name> <arraysize> Size </arraysize>   ...
         </instance>
     ) ... </instances>
+
+
+
+// @processParserDec
+
+rule <k> @processParserDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
+    <parserStates>... (.Bag =>
+          <state>
+            <name> Name </name> <body> Body </body>
+          </state>
+    ) ... </parserStates>
 
 
 
