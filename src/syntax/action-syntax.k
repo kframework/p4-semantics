@@ -48,18 +48,24 @@ imports CHECKSUM-SYNTAX // for FieldListCalculationName
     syntax ActionProfileDeclaration ::=
             "action_profile" ActionProfileName "{"
                 ActionSpecification
+                ActionsProfileOptionals
                 //OptionalSize
                 //OptionalDynamicActionSelection
-                //TODO: add the optionals in a clean way
+
             "}"
 
+    //TODO Note: current workraround for problem with None. note that this is not the official syntax, but it can be turned into semantic check insteaf of syntactic check
+    syntax ActionsProfileOptionals ::= List{ActionsProfileOptional,""} [klabel('ActionsProfileOptionals)]
+    syntax ActionsProfileOptional ::=
+              "size" ":" ConstValue ";"
+            | "dynamic_action_selection" ":" SelectorName ";"
 
     //syntax OptionalSize ::= None | "size" ":" ConstValue ";"
     //syntax OptionalDynamicActionSelection ::= "dynamic_action_selection" ":" SelectorName ";"
 
     syntax ActionSpecification ::= "actions" "{" ActionNameItems "}"
     syntax ActionNameItems ::= NeList{ActionNameItem,""}                [klabel('ActionNameItems)]
-    syntax ActionNameItem ::= ActionName ";"
+    syntax ActionNameItem ::= ActionName ";"    [klabel('ActionNameItem)]
 
     syntax ActionSelectorDeclaration ::=
             "action_selector" SelectorName "{"

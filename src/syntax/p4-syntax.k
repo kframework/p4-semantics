@@ -1,5 +1,5 @@
 require "value-syntax.k"
-//require "table-syntax.k"
+require "table-syntax.k"
 //require "stateful-syntax.k"
 require "action-syntax.k"
 require "parser-syntax.k"
@@ -17,7 +17,7 @@ module P4-COMMON
     //imports PARSER-EXCEPTION-SYNTAX
     imports ACTION-SYNTAX
     //imports ACTION-PROFILE-SYNTAX
-    //imports TABLE-SYNTAX
+    imports TABLE-SYNTAX
     //imports CONTROL-SYNTAX
 
     syntax P4Program ::= P4Declarations
@@ -40,7 +40,7 @@ module P4-COMMON
                 | ActionFunctionDeclaration
     //            | ActionProfileDeclaration
     //            | ActionSelectorDeclaration
-    //            | TableDeclaration
+                | TableDeclaration
     //            | ControlFunctionDeclaration*/
 
 

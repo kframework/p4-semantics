@@ -12,11 +12,6 @@ configuration
 <T>
     <k>  $PGM:P4Program ~> @exec </k>
 
-    <tables>
-        <table multiplicity="*">
-            .K
-        </table>
-    </tables>
 
     <headers>
         <header multiplicity="*">
@@ -50,6 +45,15 @@ configuration
             <body> .K </body>
         </action>
     </actions>
+
+    <tables>
+        <table multiplicity="*">
+            <name> .K </name>
+            <reads> .K </reads>
+            <acts> .K </acts>
+            <opts> .K </opts>
+        </table>
+    </tables>
 
 
     <input>
@@ -114,20 +118,28 @@ rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) =>
 
 
 
-rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements } ) => . ... </k>
+rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>
     <actions>... (.Bag =>
           <action>
             <name> Name </name> <params> Params </params> <body> Body </body>
           </action>
     ) ... </actions>
 
-rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements } ) => . ... </k>
-         <actions>... (.Bag =>
-               <action>
-                 <name> Name </name> <params> Params </params> <body> Body </body>
-               </action>
-         ) ... </actions>
 
+
+rule <k> @processDec(table Name:TableName { Read:Reads Act:TableActions Opt:TableOptionals } ) => . ... </k>
+         <tables>... (.Bag =>
+               <table>
+                 <name> Name </name> <reads> Read </reads> <acts> Act </acts> <opts> Opt </opts>
+               </table>
+         ) ... </tables>
+
+rule <k> @processDec(table Name:TableName {Act:TableActions Opt:TableOptionals } ) => . ... </k>
+         <tables>... (.Bag =>
+               <table>
+                 ...<name> Name </name> <acts> Act </acts> <opts> Opt </opts>...
+               </table>
+         ) ... </tables>
 
 
 

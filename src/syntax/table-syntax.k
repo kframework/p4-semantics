@@ -11,22 +11,40 @@ imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, 
 //11 Table Declarations
     syntax TableDeclaration ::=
             "table" TableName "{"
-                OptionalReads
+                //OptionalReads
                 TableActions
-                OptionalMinSize
-                OptionalMaxSize
-                OptionalSize
-                OptionalSupportTimeout
+                TableOptionals
+                //OptionalMinSize
+                //OptionalMaxSize
+                //OptionalSize
+                //OptionalSupportTimeout
             "}"
+            | "table" TableName "{"
+                              Reads
+                              TableActions
+                              TableOptionals
+              "}"
 
-    syntax OptionalReads ::= None | "reads" "{" FieldMatchs "}"
+    //TODO Note: current workraround for problem with None. note that this is not the official syntax, but it can be turned into semantic check insteaf of syntactic check
+    syntax TableOptionals ::= List{TableOptional,""} [klabel('TableOptionals)]
+    syntax TableOptional ::=
+                  "min_size" ":" ConstValue ";"
+                | "max_size" ":" ConstValue ";"
+                | "size" ":" ConstValue ";"
+                | "support_timeout" ":" BoolValue ";"
+
+
+
+    //syntax OptionalReads ::= None | "reads" "{" FieldMatchs "}"
+    syntax Reads ::= "reads" "{" FieldMatchs "}"
+
 
     syntax FieldMatchs ::= NeList{FieldMatch,""}                    [klabel('FieldMatchs)]
 
-    syntax OptionalMinSize ::= None |  "min_size" ":" ConstValue ";"
-    syntax OptionalMaxSize ::= None |  "max_size" ":" ConstValue ";"
+    //syntax OptionalMinSize ::= None |  "min_size" ":" ConstValue ";"
+    //syntax OptionalMaxSize ::= None |  "max_size" ":" ConstValue ";"
     //syntax OptionaSize ::= None |  "size" ":" ConstValue ";" //already defined in action-profile-syntax
-    syntax OptionalSupportTimeout ::= None | "support_timeout" ":" BoolValue ";"
+    //syntax OptionalSupportTimeout ::= None | "support_timeout" ":" BoolValue ";"
 
     syntax FieldMatch ::= FieldOrMaskedRef ":" FieldMatchType ";"
     syntax FieldOrMaskedRef ::= HeaderRef | FieldRef | FieldRef "mask" ConstValue
