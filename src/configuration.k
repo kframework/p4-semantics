@@ -52,6 +52,7 @@ configuration
             <reads> .K </reads>
             <acts> .K </acts>
             <opts> .K </opts>
+            <rules> .List </rules>
         </table>
     </tables>
 
@@ -63,9 +64,14 @@ configuration
     </controlFlows>
 
 
-    <input>
+    //<input stream="stdin">
+    //    .List
+    //</input>
+
+    <packet>
         .K
-    </input>
+    </packet>
+
 
 </T>
 
@@ -140,14 +146,14 @@ rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionSt
 rule <k> @processDec(table Name:TableName { Read:Reads Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
                <table>
-                 <name> Name </name> <reads> Read </reads> <acts> Act </acts> <opts> Opt </opts>
+                 <name> Id2String(Name:>Id) </name> <reads> Read </reads> <acts> Act </acts> <opts> Opt </opts> ...
                </table>
          ) ... </tables>
 
 rule <k> @processDec(table Name:TableName {Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
                <table>
-                 ...<name> Name </name> <acts> Act </acts> <opts> Opt </opts>...
+                 ...<name> Id2String(Name:>Id) </name> <acts> Act </acts> <opts> Opt </opts>...
                </table>
          ) ... </tables>
 
@@ -159,6 +165,44 @@ rule <k> @processDec(control Name:ControlFnName { Body:ControlStatements } ) => 
                     <name> Name </name> <body> Body </body>
                </control>
          ) ... </controlFlows>
+
+
+// --------------------
+
+syntax KItem ::= "@init" | "@parse" | "@ingress" | "@egress"
+
+rule @exec => @init ~> @parse ~> @ingress ~> @egress
+
+
+//syntax Input ::= "packet" "(" String ")"
+
+//syntax Packet ::= "packet" "(" Int ")"
+
+syntax Rule ::= "$rule" "(" Criteria   /* ActionName */ ")"
+syntax Criteria ::= "$ctr" "(" Matchs ")"
+syntax Matchs ::= List{Match,","} [klable('Matchs)]
+syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
+
+//temprory
+rule <k> @init => . ... </k>
+     <packet> . => "00100001010101010" </packet>
+     <tables>
+        ...
+        <table>
+            ...
+            <name> "egress_meter" </name>
+            <rules> .List => ListItem($rule($ctr(String2Id("ethernet").String2Id("dstAddr") : #token("10","DecimalValueToken@VALUE-SYNTAX"))))</rules>
+        </table>
+        ...
+     </tables>
+
+
+
+//syntax KItem ::= "start"
+rule <k> @parse => .  ... </k>
+     <parserStates>... <state> ... <name> Name:Id </name> ... </state> ...</parserStates>
+
+
 
 
 
