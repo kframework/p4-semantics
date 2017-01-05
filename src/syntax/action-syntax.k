@@ -31,8 +31,8 @@ imports HEADER-SYNTAX //only for header reference
     syntax Args ::= List{Arg, ","}                          [klabel('Args)]
 
     syntax Arg ::=
-          ParamName         [klabel('ArgParamName)]
-        | FieldValue        [klabel('ArgFieldValue)]
+        //  ParamName         [klabel('ArgParamName)] //TODO(SYNTAX): causes ambiguity with HeaderRef (What it is exactly)
+          FieldValue        [klabel('ArgFieldValue)]
         | FieldRef          [klabel('ArgFieldRef)]
         | HeaderRef         [klabel('ArgHeaderRef)]
 
