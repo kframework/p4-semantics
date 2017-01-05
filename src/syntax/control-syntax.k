@@ -10,7 +10,7 @@ imports TABLE-SYNTAX //for VALUE-SYNTAX and HeaderRef and TableName
 // 12 Packet Processing and Control Flow
     syntax ControlFunctionDeclaration ::= "control" ControlFnName ControlBlock
     syntax ControlBlock ::= "{" ControlStatements "}"
-    syntax ControlStatements ::= List{ControlStatement,""}
+    syntax ControlStatements ::= List{ControlStatement,""} [klabel('ControlStatements)]
     syntax ControlStatement ::=
                   ApplyTableCall            [klabel('ContStmApp)]
                 | ApplyAndSelectBlock       [klabel('ContStmAppSel)]

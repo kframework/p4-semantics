@@ -198,15 +198,21 @@ rule <k> @init => . ... </k>
 
 
 
-//syntax KItem ::= "start"
-rule <k> @parse => .  ... </k>
-     <parserStates>... <state> ... <name> Name:Id </name> ... </state> ...</parserStates>
+//parsing
+syntax Id ::= "start" [token]
+syntax KItem ::= "@parse" "(" Id ")"
+rule <k> @parse => Body  ... </k>
+     <parserStates>... <state> ... <name> start </name> <body> Body </body> ... </state> ...</parserStates>
 
+rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
+rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structural]
 
+rule .ExtractOrSetStatements => .
 
+rule <k> return State:ParserStateName ; => Body ... </k>
+     <parserStates>... <state> ... <name> State </name> <body> Body </body> ... </state> ...</parserStates>
 
-
-
+//rule extract()
 
 
 endmodule
