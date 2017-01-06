@@ -114,7 +114,7 @@ rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:Field
     <instances>  (.Bag =>
         <instance>
              <valid> true </valid>
-                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <fieldVals> @initFields(Asgn,@fieldSet(Fields)) </fieldVals>  ...
+                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <fieldVals> @initFields(Asgn,@fieldSet(Fields,.Set),.Map) </fieldVals>  ...
         </instance>
     ) ... </instances>
     <headers>  <header>  <name> Type </name>  <fields> Fields:FieldDecs </fields> ... </header> ... </headers>
@@ -134,13 +134,21 @@ rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... <
 //    ) ... </instances>
 //TODO: array is not supported yet
 
-syntax Set ::= "@fieldSet" "(" FieldDecs ")" [function]
-rule @fieldSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs) => SetItem(N) @fieldSet(Rest))
-rule @fieldSet(.FieldDecs) => .Set
+syntax Set ::= "@fieldSet" "(" FieldDecs "," Set ")" [function]
+rule @fieldSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs, Acc:Set) => @fieldSet(Rest, SetItem(N) Acc)
+rule @fieldSet(.FieldDecs, Acc:Set) => Acc
+//TODO: ask if we can get rid of the Acc
 //TODO: check a field is not decrlared twice
 
 
-syntax Map ::= "@initFields" "(" FieldValueAssignments "," Set ")" [function,strict]
+syntax Map ::= "@initFields" "(" FieldValueAssignments "," Set "," Map ")" [function]
+rule @initFields(.FieldValueAssignments, .Set, Acc:Map) => Acc
+rule @initFields(.FieldValueAssignments, SetItem(N:FieldName) Fields:Set, Acc:Map) =>
+        @initFields(.FieldValueAssignments, Fields, N |-> #token("0","DecimalValueToken@VALUE-SYNTAX")  Acc)
+//TODO: fix the token thing
+rule @initFields(N:FieldName : V:FieldValue ; Rest:FieldValueAssignments, SetItem(N:FieldName) Fields:Set, Acc:Map) =>
+        @initFields(Rest, Fields, N |-> V  Acc)
+
 //rule @initFields(.FieldValueAssignments, ,Acc)
 
 
