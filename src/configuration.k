@@ -215,7 +215,7 @@ syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
 
 //temprory
 rule <k> @init => . ... </k>
-     <packet> . => "00100001010101010" </packet>
+     <packet> . => "0010000101010101000100001010101010001000010101010100010000101010101000100001010101010" </packet>
      <tables>
         ...
         <table>
@@ -256,21 +256,33 @@ rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
 syntax KItem ::= "@extract" "(" InstanceName "," FieldDecs ")"
 rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
      <instances>
-            <instance> <name> Name </name> <valid> _ => true </valid> ... </instance> ...
+            <instance> <name> Name </name> <valid> false => true </valid> ... </instance> ...
      </instances>
 
-rule <k> @extract(N:InstanceName, F:FieldName : W:BitWidth ( _:FieldMods ) ; Rest:FieldDecs ) => @extract(N, Rest) ... </k>
+rule <k> @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) => @extract(N, Rest) ... </k>
      <instances>
-        <instance> <name> Name </name> <fieldVals>  (.Map => (F |-> substrString(Packet,I,1))) _:Map </fieldVals> ... </instance> ...
+        <instance> <name> Name </name> <fieldVals>  (.Map => (F |-> substrString(Packet,I,ConstVal2Int(CW))))  </fieldVals> ... </instance> ...
      </instances>
      <packet> Packet </packet>
-     <index> I:Int => I +Int 1 </index> //TODO:Change 1 to W
-
-
-
+     <index> I:Int => I +Int ConstVal2Int(CW) </index>
+//TODO:support *
+//TODO:change the string to number value
 
 
 //TODO: array
+
+
+
+
+
+//utils
+syntax Id ::= ConstValue
+syntax Int ::= "ConstVal2Int" "(" ConstValue ")" [function]
+rule ConstVal2Int ( C:ConstValue ) => String2Int(Id2String(C))
+
+
+
+
 
 
 endmodule
