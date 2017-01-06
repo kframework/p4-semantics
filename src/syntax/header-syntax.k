@@ -17,12 +17,15 @@ imports VALUE-SYNTAX
 
     //syntax HeaderDecBody ::= "fields" "{" FieldDecs "}" OptionalLengthDec OptionalMaxLengthDec
     syntax HeaderDecBody ::=
-              "fields" "{" FieldDecs "}"                [klabel('HeaderDecBody)]
-            | "fields" "{" FieldDecs "}" LengthDec      [klabel('HeaderDecBodyLen)]
-            | "fields" "{" FieldDecs "}" MaxLengthDec   [klabel('HeaderDecBodyMaxLen)]
-            | "fields" "{" FieldDecs "}" LengthDec MaxLengthDec [klabel('HeaderDecBodyLenMaxLen)]
+              "fields" "{" FieldDecs "}"  HeaderOptionals              [klabel('HeaderDecBody)]
+//            | "fields" "{" FieldDecs "}" LengthDec      [klabel('HeaderDecBodyLen)]
+//            | "fields" "{" FieldDecs "}" MaxLengthDec   [klabel('HeaderDecBodyMaxLen)]
+//            | "fields" "{" FieldDecs "}" LengthDec MaxLengthDec [klabel('HeaderDecBodyLenMaxLen)]
 
 
+    //TODO Note: current workraround for problem with None. note that this is not the official syntax, but it can be turned into semantic check instead of syntactic check
+    syntax HeaderOptionals ::= List{HeaderOptional,""} [klabel('HeaderOptionals)]
+    syntax HeaderOptional ::= LengthDec | MaxLengthDec
 
     //length is in bytes
     //The length attribute specifies an expression whose evaluation gives the length of the header in bytes for variable length headers.

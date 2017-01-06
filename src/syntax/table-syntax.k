@@ -25,7 +25,7 @@ imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, 
                               TableOptionals
               "}"
 
-    //TODO Note: current workraround for problem with None. note that this is not the official syntax, but it can be turned into semantic check insteaf of syntactic check
+    //TODO Note: current workraround for problem with None. note that this is not the official syntax, but it can be turned into semantic check instead of syntactic check
     syntax TableOptionals ::= List{TableOptional,""} [klabel('TableOptionals)]
     syntax TableOptional ::=
                   "min_size" ":" ConstValue ";"

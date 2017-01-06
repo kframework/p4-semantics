@@ -15,18 +15,20 @@ configuration
 
     <headers>
         <header multiplicity="*">
-            .K
+            <name> .K </name>
+            <opts> .K </opts>
+            <fields> .List </fields>
         </header>
     </headers>
 
     <instances>
         <instance multiplicity="*">
+            <valid> .K </valid>
             <metadata> .K </metadata>
             <typeName> .K </typeName>
             <name> .K </name>
             <fieldVals> .Map </fieldVals>
-            <arraysize> .K </arraysize>
-            <init> .K </init>
+            //<arraysize> .K </arraysize>
         </instance>
     </instances>
 
@@ -76,9 +78,12 @@ configuration
 </T>
 
 
+//macros
+
+
+
+
 // putting decralarions into configuration cells
-
-
 
 syntax KItem ::=
           "@processDec" "(" K ")"
@@ -89,36 +94,56 @@ rule <k> (.P4Declarations => .) ... </k>
 
 // @processDec
 
-rule <k> @processDec(Header:HeaderTypeDeclaration) => . ... </k>
-    <headers> ... (.Bag => <header> Header </header>) ... </headers>
+
+// header dec
+//
+rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opt:HeaderOptionals }) => . ... </k>
+    <headers> ... (.Bag =>
+        <header>  <name> Name </name> <opts> Opt </opts> <fields> Fields:>List </fields>   </header>)
+    ... </headers>
 
 
-// header
+rule N:FieldName : W:BitWidth ; => N : W ( .FieldMods ) ; [macro]
 
-rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName ;) => . ... </k>
+
+// header instance
+
+rule metadata H:HeaderTypeName  I:InstanceName ; => metadata H I { .FieldValueAssignments }  [macro]
+
+rule <k> @processDec(metadata Type:Id Name:InstanceName { Asgn:FieldValueAssignments } ) => . ... </k>
+    <headers>...
+        <header>
+                   <name> _ </name>
+                   <opts> _ </opts>
+                   <fields> _ </fields>
+        </header>...
+    </headers>
     <instances> ... (.Bag =>
         <instance>
-            ... <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name>   ...
+             <valid> true </valid>
+                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <fieldVals> .Map </fieldVals>
         </instance>
     ) ... </instances>
-rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => . ... </k>
-    <instances> ... (.Bag =>
-        <instance>
-            ... <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <init> Asgn </init>  ...
-        </instance>
-    ) ... </instances>
+
+
 rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... </k>
     <instances> ... (.Bag =>
         <instance>
-            ... <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  ...
+             <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  <fieldVals> .Map </fieldVals>
         </instance>
     ) ... </instances>
-rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstValue ] ; ) => . ... </k>
-    <instances> ... (.Bag =>
-        <instance>
-            ... <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name> <arraysize> Size </arraysize>   ...
-        </instance>
-    ) ... </instances>
+//rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstValue ] ; ) => . ... </k>
+//    <instances> ... (.Bag =>
+//        <instance>
+//            ... <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name> <arraysize> Size </arraysize>   ...
+//        </instance>
+//    ) ... </instances>
+//TODO: array is not supported yet
+
+
+syntax KItem ::= "@initFields" "(" FieldValueAssignments "," Set "," Map  ")" [function]
+//rule @initFields(.FieldValueAssignments, ,Acc)
+
 
 
 //parser
@@ -143,19 +168,15 @@ rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionSt
 
 //table
 
+rule table N:TableName { A:TableActions O:TableOptionals } => table N { reads { .FieldMatchs } A O } [macro]
+
 rule <k> @processDec(table Name:TableName { Read:Reads Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
                <table>
-                 <name> Id2String(Name:>Id) </name> <reads> Read </reads> <acts> Act </acts> <opts> Opt </opts> ...
+                 <name> Id2String(Name:>Id) </name> <reads> Read </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules>
                </table>
          ) ... </tables>
 
-rule <k> @processDec(table Name:TableName {Act:TableActions Opt:TableOptionals } ) => . ... </k>
-         <tables>... (.Bag =>
-               <table>
-                 ...<name> Id2String(Name:>Id) </name> <acts> Act </acts> <opts> Opt </opts>...
-               </table>
-         ) ... </tables>
 
 // control
 
@@ -200,7 +221,6 @@ rule <k> @init => . ... </k>
 
 //parsing
 syntax Id ::= "start" [token]
-syntax KItem ::= "@parse" "(" Id ")"
 rule <k> @parse => Body  ... </k>
      <parserStates>... <state> ... <name> start </name> <body> Body </body> ... </state> ...</parserStates>
 
