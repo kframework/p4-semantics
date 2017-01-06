@@ -251,15 +251,20 @@ rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
      <headers>
         <header> <name> Type </name>  <fields> Fields:FieldDecs </fields> ... </header> ...
      </headers>
+//TODO: what happens if a valid header gets extracted again?
 
 syntax KItem ::= "@extract" "(" InstanceName "," FieldDecs ")"
-/*rule @extract(N:InstanceName, .FieldDecs) => .
+rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
+     <instances>
+            <instance> <name> Name </name> <valid> _ => true </valid> ... </instance> ...
+     </instances>
+
 rule <k> @extract(N:InstanceName, F:FieldName : W:BitWidth ( _:FieldMods ) ; Rest:FieldDecs ) => @extract(N, Rest) ... </k>
      <instances>
-        <instance> <name> Name </name> <fieldVals> .Map => F |-> substrString(Packet,I,1) ... </fieldVals> ... </instance> ...
+        <instance> <name> Name </name> <fieldVals>  (.Map => (F |-> substrString(Packet,I,1))) _:Map </fieldVals> ... </instance> ...
      </instances>
      <packet> Packet </packet>
-     <index> I:Int => I +Int 1 </index> //TODO:Change 1 to W*/
+     <index> I:Int => I +Int 1 </index> //TODO:Change 1 to W
 
 
 
