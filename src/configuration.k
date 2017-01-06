@@ -114,16 +114,16 @@ rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:Field
     <instances>  (.Bag =>
         <instance>
              <valid> true </valid>
-                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> ...
+                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <fieldVals> @initFields(Asgn,@fieldSet(Fields)) </fieldVals>  ...
         </instance>
     ) ... </instances>
-    <headers>  <header> ... <name> Type </name> ... </header> ... </headers>
+    <headers>  <header>  <name> Type </name>  <fields> Fields:FieldDecs </fields> ... </header> ... </headers>
 
 
 rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... </k>
     <instances> (.Bag =>
         <instance>
-             <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  <fieldVals> .Map </fieldVals>
+             <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  ...
         </instance>
     ) ... </instances>
 //rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstValue ] ; ) => . ... </k>
@@ -134,8 +134,13 @@ rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... <
 //    ) ... </instances>
 //TODO: array is not supported yet
 
+syntax Set ::= "@fieldSet" "(" FieldDecs ")" [function]
+rule @fieldSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs) => SetItem(N) @fieldSet(Rest))
+rule @fieldSet(.FieldDecs) => .Set
+//TODO: check a field is not decrlared twice
 
-syntax KItem ::= "@initFields" "(" FieldValueAssignments "," Set "," Map  ")" [function]
+
+syntax Map ::= "@initFields" "(" FieldValueAssignments "," Set ")" [function,strict]
 //rule @initFields(.FieldValueAssignments, ,Acc)
 
 
