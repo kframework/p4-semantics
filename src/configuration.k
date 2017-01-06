@@ -73,6 +73,9 @@ configuration
     <packet>
         .K
     </packet>
+    <index>
+        0
+    </index>
 
 
 </T>
@@ -96,7 +99,6 @@ rule <k> (.P4Declarations => .) ... </k>
 
 
 // header dec
-//
 rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opt:HeaderOptionals }) => . ... </k>
     <headers>  (.Bag =>
         <header>  <name> Name </name> <opts> Opt </opts> <fields> Fields </fields>   </header>)
@@ -236,10 +238,34 @@ rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structu
 
 rule .ExtractOrSetStatements => .
 
+//return
 rule <k> return State:ParserStateName ; => Body ... </k>
      <parserStates> <state>  <name> State </name> <body> Body </body> ... </state> ...</parserStates>
 
-//rule extract()
+
+//extract
+rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
+     <instances>
+        <instance> <name> Name </name> <metadata> false </metadata> <typeName> Type:HeaderTypeName </typeName> ... </instance> ...
+     </instances>
+     <headers>
+        <header> <name> Type </name>  <fields> Fields:FieldDecs </fields> ... </header> ...
+     </headers>
+
+syntax KItem ::= "@extract" "(" InstanceName "," FieldDecs ")"
+/*rule @extract(N:InstanceName, .FieldDecs) => .
+rule <k> @extract(N:InstanceName, F:FieldName : W:BitWidth ( _:FieldMods ) ; Rest:FieldDecs ) => @extract(N, Rest) ... </k>
+     <instances>
+        <instance> <name> Name </name> <fieldVals> .Map => F |-> substrString(Packet,I,1) ... </fieldVals> ... </instance> ...
+     </instances>
+     <packet> Packet </packet>
+     <index> I:Int => I +Int 1 </index> //TODO:Change 1 to W*/
+
+
+
+
+
+//TODO: array
 
 
 endmodule

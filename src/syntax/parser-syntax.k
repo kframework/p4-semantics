@@ -32,8 +32,8 @@ imports VALUE-SYNTAX
 
 
     syntax HeaderExtractRef ::=
-                      InstanceName
-                    | InstanceName "[" HeaderExtractIndex "]"
+                      InstanceName          [klabel('ScalarExtract)]
+                    | InstanceName "[" HeaderExtractIndex "]" [klabel('ArrayExtract)]
 
     syntax HeaderExtractIndex ::=
                   ConstValue
