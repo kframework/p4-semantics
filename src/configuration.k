@@ -17,7 +17,7 @@ configuration
         <header multiplicity="*">
             <name> .K </name>
             <opts> .K </opts>
-            <fields> .List </fields>
+            <fields> .K </fields>
         </header>
     </headers>
 
@@ -99,7 +99,7 @@ rule <k> (.P4Declarations => .) ... </k>
 //
 rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opt:HeaderOptionals }) => . ... </k>
     <headers> ... (.Bag =>
-        <header>  <name> Name </name> <opts> Opt </opts> <fields> Fields:>List </fields>   </header>)
+        <header>  <name> Name </name> <opts> Opt </opts> <fields> Fields </fields>   </header>)
     ... </headers>
 
 
