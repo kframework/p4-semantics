@@ -98,7 +98,7 @@ rule <k> (.P4Declarations => .) ... </k>
 // header dec
 //
 rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opt:HeaderOptionals }) => . ... </k>
-    <headers> ... (.Bag =>
+    <headers>  (.Bag =>
         <header>  <name> Name </name> <opts> Opt </opts> <fields> Fields </fields>   </header>)
     ... </headers>
 
@@ -110,24 +110,18 @@ rule N:FieldName : W:BitWidth ; => N : W ( .FieldMods ) ; [macro]
 
 rule metadata H:HeaderTypeName  I:InstanceName ; => metadata H I { .FieldValueAssignments }  [macro]
 
-rule <k> @processDec(metadata Type:Id Name:InstanceName { Asgn:FieldValueAssignments } ) => . ... </k>
-    <headers>...
-        <header>
-                   <name> _ </name>
-                   <opts> _ </opts>
-                   <fields> _ </fields>
-        </header>...
-    </headers>
-    <instances> ... (.Bag =>
+rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => . ... </k>
+    <instances>  (.Bag =>
         <instance>
              <valid> true </valid>
-                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <fieldVals> .Map </fieldVals>
+                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> ...
         </instance>
     ) ... </instances>
+    <headers>  <header> ... <name> Type </name> ... </header> ... </headers>
 
 
 rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... </k>
-    <instances> ... (.Bag =>
+    <instances> (.Bag =>
         <instance>
              <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  <fieldVals> .Map </fieldVals>
         </instance>
@@ -149,7 +143,7 @@ syntax KItem ::= "@initFields" "(" FieldValueAssignments "," Set "," Map  ")" [f
 //parser
 
 rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
-    <parserStates>... (.Bag =>
+    <parserStates> (.Bag =>
           <state>
             <name> Name </name> <body> Body </body>
           </state>
@@ -159,7 +153,7 @@ rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) =>
 //action
 
 rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>
-    <actions>... (.Bag =>
+    <actions> (.Bag =>
           <action>
             <name> Name </name> <params> Params </params> <body> Body </body>
           </action>
@@ -181,7 +175,7 @@ rule <k> @processDec(table Name:TableName { Read:Reads Act:TableActions Opt:Tabl
 // control
 
 rule <k> @processDec(control Name:ControlFnName { Body:ControlStatements } ) => . ... </k>
-         <controlFlows>... (.Bag =>
+         <controlFlows> (.Bag =>
                <control>
                     <name> Name </name> <body> Body </body>
                </control>
@@ -222,7 +216,7 @@ rule <k> @init => . ... </k>
 //parsing
 syntax Id ::= "start" [token]
 rule <k> @parse => Body  ... </k>
-     <parserStates>... <state> ... <name> start </name> <body> Body </body> ... </state> ...</parserStates>
+     <parserStates> <state>  <name> start </name> <body> Body </body> ... </state> ...</parserStates>
 
 rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
 rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structural]
@@ -230,7 +224,7 @@ rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structu
 rule .ExtractOrSetStatements => .
 
 rule <k> return State:ParserStateName ; => Body ... </k>
-     <parserStates>... <state> ... <name> State </name> <body> Body </body> ... </state> ...</parserStates>
+     <parserStates> <state>  <name> State </name> <body> Body </body> ... </state> ...</parserStates>
 
 //rule extract()
 
