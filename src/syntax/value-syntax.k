@@ -8,9 +8,9 @@ module VALUE-SYNTAX
     //syntax ConstValue ::= OptionalSign OptionalWidthSpec UnsignedValue
     syntax ConstValue ::=
               UnsignedValue
-            | Sign UnsignedValue
-            | WidthSpec UnsignedValue
-            | Sign WidthSpec UnsignedValue
+            | Sign UnsignedValue            [strict(2)]
+            | WidthSpec UnsignedValue       [strict(2)]
+            | Sign WidthSpec UnsignedValue  [strict(3)]
 
     //syntax OptionalWidthSpec ::= None | WidthSpec
     //syntax OptionalSign ::= None | Sign

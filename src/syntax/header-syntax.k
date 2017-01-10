@@ -79,7 +79,7 @@ imports VALUE-SYNTAX
 // 2.3 HeaderandFieldReferences
     syntax HeaderRef ::=
               HeaderInstanceName
-            | HeaderInstanceName "[" Index "]"
+            | HeaderInstanceName "[" Index "]" [strict(2)]
 
     syntax Index ::= ConstValue | "last"
 

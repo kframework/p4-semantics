@@ -1,0 +1,56 @@
+Questions about P4 Language Specification Version 1.0.3
+http://p4.org/wp-content/uploads/2016/11/p4-spec-latest.pdf
+
+- Page 59,
+exp ::=
+exp bin_op exp | un_op exp | field_ref |
+value | ( exp )
+What is value? Is it const_value?
+
+
+- Page 27,
+counter_declaration ::=
+counter counter_name {
+type : counter_type ;
+[ direct_or_static ; ]
+[ instance_count : const_expr ; ]
+[ min_width : const_expr ; ]
+[ saturating ; ]
+}
+meter_declaration ::=
+meter meter_name {
+type : meter_type ;
+[ result : field_ref ; ]
+[ direct_or_static ; ]
+[ instance_count : const_expr ; ]
+}
+What is const_expr? Is it const_value?
+
+
+- What is atomic? What happens if a new rule is received while processing a packet?
+- Does packets get processed in parallel or sequentially? (it affects the semantics)
+
+- How exactly unparsing works?
+
+- Page 13
+ field_list_declaration ::=
+ field_list field_list_name {
+ [ field_list_entry ; ] +
+ }
+ field_list_entry ::=
+ field_ref | header_ref | field_value | field_list_name | payload
+ field_ref ::= header_ref . field_name
+ header_ref ::= instance_name | instance_name "[" index "]"
+ index ::= const_value | last
+ Does it mean we can have hdr [ last ] in field_list_declaration ?
+
+
+- FieldRefs in functions (actions_ are different from FieldRefs in other places such as field_list_dec or return select
+  In the former, FieldRefs are actually reference to fields, in the later they are the value of the fields
+
+
+
+
+
+
+

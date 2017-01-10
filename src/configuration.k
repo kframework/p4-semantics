@@ -228,7 +228,7 @@ rule <k> @init => . ... </k>
 
 
 
-//parsing
+//--------------------parsing------------------------------
 syntax Id ::= "start" [token]
 rule <k> @parse => Body  ... </k>
      <parserStates> <state>  <name> start </name> <body> Body </body> ... </state> ...</parserStates>
@@ -238,9 +238,38 @@ rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structu
 
 rule .ExtractOrSetStatements => .
 
-//return
+//return to state
+//TODO: check it is not control function name
 rule <k> return State:ParserStateName ; => Body ... </k>
      <parserStates> <state>  <name> State </name> <body> Body </body> ... </state> ...</parserStates>
+
+//return to control function
+//TODO
+
+//return parser_exception
+//TODO
+
+//return select
+//syntax ReturnStatement ::= List{ReturnIf,""} [klabel('ReturnIfs)]
+//syntax ReturnIf ::= "$if" SelectExp "$matches" ValueList "$then" ReturnValueType [strict(1,2)]
+
+
+syntax KItem ::= "@select" "(" K /* Vals */ "," CaseEntries ")" [strict(1)]
+rule return select ( SE:SelectExp ) { CE:CaseEntries } => @select(SE,CE)
+
+
+syntax Vals ::= "@readVals" "(" FieldOrDataRefs "," Vals ")"
+rule SelExp:FieldOrDataRefs => @readVals(SelExp,.Vals)
+rule @readVals(.FieldOrDataRefs, Vs:Vals) => Vs
+rule @readVals((H:HeaderInstanceName . F:FieldName , Rest:FieldOrDataRefs), Vs:Vals) => @readVals(Rest,(@val(0,0,false),Vs))
+//TODO: fix this
+//context @readVals((HOLE:FieldRef , Rest:FieldOrDataRefs), Vs:Values)
+//rule @readVals((@href(H:HeaderInstanceName).F:FieldName , Rest:FieldOrDataRefs), Vs:Values) => @readVals(Rest,(@val(0,0,false),Vs))
+
+syntax ParserExceptionName ::= "p4_pe_unhandled_select" [token]
+//rule return select ( E:SelectExp ) { CE:Case
+//rule return select ( E:SelectExp ) { .CaseEntries } =>  parse_error p4_pe_unhandled_select ;
+//rule return select ( E:SelectExp ) {
 
 
 //extract
@@ -267,18 +296,57 @@ rule <k> @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; 
      <index> I:Int => I +Int ConstVal2Int(CW) </index>
 //TODO:support *
 //TODO:change the string to number value
-
+//TODO: add _:Map to <fieldVals>
 
 //TODO: array
 
 
+//----------------header and field ref--------------------
+//syntax HRef ::= "@href" "(" HeaderInstanceName ")"
+//syntax FieldRef ::= HRef "." FieldName
+//syntax KResult ::= HRef
+//
+//rule HI:HeaderInstanceName => @href(HI)
+//TODO: support array
+//TODO:maybe @href is not needed, instance name is enough
 
 
 
-//utils
+
+//------------------utils-------------------------------
 syntax Id ::= ConstValue
 syntax Int ::= "ConstVal2Int" "(" ConstValue ")" [function]
 rule ConstVal2Int ( C:ConstValue ) => String2Int(Id2String(C))
+//TODO: support other types of ConstValue (other that Token)
+
+
+syntax Int ::= "USgnVal2Int" "(" ConstValue ")" [function]
+rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceAll(Id2String(UV),"_",""),2)
+rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),"_",""))
+rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceAll(Id2String(UV),"_",""),16)
+
+//------------------const value--------------------------
+
+
+syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
+syntax Vals ::= List{Val,","} [klabel('Vals)]
+syntax KResult ::= Val | Vals
+
+syntax ConstValue ::= Val
+
+
+//rule T:BinaryValueToken => #parseToken(replaceAll(Id2String(T)),"BinaryValueToken") [macro]
+//TODO is it possible to do so?
+
+
+//rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
+//rule (+ @val(N:Int,0,false)) => @val(N,0,false)
+//rule (- @val(N:Int,0,false)) => @val(N,0,true)
+//rule (+ W:DecimalValueToken' @val(N:Int,0,false)) => (W' @val(N:Int,0,false))
+//rule (W:DecimalValueToken' @val(N:Int,0,false)) => @val(USgnVal2Int(W))
+//rule (- W:DecimalValueToken' @val(N:Int,0,false)) => @val(USgnVal2Int(W))
+
+
 
 
 
