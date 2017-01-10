@@ -48,6 +48,12 @@ What is const_expr? Is it const_value?
 - FieldRefs in functions (actions_ are different from FieldRefs in other places such as field_list_dec or return select
   In the former, FieldRefs are actually reference to fields, in the later they are the value of the fields
 
+- "Select functions take a comma-separated list of fields and concatenate their values,
+  with the left-most field forming the most-significant bits of the concatenated value. The
+  select operation then compares the values in the order they occur in the program to the
+  entries to find a matching one."
+  Does it mean we do the same thing (concatenation) with the match cases and then compare the values?
+
 
 
 
