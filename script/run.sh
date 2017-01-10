@@ -1,0 +1,1 @@
+krun -d src/ $@
