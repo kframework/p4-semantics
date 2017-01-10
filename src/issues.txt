@@ -45,8 +45,9 @@ What is const_expr? Is it const_value?
  Does it mean we can have hdr [ last ] in field_list_declaration ?
 
 
-- FieldRefs in functions (actions_ are different from FieldRefs in other places such as field_list_dec or return select
-  In the former, FieldRefs are actually reference to fields, in the later they are the value of the fields
+- field_ref in functions (actions) is different from field_ref in other places such as field_list_dec or return select
+  In the former, field_ref is actually reference to fields, in the later they are the value of the fields.
+  Isn't this a bad thing?
 
 - "Select functions take a comma-separated list of fields and concatenate their values,
   with the left-most field forming the most-significant bits of the concatenated value. The

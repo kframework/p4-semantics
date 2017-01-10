@@ -66,7 +66,7 @@ imports VALUE-SYNTAX
     syntax ValueOrMaskeds ::= NeList{ValueOrMasked,","} [klabel('ValueOrMaskeds)]
     syntax ValueOrMasked ::=
                   FieldValue
-                | FieldValue "mask" FieldValue
+                | FieldValue "mask" FieldValue  [strict]
                 | ValueSetName
                // | "(" ValueOrMaskeds ")"
 

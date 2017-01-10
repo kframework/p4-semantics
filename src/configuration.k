@@ -254,11 +254,24 @@ rule <k> return State:ParserStateName ; => Body ... </k>
 //syntax ReturnIf ::= "$if" SelectExp "$matches" ValueList "$then" ReturnValueType [strict(1,2)]
 
 
-syntax KItem ::= "@select" "(" K /* Vals */ "," CaseEntries ")" [strict(1)]
-rule return select ( SE:SelectExp ) { CE:CaseEntries } => @select(SE,CE)
+syntax KItem ::= "@select" "(" K /* Vals */ "," K /* Cases */ ")" [strict(1,2)]
+
+syntax Cases := List{Case,";"}
 
 
-syntax Vals ::= "@readVals" "(" FieldOrDataRefs "," Vals ")"
+rule return select ( SE:SelectExp ) { Vs:ValueList : CA:CaseReturnValueType; Rest:CaseEntries }
+    => @select(@concat(SE),Vs,CA,Rest)
+rule @select(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries) =>
+    => @if @concat(Vs) ==== @concat(Vss)  @then CA @else @select(Vs,Rest)
+
+syntax Val ::= "@concat" "(" K /* Vals */ ")" [strict]
+
+rule @concat(V:Val , .Vals) => V [prefer]
+
+syntax KItem ::= Val "====" Val  //TODO: change this to == in Val
+
+
+syntax KItem ::= "@readVals" "(" FieldOrDataRefs "," Vals ")"
 rule SelExp:FieldOrDataRefs => @readVals(SelExp,.Vals)
 rule @readVals(.FieldOrDataRefs, Vs:Vals) => Vs
 rule @readVals((H:HeaderInstanceName . F:FieldName , Rest:FieldOrDataRefs), Vs:Vals) => @readVals(Rest,(@val(0,0,false),Vs))
@@ -324,6 +337,12 @@ syntax Int ::= "USgnVal2Int" "(" ConstValue ")" [function]
 rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceAll(Id2String(UV),"_",""),2)
 rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),"_",""))
 rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceAll(Id2String(UV),"_",""),16)
+
+
+syntax K ::= "@if" K /* Bool */ "@then" K "@else" K [strict(1)]
+syntax KResult ::= Bool
+rule @if true @then T:K @else F:K => T
+rule @if false @then T:K @else F:K => F
 
 //------------------const value--------------------------
 
