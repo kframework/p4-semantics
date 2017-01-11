@@ -76,7 +76,7 @@ imports VALUE-SYNTAX
     syntax FieldOrDataRef ::=
                   FieldRef
                 | "latest" "." FieldName
-                | "current" "(" ConstValue "," ConstValue ")" [strict]
+                | "current" "(" ConstValue "," ConstValue ")"
 
 
 endmodule
