@@ -86,7 +86,7 @@ configuration
 
 
 
-// putting decralarions into configuration cells
+//---------------- putting decralarions into configuration cells--------------------------------
 
 syntax KItem ::=
           "@processDec" "(" K ")"
@@ -197,7 +197,7 @@ rule <k> @processDec(control Name:ControlFnName { Body:ControlStatements } ) => 
          ) ... </controlFlows>
 
 
-// --------------------
+// --------------------init------------------------------------
 
 syntax KItem ::= "@init" | "@parse" | "@ingress" | "@egress"
 
@@ -250,31 +250,36 @@ rule <k> return State:ParserStateName ; => Body ... </k>
 //TODO
 
 //return select
-//syntax ReturnStatement ::= List{ReturnIf,""} [klabel('ReturnIfs)]
-//syntax ReturnIf ::= "$if" SelectExp "$matches" ValueList "$then" ReturnValueType [strict(1,2)]
 
+rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@readVals(SE),CE)
 
-syntax KItem ::= "@select" "(" K /* Vals */ "," K /* Cases */ ")" [strict(1,2)]
+syntax KItem ::= "@select" "(" K /* Vals */ "," CaseEntries ")" [strict(1)]
+rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
+    => @selectCheckCase(Vs, @VMtoVals(VM), CA, Rest)
+rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => CA
 
-syntax Cases := List{Case,";"}
-
-
-rule return select ( SE:SelectExp ) { Vs:ValueList : CA:CaseReturnValueType; Rest:CaseEntries }
-    => @select(@concat(SE),Vs,CA,Rest)
-rule @select(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries) =>
+syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
+rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
     => @if @concat(Vs) ==== @concat(Vss)  @then CA @else @select(Vs,Rest)
 
-syntax Val ::= "@concat" "(" K /* Vals */ ")" [strict]
-
-rule @concat(V:Val , .Vals) => V [prefer]
-
-syntax KItem ::= Val "====" Val  //TODO: change this to == in Val
+syntax KItem /* Vals */ ::= "@VMtoVals" "(" ValueOrMaskeds ")"
+rule @VMtoVals (.ValueOrMaskeds) => @nil
+rule @VMtoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMtoVals(Rest))
 
 
-syntax KItem ::= "@readVals" "(" FieldOrDataRefs "," Vals ")"
-rule SelExp:FieldOrDataRefs => @readVals(SelExp,.Vals)
-rule @readVals(.FieldOrDataRefs, Vs:Vals) => Vs
-rule @readVals((H:HeaderInstanceName . F:FieldName , Rest:FieldOrDataRefs), Vs:Vals) => @readVals(Rest,(@val(0,0,false),Vs))
+
+syntax Val ::= "@concat" "(" Vals ")" [function]
+
+rule @concat(@cons(V:Val,@nil)) => V
+//todo: complete this
+
+syntax KItem ::= K "====" K [seqstrict]  //TODO: change this to == in Val when we have complete semantics for it
+rule (@val(V:Int,0,S:Bool) ==== @val(V,0,S)) => true
+rule (V1:Val ==== V2:Val) => false  [owise]
+
+syntax KItem ::= "@readVals" "(" SelectExp ")"
+rule @readVals(.FieldOrDataRefs) => @nil
+rule @readVals(H:HeaderInstanceName . F:FieldName , Rest:FieldOrDataRefs) => @makeCons(@val(0,0,false),@readVals(Rest))
 //TODO: fix this
 //context @readVals((HOLE:FieldRef , Rest:FieldOrDataRefs), Vs:Values)
 //rule @readVals((@href(H:HeaderInstanceName).F:FieldName , Rest:FieldOrDataRefs), Vs:Values) => @readVals(Rest,(@val(0,0,false),Vs))
@@ -336,7 +341,7 @@ rule ConstVal2Int ( C:ConstValue ) => String2Int(Id2String(C))
 syntax Int ::= "USgnVal2Int" "(" ConstValue ")" [function]
 rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceAll(Id2String(UV),"_",""),2)
 rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),"_",""))
-rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceAll(Id2String(UV),"_",""),16)
+rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0x",""),16)
 
 
 syntax K ::= "@if" K /* Bool */ "@then" K "@else" K [strict(1)]
@@ -348,8 +353,12 @@ rule @if false @then T:K @else F:K => F
 
 
 syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
-syntax Vals ::= List{Val,","} [klabel('Vals)]
+syntax Vals ::= "@nil" | "@cons" "(" Val "," Vals ")"
 syntax KResult ::= Val | Vals
+
+syntax KItem /* Vals */ ::= "@makeCons" "(" K /* Val */ "," K /* Vals */ ")" [seqstrict]
+
+rule @makeCons(V:Val,Vs:Vals) => @cons (V,Vs)
 
 syntax ConstValue ::= Val
 
@@ -358,7 +367,7 @@ syntax ConstValue ::= Val
 //TODO is it possible to do so?
 
 
-//rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
+rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
 //rule (+ @val(N:Int,0,false)) => @val(N,0,false)
 //rule (- @val(N:Int,0,false)) => @val(N,0,true)
 //rule (+ W:DecimalValueToken' @val(N:Int,0,false)) => (W' @val(N:Int,0,false))
