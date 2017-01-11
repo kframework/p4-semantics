@@ -251,43 +251,44 @@ rule <k> return State:ParserStateName ; => Body ... </k>
 
 //return select
 
-rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@readVals(SE),CE)
+rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@readFDRefs(SE),CE)
 
 syntax KItem ::= "@select" "(" K /* Vals */ "," CaseEntries ")" [strict(1)]
 rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
-    => @selectCheckCase(Vs, @VMtoVals(VM), CA, Rest)
+    => @selectCheckCase(Vs, @VMstoVals(VM), CA, Rest)
 rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => CA
 
 syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
 rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
     => @if @concat(Vs) ==== @concat(Vss)  @then CA @else @select(Vs,Rest)
 
-syntax KItem /* Vals */ ::= "@VMtoVals" "(" ValueOrMaskeds ")"
-rule @VMtoVals (.ValueOrMaskeds) => @nil
-rule @VMtoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMtoVals(Rest))
+syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
+rule @VMstoVals (.ValueOrMaskeds) => @nil
+rule @VMstoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMstoVals(Rest))
 
 
+//TODO: rule V:Val mask M:Val => ?
+//TODO: rule VS:ValueSetName => ?
 
-syntax Val ::= "@concat" "(" Vals ")" [function]
-
-rule @concat(@cons(V:Val,@nil)) => V
-//todo: complete this
 
 syntax KItem ::= K "====" K [seqstrict]  //TODO: change this to == in Val when we have complete semantics for it
 rule (@val(V:Int,0,S:Bool) ==== @val(V,0,S)) => true
 rule (V1:Val ==== V2:Val) => false  [owise]
 
-syntax KItem ::= "@readVals" "(" SelectExp ")"
-rule @readVals(.FieldOrDataRefs) => @nil
-rule @readVals(H:HeaderInstanceName . F:FieldName , Rest:FieldOrDataRefs) => @makeCons(@val(0,0,false),@readVals(Rest))
-//TODO: fix this
-//context @readVals((HOLE:FieldRef , Rest:FieldOrDataRefs), Vs:Values)
-//rule @readVals((@href(H:HeaderInstanceName).F:FieldName , Rest:FieldOrDataRefs), Vs:Values) => @readVals(Rest,(@val(0,0,false),Vs))
+syntax KItem /* Vals */ ::= "@readFDRefs" "(" SelectExp ")"
+rule @readFDRefs(.FieldOrDataRefs) => @nil
+rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@readField(F),@readFDRefs(Rest))
+//TODO: rule <k> @readVals(latest . Fn:FieldName , Rest:FieldOrDataRefs) => @makeCons(@readField(H.F),@readVals(Rest)) ... </k>
+        //<lastHeader> H:HeaderName </lastHeader>
+//rule @readVals(current())
 
-syntax ParserExceptionName ::= "p4_pe_unhandled_select" [token]
-//rule return select ( E:SelectExp ) { CE:Case
-//rule return select ( E:SelectExp ) { .CaseEntries } =>  parse_error p4_pe_unhandled_select ;
-//rule return select ( E:SelectExp ) {
+//TODO:temporary, maybe we want to resolve the referece to header first
+//If not, complete it is for array
+syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
+rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
+      <instances>
+         <instance> <name> H </name>  <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
+      </instances>
 
 
 //extract
@@ -305,13 +306,16 @@ rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
      <instances>
             <instance> <name> Name </name> <valid> false => true </valid> ... </instance> ...
      </instances>
+rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
+        @extractField(N,F,CW) ~> @extract(N,Rest)
 
-rule <k> @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) => @extract(N, Rest) ... </k>
+syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
      <instances>
-        <instance> <name> Name </name> <fieldVals>  (.Map => (F |-> substrString(Packet,I,ConstVal2Int(CW))))  </fieldVals> ... </instance> ...
+        <instance> <name> Name </name> <fieldVals>  (.Map => (F |-> @val(String2Base(substrString(Packet,I,Val2Int(W)),2),Val2Int(W),false))) /* TODO: the sign should be extracted according to field_mod more imporantly the Int should be change according to the sign */   </fieldVals> ... </instance> ...
      </instances>
      <packet> Packet </packet>
-     <index> I:Int => I +Int ConstVal2Int(CW) </index>
+     <index> I:Int => I +Int Val2Int(W) </index>
 //TODO:support *
 //TODO:change the string to number value
 //TODO: add _:Map to <fieldVals>
@@ -332,14 +336,14 @@ rule <k> @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; 
 
 
 //------------------utils-------------------------------
-syntax Id ::= ConstValue
-syntax Int ::= "ConstVal2Int" "(" ConstValue ")" [function]
-rule ConstVal2Int ( C:ConstValue ) => String2Int(Id2String(C))
-//TODO: support other types of ConstValue (other that Token)
+syntax Int ::= "Val2Int" "(" Val ")" [function]
+rule Val2Int ( @val(I:Int,_,_) ) => I
 
 
+syntax Id ::= BinaryValueToken | DecimalValueToken | HexadecimalValueToken
 syntax Int ::= "USgnVal2Int" "(" ConstValue ")" [function]
-rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceAll(Id2String(UV),"_",""),2)
+//TODO: change all letters to lower caseste
+rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0b",""),2)
 rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),"_",""))
 rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0x",""),16)
 
@@ -348,6 +352,14 @@ syntax K ::= "@if" K /* Bool */ "@then" K "@else" K [strict(1)]
 syntax KResult ::= Bool
 rule @if true @then T:K @else F:K => T
 rule @if false @then T:K @else F:K => F
+
+
+
+
+syntax Val ::= "@concat" "(" Vals ")" [function]
+
+rule @concat(@cons(V:Val,@nil)) => V
+//todo: complete this
 
 //------------------const value--------------------------
 
@@ -360,7 +372,7 @@ syntax KItem /* Vals */ ::= "@makeCons" "(" K /* Val */ "," K /* Vals */ ")" [se
 
 rule @makeCons(V:Val,Vs:Vals) => @cons (V,Vs)
 
-syntax ConstValue ::= Val
+
 
 
 //rule T:BinaryValueToken => #parseToken(replaceAll(Id2String(T)),"BinaryValueToken") [macro]
@@ -373,6 +385,8 @@ rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
 //rule (+ W:DecimalValueToken' @val(N:Int,0,false)) => (W' @val(N:Int,0,false))
 //rule (W:DecimalValueToken' @val(N:Int,0,false)) => @val(USgnVal2Int(W))
 //rule (- W:DecimalValueToken' @val(N:Int,0,false)) => @val(USgnVal2Int(W))
+
+
 
 
 
