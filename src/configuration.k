@@ -304,7 +304,7 @@ rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
 syntax KItem ::= "@extract" "(" InstanceName "," FieldDecs ")"
 rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
      <instances>
-            <instance> <name> Name </name> <valid> false => true </valid> ... </instance> ...
+            <instance> <name> N </name> <valid> false => true </valid> ... </instance> ...
      </instances>
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
@@ -312,12 +312,14 @@ rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
      <instances>
-        <instance> <name> Name </name> <fieldVals>  (.Map => (F |-> @val(String2Base(substrString(Packet,I,Val2Int(W)),2),Val2Int(W),false))) /* TODO: the sign should be extracted according to field_mod more imporantly the Int should be change according to the sign */   </fieldVals> ... </instance> ...
+        <instance> <name> N </name> <fieldVals>  (.Map => (F |-> @val(String2Base(substrString(Packet,I,Val2Int(W)),2),Val2Int(W),false))) ... </fieldVals> ... </instance>
+        ...
      </instances>
      <packet> Packet </packet>
      <index> I:Int => I +Int Val2Int(W) </index>
-//TODO:support *
-//TODO:change the string to number value
+//TODO: the sign should be extracted according to field_mod more imporantly the Int should be change according to the sign */
+//TODO: support *
+//TODO: change the string to number value
 //TODO: add _:Map to <fieldVals>
 
 //TODO: array
