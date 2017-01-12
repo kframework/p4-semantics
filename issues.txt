@@ -57,6 +57,11 @@ What is const_expr? Is it const_value?
 
 - Is it possible to extract and already extracted header?
 
+- Page 21
+  "The header reference latest refers to the most recently extracted header instance
+   within the parse function. It is an error to reference latest without a preceding
+   extract operation in the same function."
+   What kind of error is it? Runtime or compile time?
 
 
 
