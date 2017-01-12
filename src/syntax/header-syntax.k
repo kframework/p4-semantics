@@ -65,7 +65,7 @@ imports VALUE-SYNTAX
                     //|  "metadata" HeaderTypeName  InstanceName OptionalMetadataInitializer //TODO ISSUE: not sure about the syntax
                       | "metadata" HeaderTypeName  InstanceName MetadataInitializer
     //If an initializer is present,the named fields are initialized to the indicated values;  unspecified values are initialized to 0.
-    //TODO ISSUE: what if inilializer is not specified?
+    //ISSUE: what if inilializer is not specified? ANSWER: will init to zero by default
 
     //syntax OptionalMetadataInitializer ::= None | MetadataInitializer
 
