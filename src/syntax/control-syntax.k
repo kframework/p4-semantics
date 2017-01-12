@@ -6,16 +6,17 @@ endmodule
 
 module CONTROL-SYNTAX
 imports TABLE-SYNTAX //for VALUE-SYNTAX and HeaderRef and TableName
-    syntax ControlFnName ::= Id
+imports PARSER-SYNTAX //for ControlFunctionName
+
 // 12 Packet Processing and Control Flow
-    syntax ControlFunctionDeclaration ::= "control" ControlFnName ControlBlock
+    syntax ControlFunctionDeclaration ::= "control" ControlFunctionName ControlBlock
     syntax ControlBlock ::= "{" ControlStatements "}"
     syntax ControlStatements ::= List{ControlStatement,""} [klabel('ControlStatements)]
     syntax ControlStatement ::=
                   ApplyTableCall            [klabel('ContStmApp)]
                 | ApplyAndSelectBlock       [klabel('ContStmAppSel)]
                 | IfElseStatement           [klabel('ContStmIf)]
-                | ControlFnName "(" ")" ";" [klabel('ContStmFn)]
+                | ControlFunctionName "(" ")" ";" [klabel('ContStmFn)]
                 //| "return" ";"
 
 

@@ -77,6 +77,9 @@ configuration
         0
     </index>
 
+    //<lastExtract>
+    //    .K
+    //</lastExtract>
 
 </T>
 
@@ -189,7 +192,7 @@ rule <k> @processDec(table Name:TableName { Read:Reads Act:TableActions Opt:Tabl
 
 // control
 
-rule <k> @processDec(control Name:ControlFnName { Body:ControlStatements } ) => . ... </k>
+rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements } ) => . ... </k>
          <controlFlows> (.Bag =>
                <control>
                     <name> Name </name> <body> Body </body>
@@ -244,7 +247,12 @@ rule <k> return State:ParserStateName ; => Body ... </k>
      <parserStates> <state>  <name> State </name> <body> Body </body> ... </state> ...</parserStates>
 
 //return to control function
-//TODO
+rule <k> return Control:ControlFunctionName ; => Body ... </k>
+     <controlFlows>
+        <control> <name> Control </name> <body> Body </body> ... </control>
+        ...
+     </controlFlows>
+
 
 //return parser_exception
 //TODO
@@ -256,16 +264,20 @@ rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@readFDRefs(SE)
 syntax KItem ::= "@select" "(" K /* Vals */ "," CaseEntries ")" [strict(1)]
 rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
     => @selectCheckCase(Vs, @VMstoVals(VM), CA, Rest)
-rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => CA
+rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseReturnToReturn(CA)
 
 syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
 rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
-    => @if @concat(Vs) ==== @concat(Vss)  @then CA @else @select(Vs,Rest)
+    => @if @concat(Vs) ==== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest)
 
 syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
 rule @VMstoVals (.ValueOrMaskeds) => @nil
 rule @VMstoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMstoVals(Rest))
 
+syntax ReturnValueType ::= "@caseReturnToReturn" "(" CaseReturnValueType ")" [function]
+rule @caseReturnToReturn(PS:ParserStateName) => return PS ;
+rule @caseReturnToReturn(CF:ControlFunctionName) => return CF ;
+rule @caseReturnToReturn(parse_error PE:ParserExceptionName) => parse_error PE ;
 
 //TODO: rule V:Val mask M:Val => ?
 //TODO: rule VS:ValueSetName => ?
@@ -277,15 +289,15 @@ rule (V1:Val ==== V2:Val) => false  [owise]
 
 syntax KItem /* Vals */ ::= "@readFDRefs" "(" SelectExp ")"
 rule @readFDRefs(.FieldOrDataRefs) => @nil
-rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@readField(F),@readFDRefs(Rest))
-//TODO: rule <k> @readVals(latest . Fn:FieldName , Rest:FieldOrDataRefs) => @makeCons(@readField(H.F),@readVals(Rest)) ... </k>
-        //<lastHeader> H:HeaderName </lastHeader>
-//rule @readVals(current())
+rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@getField(F),@readFDRefs(Rest))
+//TODO <k> rule @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons(@readField(H.F),@readVals(Rest)) ... </k>
+//        <lastExtract> I:HeaderInstanceName </lastExtract>
+//TODO rule @readVals(current())
 
 //TODO:temporary, maybe we want to resolve the referece to header first
 //If not, complete it is for array
-syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
-rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
+syntax KItem /* Val */ ::= "@getField" "(" K /* FieldRef */ ")"
+rule <k> @getField(H:HeaderInstanceName . F:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name>  <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
       </instances>
@@ -304,8 +316,9 @@ rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
 syntax KItem ::= "@extract" "(" InstanceName "," FieldDecs ")"
 rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
      <instances>
-            <instance> <name> N </name> <valid> false => true </valid> ... </instance> ...
+            <instance> <name> N </name>  <valid> false => true </valid> ... </instance> ...
      </instances>
+     //<lastExtract> _ => N </lastExtract>
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
 
@@ -324,6 +337,8 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
 
 //TODO: array
 
+
+//----------------control flow-------------------------
 
 //----------------header and field ref--------------------
 //syntax HRef ::= "@href" "(" HeaderInstanceName ")"
