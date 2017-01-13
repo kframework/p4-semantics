@@ -339,6 +339,10 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
 
 
 //----------------control flow-------------------------
+rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
+rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
+
+rule apply (T:TableName) ; => apply (T) { .HitMissCases } [macro]
 
 //----------------header and field ref--------------------
 //syntax HRef ::= "@href" "(" HeaderInstanceName ")"

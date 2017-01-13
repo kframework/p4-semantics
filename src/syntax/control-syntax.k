@@ -13,10 +13,10 @@ imports PARSER-SYNTAX //for ControlFunctionName
     syntax ControlBlock ::= "{" ControlStatements "}"
     syntax ControlStatements ::= List{ControlStatement,""} [klabel('ControlStatements)]
     syntax ControlStatement ::=
-                  ApplyTableCall            [klabel('ContStmApp)]
-                | ApplyAndSelectBlock       [klabel('ContStmAppSel)]
-                | IfElseStatement           [klabel('ContStmIf)]
-                | ControlFunctionName "(" ")" ";" [klabel('ContStmFn)]
+                  ApplyTableCall            //[klabel(ContStmApp)]
+                | ApplyAndSelectBlock       //[klabel('ContStmAppSel)]
+                | IfElseStatement           //[klabel('ContStmIf)]
+                | ControlFunctionName "(" ")" ";" //[klabel('ContStmFn)]
                 //| "return" ";"
 
 
