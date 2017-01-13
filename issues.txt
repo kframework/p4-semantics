@@ -6,6 +6,7 @@ exp ::=
 exp bin_op exp | un_op exp | field_ref |
 value | ( exp )
 What is value? Is it const_value?
+RESOLVED(Nate Foster): const_value
 
 
 - Page 27,
@@ -62,6 +63,12 @@ What is const_expr? Is it const_value?
    within the parse function. It is an error to reference latest without a preceding
    extract operation in the same function."
    What kind of error is it? Runtime or compile time?
+   RESOLVED (figured out): it should be compile time
+
+- Page 56
+  action_specification ::=
+  actions { [ action_name ] + }
+  Shouldn't there be a semicolon?
 
 
 
