@@ -29,6 +29,7 @@ What is const_expr? Is it const_value?
 
 
 - What is atomic? What happens if a new rule is received while processing a packet?
+- What happens if during checking if while a rule is being checked for matching, a new rule is added to the table?
 - Does packets get processed in parallel or sequentially? (it affects the semantics)
 
 - How exactly unparsing works?
@@ -66,9 +67,25 @@ What is const_expr? Is it const_value?
    RESOLVED (figured out): it should be compile time
 
 - Page 56
+  Page 54
   action_specification ::=
   actions { [ action_name ] + }
   Shouldn't there be a semicolon?
+
+
+- lpm: This is a special case of a ternary match. Each entry’s mask selects a prefix by
+  having a divide between 1s in the high order bits and 0s in the low order bits. The
+  number of 1 bits gives the length of the prefix which is used as the priority of the
+  entry.
+  in table t {
+    reads {
+        h.f1 : lpm
+        h.f2 : lpm
+    }
+    ...
+  }
+  How the table entries are given priorities?
+
 
 
 

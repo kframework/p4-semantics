@@ -182,10 +182,10 @@ rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionSt
 
 rule table N:TableName { A:TableActions O:TableOptionals } => table N { reads { .FieldMatchs } A O } [macro]
 
-rule <k> @processDec(table Name:TableName { Read:Reads Act:TableActions Opt:TableOptionals } ) => . ... </k>
+rule <k> @processDec(table Name:TableName { reads { FM:FieldMatchs }  Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
                <table>
-                 <name> Id2String(Name:>Id) </name> <reads> Read </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules>
+                 <name> Name </name> <reads> FM </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules>
                </table>
          ) ... </tables>
 
@@ -211,20 +211,28 @@ rule @exec => @init ~> @parse ~> @ingress ~> @egress
 
 //syntax Packet ::= "packet" "(" Int ")"
 
-syntax Rule ::= "$rule" "(" Criteria   /* ActionName */ ")"
-syntax Criteria ::= "$ctr" "(" Matchs ")"
-syntax Matchs ::= List{Match,","} [klable('Matchs)]
-syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
+//syntax Rule ::= "$rule" "(" Criteria  ","  ActionName ")"
+//syntax Criteria ::= "$ctr" "(" Matchs ")"
+//syntax Matchs ::= List{Match,","} [klable('Matchs)]
+//syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
 
-//temprory
+syntax Rule ::= "$rule" "(" Criteria "," ActionName ")"
+syntax Criteria ::= "$ctr" "(" List ")"
+
+//temporary
+syntax Id ::= "egress_meter" [token]
 rule <k> @init => . ... </k>
      <packet> . => "0010000101010101000100001010101010001000010101010100010000101010101000100001010101010" </packet>
      <tables>
         ...
         <table>
             ...
-            <name> "egress_meter" </name>
-            <rules> .List => ListItem($rule($ctr(String2Id("ethernet").String2Id("dstAddr") : #token("10","DecimalValueToken@VALUE-SYNTAX"))))</rules>
+            <name> egress_meter </name>
+            <rules> .List => ListItem(
+                                $rule(
+                                    $ctr(ListItem(@val(10,0,false)))
+                                , String2Id("meter_pkt") )
+                            )</rules>
         </table>
         ...
      </tables>
@@ -268,7 +276,7 @@ rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseR
 
 syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
 rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
-    => @if @concat(Vs) ==== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest)
+    => @if @concat(Vs) ==== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest)  //TODO: change this to == in Val when we have complete semantics for it
 
 syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
 rule @VMstoVals (.ValueOrMaskeds) => @nil
@@ -283,24 +291,15 @@ rule @caseReturnToReturn(parse_error PE:ParserExceptionName) => parse_error PE ;
 //TODO: rule VS:ValueSetName => ?
 
 
-syntax KItem ::= K "====" K [seqstrict]  //TODO: change this to == in Val when we have complete semantics for it
-rule (@val(V:Int,0,S:Bool) ==== @val(V,0,S)) => true
-rule (V1:Val ==== V2:Val) => false  [owise]
 
 syntax KItem /* Vals */ ::= "@readFDRefs" "(" SelectExp ")"
 rule @readFDRefs(.FieldOrDataRefs) => @nil
-rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@getField(F),@readFDRefs(Rest))
+rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@readField(F),@readFDRefs(Rest))
 //TODO <k> rule @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons(@readField(H.F),@readVals(Rest)) ... </k>
 //        <lastExtract> I:HeaderInstanceName </lastExtract>
 //TODO rule @readVals(current())
 
-//TODO:temporary, maybe we want to resolve the referece to header first
-//If not, complete it is for array
-syntax KItem /* Val */ ::= "@getField" "(" K /* FieldRef */ ")"
-rule <k> @getField(H:HeaderInstanceName . F:FieldName) => V ... </k>
-      <instances>
-         <instance> <name> H </name>  <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
-      </instances>
+
 
 
 //extract
@@ -318,7 +317,7 @@ rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
      <instances>
             <instance> <name> N </name>  <valid> false => true </valid> ... </instance> ...
      </instances>
-     //<lastExtract> _ => N </lastExtract>
+
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
 
@@ -342,7 +341,53 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
 
-rule apply (T:TableName) ; => apply (T) { .HitMissCases } [macro]
+rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
+
+//for now assuming that a screenshot of current rules are taken before matching
+rule <k> apply (T:TableName) { C:CaseList } => @checkNextRule(FM,R) ~> @checkApplyResult(C) ... </k>
+     <tables>
+        <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
+     ...
+     </tables>
+
+syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
+
+//TODO: check defualt action
+//TODO: what else todo
+//TODO: assumming rules are checked for consistency at the time of insertion and are  are sorted by their priority
+
+rule @checkNextRule(_:FieldMatchs,.List  ) => .
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),A:ActionName)) Rest:List) => @if @matchAll(FM,R) @then @call(A) @else @checkNextRule(FM,Rest)
+
+syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
+rule @matchAll(.FieldMatchs,.List) => true
+rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListItem(V:K) R2:List)
+    => @match(@readFMRef(FMR),V,MT) =&&= @matchAll(R1,R2) //TODO change it with &&
+
+syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
+rule @match(@val(V,W,S),@val(V,W,S),exact) => true //TODO: is this it?
+rule @match(_:Val,_:Val,exact) => false
+//TODO: rule @match(V:?,M:?,ternary)
+//TODO: rule @match(V:?,M:?,lmp)
+//TODO: rule @match(V:?,M:?,range)
+//TODO: rule @match(V:?,M:?,valid)
+
+
+syntax KItem /* KResult */ ::= "@readFMRef" "(" FieldOrMaskedRef ")"
+//rule @readFMRef(H:HeaderRef) => //TODO
+rule @readFMRef(F:FieldRef) => @readField(F)
+rule @readFMRef(F:FieldRef mask M:ConstValue)  => @applyMask(@readField(F),M)
+
+
+
+
+syntax KItem ::= "@checkApplyResult" "(" CaseList ")"
+//TODO
+
+//---------------actions----------------------------------
+syntax KItem ::= "@call" "(" ActionName ")"
+//TODO
+
 
 //----------------header and field ref--------------------
 //syntax HRef ::= "@href" "(" HeaderInstanceName ")"
@@ -382,6 +427,20 @@ syntax Val ::= "@concat" "(" Vals ")" [function]
 rule @concat(@cons(V:Val,@nil)) => V
 //todo: complete this
 
+
+
+//TODO:temporary, maybe we want to resolve the referece to header first
+//If not, complete it is for array
+syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
+rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
+      <instances>
+         <instance> <name> H </name>  <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
+      </instances>
+
+
+syntax KItem /* Val */ ::= "@applyMask" "(" K /* Val */ "," K /* Val */ ")" [strict]
+
+
 //------------------const value--------------------------
 
 
@@ -409,9 +468,16 @@ rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
 
 
 
+//----------------------------temporary utils----------------------------------
 
 
+syntax KItem ::= K "====" K [seqstrict]
+rule (@val(V:Int,0,S:Bool) ==== @val(V,0,S)) => true
+rule (V1:Val ==== V2:Val) => false  [owise]
 
+syntax KItem ::= K "=&&=" K [seqstrict]
+rule true =&&= true => true
+rule _:Bool =&&= _:Bool => false  [owise]
 
 
 
