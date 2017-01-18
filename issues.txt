@@ -86,6 +86,48 @@ What is const_expr? Is it const_value?
   }
   How the table entries are given priorities?
 
+- When exactly the arguments are evaluated? When primitive actions are called or when any action
+ (including the compound actions are called)?
+  When exactly the the type of the arguments are inferred?
+  Is this possible to have something like this
+  action a (x) {
+    modify_field(x,10)
+    modify_field(ethernet.dstAddr,x)
+  }
+  How about this ?
+  action a (x){
+    modify_field(x.dstAddr,10)
+  }
+
+
+- Page 53
+  "...With parallel semantics, both actions are started at the same time..."
+  Page 54
+  "P4 assumes parallel semantics for the application of all the primitive actions executing
+   as a result of a match in a given table."
+   Does it mean the order of actions are not important?
+   For example, what should be the result of:
+   action a (){
+     modify_field(ethernet.fieldA, 1);
+     modify_field(ethernet.fieldA, 2);
+   }
+   or this (Assuming ethernet is initially invalid):
+   action a(){
+     add_header(ethernet[1]);
+     add_header(ethernet[1]);
+   }
+   or this
+   action a(){
+     add_header(ethernet[1]);
+     add_header(ethernet[2]);
+   }
+   Generally, any two actions that have overlapping effects.
+
+
+
+
+
+
 
 
 
