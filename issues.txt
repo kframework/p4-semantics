@@ -124,7 +124,11 @@ What is const_expr? Is it const_value?
    Generally, any two actions that have overlapping effects.
 
 
-
+- Just to make sure: if a default action in a table is defined and
+  the default action is taken, 1) is it a hit or miss? 2) does the default case
+  in a apply and select block gets gets elected?
+  If nothing matches in the table and there is no default action, does the default case
+  in a apply and select block gets gets elected?
 
 
 
