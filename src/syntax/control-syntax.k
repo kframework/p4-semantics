@@ -44,20 +44,20 @@ imports PARSER-SYNTAX //for ControlFunctionName
     syntax ElseBlock ::= "else" ControlBlock | "else" IfElseStatement
 
     syntax BoolExpr ::=
-                      "valid" "(" HeaderRef ")"         [klabel('BExpValid)]
-                    | BoolExpr BoolOp BoolExpr          [klabel('BExpBinBoolOp)]//TODO: assoc according to C
-                    | "not" BoolExpr                    [klabel('BExpBinNot)]
-                    | "(" BoolExpr ")"                  [braket, klabel('BExpBinNot)]
-                    | Exp RelOp Exp                     [klabel('BExpBinRelOp)]//TODO: assoc according to C
-                    | BoolValue                         [klabel('BExpVal)]
+                      "valid" "(" HeaderRef ")"         //[klabel('BExpValid)]
+                    | BoolExpr BoolOp BoolExpr          [strict(1,3)]//,klabel('BExpBinBoolOp)]//TODO: assoc according to C
+                    | "not" BoolExpr                    [strict]//,klabel('BExpBinNot)]
+                    | "(" BoolExpr ")"                  [braket]//, klabel('BExpBinNot)]
+                    | Exp RelOp Exp                     [strict(1,3)]//,klabel('BExpBinRelOp)]//TODO: assoc according to C
+                    | BoolValue                         //[klabel('BExpVal)]
     //syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | Value | "(" Exp ")"
     syntax  Exp ::=
-          Exp BinOp Exp [klabel('ExpBinOp)]
-        | UnOp Exp      [klabel('BExpUnOp)]
-        | FieldRef      [klabel('BExpFieldRef)]
-        | ConstValue    [klabel('BExpConst)]
-        | "(" Exp ")"   [klabel('BExpUnOp)]
-    //TODO ISSUE: what is Value ?
+          Exp BinOp Exp [strict(1,3)]//,klabel('ExpBinOp)]
+        | UnOp Exp      [strict(2)]//,klabel('BExpUnOp)]
+        | FieldRef      //[klabel('BExpFieldRef)]
+        | ConstValue    //[klabel('BExpConst)]
+        | "(" Exp ")"   [bracket]//,klabel('BExpUnOp)]
+    //ISSUE: what is Value ? RESOLVED: it is ConstValue
 
     //TODO: priorities according to C
     syntax BinOp ::= "+" | "*" | "-" | "<<" | ">>" | "&" | "|" | "^"

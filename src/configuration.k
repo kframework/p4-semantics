@@ -66,7 +66,6 @@ configuration
     </controlFlows>
 
 
-
     //<input stream="stdin">
     //    .List
     //</input>
@@ -203,9 +202,9 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
 
 // --------------------init------------------------------------
 
-syntax KItem ::= "@init" | "@parse" | "@ingress" | "@egress"
+syntax KItem ::= "@init" | "@parse&ingress" | "@egress"
 
-rule @exec => @init ~> @parse ~> @ingress ~> @egress
+rule @exec => @init ~> @parse&ingress ~> @egress
 
 
 //syntax Input ::= "packet" "(" String ")"
@@ -242,7 +241,7 @@ rule <k> @init => . ... </k>
 
 //--------------------parsing------------------------------
 syntax Id ::= "start" [token]
-rule <k> @parse => Body  ... </k>
+rule <k> @parse&ingress => Body  ... </k>
      <parserStates> <state>  <name> start </name> <body> Body </body> ... </state> ...</parserStates>
 
 rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
@@ -256,11 +255,7 @@ rule <k> return State:ParserStateName ; => Body ... </k>
      <parserStates> <state>  <name> State </name> <body> Body </body> ... </state> ...</parserStates>
 
 //return to control function
-rule <k> return Control:ControlFunctionName ; => Body ... </k>
-     <controlFlows>
-        <control> <name> Control </name> <body> Body </body> ... </control>
-        ...
-     </controlFlows>
+rule <k> return Control:ControlFunctionName ; => Control(); ... </k>
 
 
 //return parser_exception
@@ -341,7 +336,9 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
+rule { B:ControlStatement } => B                            [structural]
 
+//apply
 rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 
 
@@ -352,6 +349,7 @@ rule <k> apply (T:TableName) { C:CaseList } => @checkNextRule(FM,R) ~> C ... </k
      ...
      </tables>
 
+//select
 rule A:ActionName ~> C:CaseList  => @checkNextAppSelCase (A,C)
 
 syntax KItem ::= "@checkNextAppSelCase" "(" ActionName "," CaseList ")"
@@ -381,6 +379,38 @@ rule @isDefault(_:ActionName) => false
                 in a apply and select block gets gets elected?
 */
 
+//if
+rule if ( B:BoolExpr ) C:ControlBlock Rest:ControlStatements => if ( B ) C else { .ControlStatements } Rest  [macro]
+rule else I:IfElseStatement => else { I } [macro]
+
+rule if ( B:BoolExpr ) T:ControlBlock else F:ControlBlock =>
+        @if B @then T @else F
+
+
+//call
+rule <k> F:ControlFunctionName () ; => Body  ... </k>
+     <controlFlows>
+        <control> <name> F </name> <body> Body </body> ... </control>
+        ...
+     </controlFlows>
+//should distinguish between action call with zero arguments and control function call
+//UPDATE: it is disinguishable because the former is Id ( .Args ) ; the later is Id () ;
+
+
+//-----------------expr and boolean expr---------------
+
+rule F:FieldRef => @readField(F)
+
+syntax Exp ::= Val
+syntax BoolExpr ::= Bool
+
+rule @val(V1,W1,S1) == @val(V2,W2,S2) => V1 ==Int V2 //TODO: complete this
+//TODO: > >= <= <= < !=
+//TODO: + * - << >> & | ^
+//TODO: ^ -
+rule B1:Bool or B2:Bool => B1 orBool B2
+rule B1:Bool and B2:Bool => B1 andBool B2
+//TODO: short circuit ?
 
 //---------------table match-----------------------------
 syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
