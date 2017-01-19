@@ -66,6 +66,7 @@ configuration
     </controlFlows>
 
 
+
     //<input stream="stdin">
     //    .List
     //</input>
@@ -230,8 +231,8 @@ rule <k> @init => . ... </k>
             <name> egress_meter </name>
             <rules> .List => ListItem(
                                 $rule(
-                                    $ctr(ListItem(@val(10,0,false)))
-                                , String2Id("meter_pkt") )
+                                    $ctr(ListItem( @val ( 279611477 , 48 , false )))
+                                , String2Id("meter_pkt")  )
                             )</rules>
         </table>
         ...
@@ -343,21 +344,56 @@ rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
 
 rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 
+
 //for now assuming that a screenshot of current rules are taken before matching
-rule <k> apply (T:TableName) { C:CaseList } => @checkNextRule(FM,R) ~> @checkApplyResult(C) ... </k>
+rule <k> apply (T:TableName) { C:CaseList } => @checkNextRule(FM,R) ~> C ... </k>
      <tables>
         <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
      ...
      </tables>
 
+rule A:ActionName ~> C:CaseList  => @checkNextAppSelCase (A,C)
+
+syntax KItem ::= "@checkNextAppSelCase" "(" ActionName "," CaseList ")"
+rule @checkNextAppSelCase(_,.ActionCases) => .
+rule @checkNextAppSelCase(_,.HitMissCases) => .
+rule @checkNextAppSelCase(A:ActionName, HM:HitOrMiss B:ControlBlock Rest:HitMissCases) =>
+    #if ((HM ==K miss andBool A ==K @miss ) orBool (HM ==K hit andBool A =/=K @miss)) #then
+        B
+    #else
+        @checkNextAppSelCase(A,Rest)
+    #fi
+
+rule @checkNextAppSelCase(A:ActionName, AD:ActionOrDefault B:ControlBlock Rest:ActionCases) =>
+   #if (@isDefault(AD) orBool A ==K AD) #then
+       B
+   #else
+       @checkNextAppSelCase(A,Rest)
+   #fi
+
+syntax Bool ::= "@isDefault" "(" ActionOrDefault ")" [function]
+rule @isDefault(default) => true
+rule @isDefault(_:ActionName) => false
+/*TODO ISSUE: Just to make sure: if a default action in a table is defined and
+                the default action is taken, 1) is it a hit or miss? 2) does the default case
+                in a apply and select block gets gets elected?
+                If nothing matches in the table and there is no default action, does the default case
+                in a apply and select block gets gets elected?
+*/
+
+
+//---------------table match-----------------------------
 syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 //TODO: check defualt action
 //TODO: what else todo
 //TODO: assumming rules are checked for consistency at the time of insertion and are  are sorted by their priority
 
-rule @checkNextRule(_:FieldMatchs,.List  ) => .
-rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),A:ActionName)) Rest:List) => @if @matchAll(FM,R) @then @call(A) @else @checkNextRule(FM,Rest)
+
+syntax ActionName ::= "@miss" [token]
+rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),A:ActionName)) Rest:List)
+    => @if @matchAll(FM,R) @then @call(A) ~> A  @else @checkNextRule(FM,Rest)
 
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
@@ -365,8 +401,8 @@ rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListIt
     => @match(@readFMRef(FMR),V,MT) =&&= @matchAll(R1,R2) //TODO change it with &&
 
 syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
-rule @match(@val(V,W,S),@val(V,W,S),exact) => true //TODO: is this it?
-rule @match(_:Val,_:Val,exact) => false
+rule @match(@val(V1,W1,S1),@val(V2,W2,S2),exact) =>
+    (V1 ==Int V2) andBool (W1 ==Int W2) andBool (S1 ==Bool S2) //TODO: it this it?
 //TODO: rule @match(V:?,M:?,ternary)
 //TODO: rule @match(V:?,M:?,lmp)
 //TODO: rule @match(V:?,M:?,range)
@@ -381,12 +417,12 @@ rule @readFMRef(F:FieldRef mask M:ConstValue)  => @applyMask(@readField(F),M)
 
 
 
-syntax KItem ::= "@checkApplyResult" "(" CaseList ")"
-//TODO
 
 //---------------actions----------------------------------
 syntax KItem ::= "@call" "(" ActionName ")"
-//TODO
+
+//TODO temporary
+rule @call( _ ) => .
 
 
 //----------------header and field ref--------------------
@@ -476,8 +512,7 @@ rule (@val(V:Int,0,S:Bool) ==== @val(V,0,S)) => true
 rule (V1:Val ==== V2:Val) => false  [owise]
 
 syntax KItem ::= K "=&&=" K [seqstrict]
-rule true =&&= true => true
-rule _:Bool =&&= _:Bool => false  [owise]
+rule B1:Bool =&&= B2:Bool => B1 andBool B2
 
 
 
