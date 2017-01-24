@@ -10,7 +10,7 @@ syntax KItem ::= "@exec"
 
 configuration
 <T>
-    <k>  $PGM:P4Program ~> @exec </k>
+    <k>  $PGM:P4Program ~> @parseOrder (.K,start) ~> @deparseOrder ~> @exec  </k>
 
 
     <headers>
@@ -28,7 +28,6 @@ configuration
             <typeName> .K </typeName>
             <name> .K </name>
             <fieldVals> .Map </fieldVals>
-            //<arraysize> .K </arraysize>
         </instance>
     </instances>
 
@@ -76,6 +75,13 @@ configuration
     <index>
         0
     </index>
+
+    <order>
+        .K
+    </order>
+    <start>
+        .K
+    </start>
 
     //<lastExtract>
     //    .K
@@ -200,11 +206,57 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
          ) ... </controlFlows>
 
 
+//--------------------deparse order--------------------------
+
+//find parse order
+syntax KItem ::=  "@parseOrder" "(" K "," K ")" // current, previous
+
+rule <k> @parseOrder(P:K,C:ParserStateName) => @parseOrder(P:K,B) ... </k>
+     <parserStates>
+        <state> <name> C </name> <body> B:ParserFunctionBody   </body> </state>
+        ...
+     </parserStates>
+
+rule @parseOrder(P:K, S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(P,Rest Ret)
+rule <k> @parseOrder(.K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
+     <start> .K => H </start>
+//rule <k> @parseOrder(P:K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
+//     <order> P |-> ((. => SetItem(H)) _:Set) _:Map </order>
+//     when P =/=K .K
+rule <k> @parseOrder(P:K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
+     <order> (.Map => P |-> SetItem(H)) M:Map </order>
+     //when (P in_keys(M))
+//TODO: more compact if possible
+rule @parseOrder(P:K, .ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(P,Ret)
+rule <k> @parseOrder(P:K, return S:ParserStateName;) =>  @parseOrder(P,S) ... </k>
+      <parserStates>
+         <state> <name> S  </name> ... </state>
+         ...
+      </parserStates>
+rule <k> @parseOrder(P:K, return C:ControlFunctionName;) => . ... </k>
+      <controlFlows>
+            <control> <name> C </name> ... </control>
+            ...
+      </controlFlows>
+rule @parseOrder(P:K, return select ( _ ) { C:CaseEntries } ) =>  @parseOrder(P,C)
+rule @parseOrder(P:K, .CaseEntries) =>  .K
+rule @parseOrder(P:K, _:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
+        @parseOrder(P,Rest) ~> @parseOrder(P,@caseReturnToReturn(C))
+
+//generate deparse order
+syntax KItem ::= "@deparseOrder"
+
+
+
+
+
+
 // --------------------init------------------------------------
 
 syntax KItem ::= "@init" | "@parse&ingress" | "@egress"
 
-rule @exec => @init ~> @parse&ingress ~> @egress
+rule  @exec => @init ~> @parse&ingress ~> @egress
+
 
 
 //syntax Input ::= "packet" "(" String ")"
@@ -455,6 +507,10 @@ syntax KItem ::= "@call" "(" ActionName ")"
 rule @call( _ ) => .
 
 
+//-------------------deparsing------------------------------
+
+syntax KIte
+
 //----------------header and field ref--------------------
 //syntax HRef ::= "@href" "(" HeaderInstanceName ")"
 //syntax FieldRef ::= HRef "." FieldName
@@ -505,6 +561,9 @@ rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
 
 
 syntax KItem /* Val */ ::= "@applyMask" "(" K /* Val */ "," K /* Val */ ")" [strict]
+
+
+
 
 
 //------------------const value--------------------------

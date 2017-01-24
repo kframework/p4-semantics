@@ -131,6 +131,10 @@ What is const_expr? Is it const_value?
   in a apply and select block gets gets elected?
 
 
+- deparsing:
+  what happens when there is loop in parser graph?
+  is the order decided statically or dynamically?
+  what happens if an action adds a header that is not used in the parser?
 
 
 
