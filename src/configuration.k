@@ -10,7 +10,7 @@ syntax KItem ::= "@exec"
 
 configuration
 <T>
-    <k>  $PGM:P4Program ~> @parseOrder (.K,start) ~> @deparseOrder ~> @exec  </k>
+    <k>  $PGM:P4Program ~> @parseOrder (start) ~> @exec  </k>
 
 
     <headers>
@@ -76,12 +76,25 @@ configuration
         0
     </index>
 
-    <order>
-        .K
-    </order>
-    <start>
-        .K
-    </start>
+    <packetout>
+        ""
+    </packetout>
+
+//    <order>
+//        .Map
+//    </order>
+
+    <marked>
+        .Set
+    </marked>
+
+    <dporder>
+        .List
+    </dporder>
+
+//    <start>
+//        .K
+//    </start>
 
     //<lastExtract>
     //    .K
@@ -209,46 +222,72 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
 //--------------------deparse order--------------------------
 
 //find parse order
-syntax KItem ::=  "@parseOrder" "(" K "," K ")" // current, previous
+//syntax KItem ::=  "@parseOrder" "(" K "," K ")" // current, previous
+//
+//rule <k> @parseOrder(P:K,C:ParserStateName) => @parseOrder(P:K,B) ... </k>
+//     <parserStates>
+//        <state> <name> C </name> <body> B:ParserFunctionBody   </body> </state>
+//        ...
+//     </parserStates>
+//
+//rule @parseOrder(P:K, S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(P,Rest Ret)
+//rule <k> @parseOrder(.K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
+//     <start> .K => H </start>
+//rule <k> @parseOrder(P:HeaderExtractRef, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
+//     <order> (. => P |-> SetItem(H)) M:Map </order> when notBool P in_keys(M)
+//rule <k> @parseOrder(P:HeaderExtractRef, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
+//     <order> (P |-> ((. => SetItem(H)) S:Set)) M:Map </order>
+////TODO: more compact if possible
+//rule @parseOrder(P:K, .ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(P,Ret)
+//rule <k> @parseOrder(P:K, return S:ParserStateName;) =>  @parseOrder(P,S) ... </k>
+//      <parserStates>
+//         <state> <name> S  </name> ... </state>
+//         ...
+//      </parserStates>
+//rule <k> @parseOrder(P:K, return C:ControlFunctionName;) => . ... </k>
+//      <controlFlows>
+//            <control> <name> C </name> ... </control>
+//            ...
+//      </controlFlows>
+//rule @parseOrder(P:K, return select ( _ ) { C:CaseEntries } ) =>  @parseOrder(P,C)
+//rule @parseOrder(P:K, .CaseEntries) =>  .K
+//rule @parseOrder(P:K, _:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
+//        @parseOrder(P,Rest) ~> @parseOrder(P,@caseReturnToReturn(C))
 
-rule <k> @parseOrder(P:K,C:ParserStateName) => @parseOrder(P:K,B) ... </k>
+//TODO: assuming it is a dag
+//TODO: assuming no header stacks
+syntax KItem ::=  "@parseOrder" "(" K ")"
+rule <k> @parseOrder(C:ParserStateName) => @parseOrder(B) ... </k>
      <parserStates>
         <state> <name> C </name> <body> B:ParserFunctionBody   </body> </state>
         ...
      </parserStates>
-
-rule @parseOrder(P:K, S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(P,Rest Ret)
-rule <k> @parseOrder(.K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
-     <start> .K => H </start>
-//rule <k> @parseOrder(P:K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
-//     <order> P |-> ((. => SetItem(H)) _:Set) _:Map </order>
-//     when P =/=K .K
-rule <k> @parseOrder(P:K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
-     <order> (.Map => P |-> SetItem(H)) M:Map </order>
-     //when (P in_keys(M))
+rule @parseOrder(S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(Rest Ret)
+rule <k> @parseOrder(extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>
+            @parseOrder(Rest Ret) ~> @push(H) ...</k>
+     <marked> (. => SetItem(H)) S:Set </marked> when notBool H in S
+rule <k> @parseOrder(extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(Rest Ret) ...</k>
+     <marked> S:Set </marked> when H in S
 //TODO: more compact if possible
-rule @parseOrder(P:K, .ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(P,Ret)
-rule <k> @parseOrder(P:K, return S:ParserStateName;) =>  @parseOrder(P,S) ... </k>
+rule @parseOrder(.ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(Ret)
+rule <k> @parseOrder(return S:ParserStateName;) =>  @parseOrder(S) ... </k>
       <parserStates>
          <state> <name> S  </name> ... </state>
          ...
       </parserStates>
-rule <k> @parseOrder(P:K, return C:ControlFunctionName;) => . ... </k>
+rule <k> @parseOrder(return C:ControlFunctionName;) => . ... </k>
       <controlFlows>
             <control> <name> C </name> ... </control>
             ...
       </controlFlows>
-rule @parseOrder(P:K, return select ( _ ) { C:CaseEntries } ) =>  @parseOrder(P,C)
-rule @parseOrder(P:K, .CaseEntries) =>  .K
-rule @parseOrder(P:K, _:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
-        @parseOrder(P,Rest) ~> @parseOrder(P,@caseReturnToReturn(C))
+rule @parseOrder(return select ( _ ) { C:CaseEntries } ) =>  @parseOrder(C)
+rule @parseOrder(.CaseEntries) =>  .K
+rule @parseOrder(_:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
+         @parseOrder(@caseReturnToReturn(C)) ~> @parseOrder(Rest) //dfs
 
-//generate deparse order
-syntax KItem ::= "@deparseOrder"
-
-
-
-
+syntax KItem ::= "@push" "(" HeaderExtractRef ")"
+rule <k> @push(H:HeaderExtractRef) => . ... </k>
+     <dporder> (.List => ListItem (H)) ...  </dporder>
 
 
 // --------------------init------------------------------------
@@ -274,7 +313,7 @@ syntax Criteria ::= "$ctr" "(" List ")"
 //temporary
 syntax Id ::= "egress_meter" [token]
 rule <k> @init => . ... </k>
-     <packet> . => "0010000101010101000100001010101010001000010101010100010000101010101000100001010101010" </packet>
+     <packet> . => "0010000101010101000100001010101010001000010101010100010101010100010000101010101000101010101000100001010101010001010101010001000010101010100010000101010101000100001010101010" </packet>
      <tables>
         ...
         <table>
@@ -288,7 +327,6 @@ rule <k> @init => . ... </k>
         </table>
         ...
      </tables>
-
 
 
 //--------------------parsing------------------------------
@@ -308,6 +346,7 @@ rule <k> return State:ParserStateName ; => Body ... </k>
 
 //return to control function
 rule <k> return Control:ControlFunctionName ; => Control(); ... </k>
+    <controlFlows> <control> <name> Control </name> ... </control> ... </controlFlows>
 
 
 //return parser_exception
@@ -509,7 +548,42 @@ rule @call( _ ) => .
 
 //-------------------deparsing------------------------------
 
-syntax KIte
+rule <k> @egress => @deparseNext(L) ... </k>
+     <dporder> L:List </dporder>
+
+syntax KItem ::= "@deparseNext" "(" List ")"
+rule @deparseNext(ListItem(H:HeaderExtractRef) Rest:List) => @deparseHeader(H) ~> @deparseNext(Rest) [structural]
+rule @deparseNext(.List) => .                                                             [structural]
+
+syntax KItem ::= "@deparseHeader" "(" HeaderExtractRef ")"
+rule <k> @deparseHeader(I:InstanceName) => #if M ==Bool false #then .K #else @deparseFields(I,F) #fi ...</k>
+        <instances>
+            <instance> <name> I </name> <typeName> H:HeaderTypeName </typeName> <valid> M:Bool </valid>  ... </instance>
+            ...
+        </instances>
+        <headers>
+            <header> <name> H </name> <fields> F:FieldDecs </fields>  ... </header>
+            ...
+        </headers>
+//TODO:array
+
+syntax KItem ::= "@deparseFields" "(" InstanceName "," FieldDecs ")"
+rule @deparseFields(I:InstanceName,F:FieldName : _:ConstValue ( _:FieldMods ) ; Rest:FieldDecs) =>
+        @deparseField(I,F) ~> @deparseFields(I,Rest)        [structural]
+rule @deparseFields(_:InstanceName,.FieldDecs) => .        [structural]
+
+//TODO: replace this with readfield
+syntax KItem ::= "@deparseField" "(" InstanceName "," FieldName ")"
+rule <k> @deparseField(I:InstanceName,F:FieldName) => . ...</k>
+         <instances>
+             <instance> <name> I </name> <fieldVals> F |-> @val(V:Int,W:Int,S:Bool) ... </fieldVals>  ... </instance>
+             ...
+         </instances>
+         <packetout>
+            P:String => (P +String Base2String(V,2) )
+         </packetout>
+         //TODO: fix this for signedness and correct width
+
 
 //----------------header and field ref--------------------
 //syntax HRef ::= "@href" "(" HeaderInstanceName ")"
