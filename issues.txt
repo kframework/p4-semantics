@@ -32,7 +32,6 @@ What is const_expr? Is it const_value?
 - What happens if during checking if while a rule is being checked for matching, a new rule is added to the table?
 - Does packets get processed in parallel or sequentially? (it affects the semantics)
 
-- How exactly unparsing works?
 
 - Page 13
  field_list_declaration ::=
@@ -130,11 +129,37 @@ What is const_expr? Is it const_value?
   If nothing matches in the table and there is no default action, does the default case
   in a apply and select block gets gets elected?
 
-
+- How exactly deparsing works?
 - deparsing:
   what happens when there is loop in parser graph?
   is the order decided statically or dynamically?
   what happens if an action adds a header that is not used in the parser?
+
+
+- what happens if the unsigned value constant does not fit into the width specified?
+  is it an error or some implicit conversion happens?
+
+- "For expressions, the value with largest bit width is identified and all other
+   values are converted to this width according to their own signedness.
+   The expression is then evaluated"
+   Does it mean 1 + 1 overflows?
+
+
+
+- It seems that there is ambiguity between "-" in const_value and "-" in un_op.
+  e.g in - 5. Does this make difference in semantics? Because according to the spec
+  "For positive values the inferred width is the smallest number of bits required
+  to contain the value. For negative values the inferred width is one more than
+  the smallest number of bits required to contain the positive value."
+  and
+  "For expressions, the value with largest bit width is identified and all other
+   values are converted to this width according to their own signedness.
+   The expression is then evaluated"
+  Does - 5 , if evaluated as - (5) , yields 3 bits or 4 bits?
+  How about 6 - 5, 3 bits or 4 bits? (or 1 bit?)
+  How about 5 - 6 ?
+
+
 
 
 

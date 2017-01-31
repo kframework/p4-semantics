@@ -65,40 +65,31 @@ configuration
     </controlFlows>
 
 
-    //<input stream="stdin">
-    //    .List
-    //</input>
+
 
     <packet>
         .K
     </packet>
-    <index>
-        0
-    </index>
+
 
     <packetout>
         ""
     </packetout>
 
-//    <order>
-//        .Map
-//    </order>
 
-    <marked>
-        .Set
-    </marked>
+    <parser>
+        <graph>
+            <marked> .Set </marked>
+            <dporder> .List </dporder>
+        </graph>
+        <index> 0 </index>
+        <lastExt> .K </lastExt>
+    </parser>
 
-    <dporder>
-        .List
-    </dporder>
+    //<input stream="stdin">
+    //    .List
+    //</input>
 
-//    <start>
-//        .K
-//    </start>
-
-    //<lastExtract>
-    //    .K
-    //</lastExtract>
 
 </T>
 
@@ -168,13 +159,10 @@ rule @fieldSet(.FieldDecs, Acc:Set) => Acc
 syntax Map ::= "@initFields" "(" FieldValueAssignments "," Set "," Map ")" [function]
 rule @initFields(.FieldValueAssignments, .Set, Acc:Map) => Acc
 rule @initFields(.FieldValueAssignments, SetItem(N:FieldName) Fields:Set, Acc:Map) =>
-        @initFields(.FieldValueAssignments, Fields, N |-> #token("0","DecimalValueToken@VALUE-SYNTAX")  Acc)
+        @initFields(.FieldValueAssignments, Fields, N |-> @val(0,0,false)  Acc)
 //TODO: fix the token thing
 rule @initFields(N:FieldName : V:FieldValue ; Rest:FieldValueAssignments, SetItem(N:FieldName) Fields:Set, Acc:Map) =>
         @initFields(Rest, Fields, N |-> V  Acc)
-
-//rule @initFields(.FieldValueAssignments, ,Acc)
-
 
 
 //parser
@@ -313,7 +301,7 @@ syntax Criteria ::= "$ctr" "(" List ")"
 //temporary
 syntax Id ::= "egress_meter" [token]
 rule <k> @init => . ... </k>
-     <packet> . => "0010000101010101000100001010101010001000010101010100010101010100010000101010101000101010101000100001010101010001010101010001000010101010100010000101010101000100001010101010" </packet>
+     <packet> . => "0010000101010101000100001010101010001000010101010100010101010100010010000101010101000100001010101010001000010100100001010101010001000010101010100010000101001000010101010100010000101010101000100001010010000101010101000100001010101010001000010100100001010101010001000010101010100010000101001000010101010100010000101010101000100001010000101010101000101010101000100001010101010001010101010001000010101010100010000101010101000100001010101010" </packet>
      <tables>
         ...
         <table>
@@ -333,6 +321,7 @@ rule <k> @init => . ... </k>
 syntax Id ::= "start" [token]
 rule <k> @parse&ingress => Body  ... </k>
      <parserStates> <state>  <name> start </name> <body> Body </body> ... </state> ...</parserStates>
+     <lastExt> _ => .K </lastExt>
 
 rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
 rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structural]
@@ -343,6 +332,7 @@ rule .ExtractOrSetStatements => .
 //TODO: check it is not control function name
 rule <k> return State:ParserStateName ; => Body ... </k>
      <parserStates> <state>  <name> State </name> <body> Body </body> ... </state> ...</parserStates>
+     <lastExt> _ => .K </lastExt>
 
 //return to control function
 rule <k> return Control:ControlFunctionName ; => Control(); ... </k>
@@ -382,8 +372,8 @@ rule @caseReturnToReturn(parse_error PE:ParserExceptionName) => parse_error PE ;
 syntax KItem /* Vals */ ::= "@readFDRefs" "(" SelectExp ")"
 rule @readFDRefs(.FieldOrDataRefs) => @nil
 rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@readField(F),@readFDRefs(Rest))
-//TODO <k> rule @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons(@readField(H.F),@readVals(Rest)) ... </k>
-//        <lastExtract> I:HeaderInstanceName </lastExtract>
+rule <k> @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons(@readField(H.FN),@readFDRefs(Rest)) ... </k>
+        <lastExt> H:HeaderInstanceName </lastExt>
 //TODO rule @readVals(current())
 
 
@@ -397,13 +387,14 @@ rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
      <headers>
         <header> <name> Type </name>  <fields> Fields:FieldDecs </fields> ... </header> ...
      </headers>
-//TODO: what happens if a valid header gets extracted again?
+//TODO ISSUE: what happens if a valid header gets extracted again?
 
 syntax KItem ::= "@extract" "(" InstanceName "," FieldDecs ")"
 rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
      <instances>
             <instance> <name> N </name>  <valid> false => true </valid> ... </instance> ...
      </instances>
+     <lastExt> _ => N </lastExt>
 
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
@@ -420,6 +411,15 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
 //TODO: support *
 //TODO: change the string to number value
 //TODO: add _:Map to <fieldVals>
+//rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@String2FieldVal(substrString(Packet,I,Val2Int(W)))) ... </k>
+//     <instances>
+//        <instance> <name> N </name>  <typeName> H:HeaderTypeName </typename>  ... </instance>
+//        ...
+//     </instances>
+//     <packet> Packet </packet>
+//     <index> I:Int => I +Int Val2Int(W) </index>
+
+
 
 //TODO: array
 
@@ -433,7 +433,7 @@ rule { B:ControlStatement } => B                            [structural]
 rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 
 
-//for now assuming that a screenshot of current rules are taken before matching
+//TODO: for now assuming that a screenshot of current rules are taken before matching
 rule <k> apply (T:TableName) { C:CaseList } => @checkNextRule(FM,R) ~> C ... </k>
      <tables>
         <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
@@ -495,13 +495,36 @@ rule F:FieldRef => @readField(F)
 syntax Exp ::= Val
 syntax BoolExpr ::= Bool
 
-rule @val(V1,W1,S1) == @val(V2,W2,S2) => V1 ==Int V2 //TODO: complete this
-//TODO: > >= <= <= < !=
-//TODO: + * - << >> & | ^
-//TODO: ^ -
+rule @val(V1,_,_) == @val(V2,_,_) => V1 ==Int V2
+rule @val(V1,_,_) != @val(V2,_,_) => V1 =/=Int V2
+rule @val(V1,_,_) > @val(V2,_,_) => V1 >Int V2
+rule @val(V1,_,_) >= @val(V2,_,_) => V1 >=Int V2
+rule @val(V1,_,_) < @val(V2,_,_) => V1 <Int V2
+rule @val(V1,_,_) <= @val(V2,_,_) => V1 <=Int V2
+//TODO: is there is problem if width/signedness is different?
+
+
+rule @val(V1,_,_) + @val(V2,_,_) => @val(V1 +Int V2,0,true)
+rule @val(V1,_,_) * @val(V2,_,_) => @val(V1 *Int V2,0,true)
+rule @val(V1,_,_) - @val(V2,_,_) => @val(V1 -Int V2,0,true)
+rule @val(V1,_,_) << @val(V2,_,_) => @val(V1 <<Int V2,0,true)
+rule @val(V1,_,_) >> @val(V2,_,_) => @val(V1 >>Int V2,0,true)
+rule @val(V1,_,_) & @val(V2,_,_) => @val(V1 &Int V2,0,true)
+rule @val(V1,_,_) | @val(V2,_,_) => @val(V1 |Int V2,0,true)
+rule @val(V1,_,_) ^ @val(V2,_,_) => @val(V1 ^Int V2,0,true)
+// TODO ISSUE: the semantics of non of these operators is exactly
+// defined specially when it comes to width, so leaving it like this
+// for now.
+
+//rule MinusExp(@val(V:Int,0,_)) =>  @val(0 -Int V,0,true)
+//rule MinusExp(@val(V:Int,W,_)) =>  @val(0 -Int V,W +Int 1,true) when W >Int 0
+//TODO: unify it with @negative
+
+//rule
+
 rule B1:Bool or B2:Bool => B1 orBool B2
 rule B1:Bool and B2:Bool => B1 andBool B2
-//TODO: short circuit ?
+//TODO ISSUE: short circuit ?
 
 //---------------table match-----------------------------
 syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
@@ -519,22 +542,23 @@ rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),A:ActionName)) R
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
 rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListItem(V:K) R2:List)
-    => @match(@readFMRef(FMR),V,MT) =&&= @matchAll(R1,R2) //TODO change it with &&
+    => @match(@readFMRef(FMR,MT),V,MT) =&&= @matchAll(R1,R2)
 
 syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
-rule @match(@val(V1,W1,S1),@val(V2,W2,S2),exact) =>
-    (V1 ==Int V2) andBool (W1 ==Int W2) andBool (S1 ==Bool S2) //TODO: it this it?
+rule @match(V1:Val,V2:Val,exact) => V1 == V2    //TODO: is this it?
 //TODO: rule @match(V:?,M:?,ternary)
 //TODO: rule @match(V:?,M:?,lmp)
 //TODO: rule @match(V:?,M:?,range)
 //TODO: rule @match(V:?,M:?,valid)
 
 
-syntax KItem /* KResult */ ::= "@readFMRef" "(" FieldOrMaskedRef ")"
-//rule @readFMRef(H:HeaderRef) => //TODO
-rule @readFMRef(F:FieldRef) => @readField(F)
-rule @readFMRef(F:FieldRef mask M:ConstValue)  => @applyMask(@readField(F),M)
+syntax KItem /* KResult */ ::= "@readFMRef" "(" FieldOrMaskedRef "," FieldMatchType  ")"
 
+
+rule @readFMRef(F:FieldRef,FM:FieldMatchType) => #if FM =/=K valid #then @readField(F) #else @isValid(F) #fi
+rule @readFMRef(F:FieldRef mask M:ConstValue,_)  => @applyMask(@readField(F),M)
+// "Header references for matching may only be used with the valid match type."
+rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
 
 
 
@@ -604,7 +628,7 @@ rule Val2Int ( @val(I:Int,_,_) ) => I
 
 syntax Id ::= BinaryValueToken | DecimalValueToken | HexadecimalValueToken
 syntax Int ::= "USgnVal2Int" "(" ConstValue ")" [function]
-//TODO: change all letters to lower caseste
+//TODO: change all letters to lower case
 rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0b",""),2)
 rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),"_",""))
 rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0x",""),16)
@@ -614,8 +638,6 @@ syntax K ::= "@if" K /* Bool */ "@then" K "@else" K [strict(1)]
 syntax KResult ::= Bool
 rule @if true @then T:K @else F:K => T
 rule @if false @then T:K @else F:K => F
-
-
 
 
 syntax Val ::= "@concat" "(" Vals ")" [function]
@@ -630,14 +652,30 @@ rule @concat(@cons(V:Val,@nil)) => V
 syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
 rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
       <instances>
-         <instance> <name> H </name>  <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
+         <instance> <name> H </name> <valid> true </valid> <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
+      </instances>
+
+syntax KItem /* Bool */ ::= "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
+rule <k> @readField(H:HeaderInstanceName . _:FieldName) => V ... </k>
+      <instances>
+         <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
+      </instances>
+
+rule <k> @readField(H:HeaderInstanceName) => V ... </k>
+      <instances>
+         <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
 
 
 syntax KItem /* Val */ ::= "@applyMask" "(" K /* Val */ "," K /* Val */ ")" [strict]
+rule @applyMask(V1:Val,V2:Val) => V1 & V2
+//TODO ISSUE: is this it?
 
+syntax KItem ::= K "====" K [seqstrict]
+rule V1 ==== V2 => V1 == V2
 
-
+syntax KItem ::= K "=&&=" K [seqstrict]
+rule B1:Bool =&&= B2:Bool => B1 andBool B2
 
 
 //------------------const value--------------------------
@@ -652,30 +690,26 @@ syntax KItem /* Vals */ ::= "@makeCons" "(" K /* Val */ "," K /* Vals */ ")" [se
 rule @makeCons(V:Val,Vs:Vals) => @cons (V,Vs)
 
 
-
-
-//rule T:BinaryValueToken => #parseToken(replaceAll(Id2String(T)),"BinaryValueToken") [macro]
-//TODO is it possible to do so?
-
-
 rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
-//rule (+ @val(N:Int,0,false)) => @val(N,0,false)
-//rule (- @val(N:Int,0,false)) => @val(N,0,true)
-//rule (+ W:DecimalValueToken' @val(N:Int,0,false)) => (W' @val(N:Int,0,false))
-//rule (W:DecimalValueToken' @val(N:Int,0,false)) => @val(USgnVal2Int(W))
-//rule (- W:DecimalValueToken' @val(N:Int,0,false)) => @val(USgnVal2Int(W))
+rule + UV:UnsignedValue => UV
+rule nconstv(UV:UnsignedValue) => @negative(UV)
+rule (W:DecimalValueToken' UV:UnsignedValue) => @setWidth(USgnVal2Int(W),UV)
+rule (+ W:WidthSpec UV:UnsignedValue) => W UV
+rule nwconstv(W:WidthSpec,UV:UnsignedValue) => @negative(W UV)
+
+syntax KItem ::= "@negative" "(" K ")" [strict]
+rule @negative(@val(I:Int,W:Int,S:Bool)) => #if (notBool S) andBool (W ==Int 0) #then @val(0 -Int I,0,true) #else @val(0 -Int I,W +Int 1,true) #fi
+
+syntax KItem ::= "@setWidth" "(" K "," K ")" [seqstrict]
+rule @setWidth(@val(W:Int,0,false),@val(I:Int,0,false)) => @val(I,W,false) when I <Int (2 ^Int W)
+//TODO ISSUE: what happens if the unsigned value constant does not fit into the width specified
 
 
 
 //----------------------------temporary utils----------------------------------
 
 
-syntax KItem ::= K "====" K [seqstrict]
-rule (@val(V:Int,0,S:Bool) ==== @val(V,0,S)) => true
-rule (V1:Val ==== V2:Val) => false  [owise]
 
-syntax KItem ::= K "=&&=" K [seqstrict]
-rule B1:Bool =&&= B2:Bool => B1 andBool B2
 
 
 

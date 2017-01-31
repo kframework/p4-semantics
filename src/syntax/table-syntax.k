@@ -28,10 +28,10 @@ imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, 
     //TODO Note: current workraround for problem with None. note that this is not the official syntax, but it can be turned into semantic check instead of syntactic check
     syntax TableOptionals ::= List{TableOptional,""} [klabel('TableOptionals)]
     syntax TableOptional ::=
-                  "min_size" ":" ConstValue ";"
-                | "max_size" ":" ConstValue ";"
-                | "size" ":" ConstValue ";"
-                | "support_timeout" ":" BoolValue ";"
+                  "min_size" ":" ConstValue ";" [klabel('TMinSizeOptinal)]
+                | "max_size" ":" ConstValue ";" [klabel('TMaxSizeOptinal)]
+                | "size" ":" ConstValue ";"     [klabel('TSizeOptinal)]
+                | "support_timeout" ":" BoolValue ";"   [klabel('TTOutOptinal)]
 
 
 

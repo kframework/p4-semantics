@@ -44,24 +44,58 @@ imports PARSER-SYNTAX //for ControlFunctionName
     syntax ElseBlock ::= "else" ControlBlock | "else" IfElseStatement
 
     syntax BoolExpr ::=
-                      "valid" "(" HeaderRef ")"         //[klabel('BExpValid)]
-                    | BoolExpr BoolOp BoolExpr          [strict(1,3)]//,klabel('BExpBinBoolOp)]//TODO: assoc according to C
-                    | "not" BoolExpr                    [strict]//,klabel('BExpBinNot)]
+                      "not" BoolExpr        [strict,left]
+                    >
+                      Exp "<" Exp           [strict,left]
+                    | Exp "<=" Exp          [strict,left]
+                    | Exp ">" Exp           [strict,left]
+                    | Exp ">=" Exp          [strict,left]
+                    >
+                      Exp "==" Exp          [strict,left]
+                    | Exp "!=" Exp          [strict,left]
+                    >
+                      BoolExpr "and" BoolExpr   [strict,left]
+                    >
+                      BoolExpr "or" BoolExpr    [strict,left]
+                    |  "valid" "(" HeaderRef ")"         [klabel('BExpValid)]
+                    //| BoolExpr BoolOp BoolExpr          [strict(1,3)]//,klabel('BExpBinBoolOp)]
+                    //| "not" BoolExpr                    [strict]//,klabel('BExpBinNot)]
                     | "(" BoolExpr ")"                  [braket]//, klabel('BExpBinNot)]
-                    | Exp RelOp Exp                     [strict(1,3)]//,klabel('BExpBinRelOp)]//TODO: assoc according to C
+                    //| Exp RelOp Exp                     [strict(1,3)]//,klabel('BExpBinRelOp)]
                     | BoolValue                         //[klabel('BExpVal)]
     //syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | Value | "(" Exp ")"
     syntax  Exp ::=
-          Exp BinOp Exp [strict(1,3)]//,klabel('ExpBinOp)]
-        | UnOp Exp      [strict(2)]//,klabel('BExpUnOp)]
+          //Exp BinOp Exp [strict(1,3)]//,klabel('ExpBinOp)]
+          //| UnOp Exp      [strict(2)]//,klabel('BExpUnOp)]
+          "-" Exp       [strict,right,klabel(MinusExp)]
+        | "~" Exp       [strict,right]
+        >
+          Exp "*" Exp   [strict,left]
+        | Exp "/" Exp   [strict,left]
+        >
+          Exp "+" Exp   [strict,left]
+        | Exp "-" Exp   [strict,left,klabel(ExpMinusExp)]
+        >
+          Exp "<<" Exp  [strict,left]
+        | Exp ">>" Exp  [strict,left]
+        >
+          Exp "&" Exp   [strict,left]
+        >
+          Exp "^" Exp   [strict,left]
+        >
+          Exp "|" Exp   [strict,left]
+
         | FieldRef      //[klabel('BExpFieldRef)]
         | ConstValue    //[klabel('BExpConst)]
         | "(" Exp ")"   [bracket]//,klabel('BExpUnOp)]
     //ISSUE: what is Value ? RESOLVED: it is ConstValue
 
-    //TODO: priorities according to C
-    syntax BinOp ::= "+" | "*" | "-" | "<<" | ">>" | "&" | "|" | "^"
-    syntax UnOp ::= "~"  | "-"
-    syntax BoolOp ::= "or" | "and"
-    syntax RelOp ::= ">" | ">=" | "==" | "<=" | "<" | "!="
+    syntax priority nconstv > MinusExp > ExpMinusExp
+    syntax priority nwconstv > MinusExp > ExpMinusExp
+
+    //priorities according to C
+    //syntax BinOp ::= "+" | "*" | "-" | "<<" | ">>" | "&" | "|" | "^"
+    //syntax UnOp ::= "~"  | "-"
+    //syntax BoolOp ::= "or" | "and"
+    //syntax RelOp ::= ">" | ">=" | "==" | "<=" | "<" | "!="
 endmodule

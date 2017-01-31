@@ -29,5 +29,5 @@ parser ethernet {
 
 
 parser vlan {
-
+    return ingress;
 }

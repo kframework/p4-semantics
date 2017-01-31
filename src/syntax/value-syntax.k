@@ -8,14 +8,17 @@ module VALUE-SYNTAX
     //syntax ConstValue ::= OptionalSign OptionalWidthSpec UnsignedValue
     syntax ConstValue ::=
               UnsignedValue
-            | Sign UnsignedValue            [strict(2)]
-            | WidthSpec UnsignedValue       [strict(2)]
-            | Sign WidthSpec UnsignedValue  [strict(3)]
+            | "+" UnsignedValue
+            | "-" UnsignedValue            [klabel(nconstv)] //added this to avoid ambiguity with - Exp
+            | WidthSpec UnsignedValue
+            | "+" WidthSpec UnsignedValue
+            | "-" WidthSpec UnsignedValue  [klabel(nwconstv)] //this one too
+
 
     //syntax OptionalWidthSpec ::= None | WidthSpec
     //syntax OptionalSign ::= None | Sign
 
-    syntax Sign ::= "+" | "-"
+   // syntax Sign ::= "+" | "-"
 
     syntax UnsignedValue ::= BinaryValue | DecimalValue | HexadecimalValue
 

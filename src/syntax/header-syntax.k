@@ -45,12 +45,20 @@ imports VALUE-SYNTAX
     //syntax OptionalFieldMods ::= None | "(" FieldMods ")"
     syntax FieldMods ::= NeList{FieldMod, ","}              [klabel('FieldMods)]
     syntax FieldMod ::= "signed" | "saturating"
-    syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>" //TODO: priorities according to C
+    //syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>" //priorities according to C
     syntax LengthExp ::=
                   ConstValue
                 | FieldName //TODO ISSUE: what does it mean?
-                | LengthExp LengthBinOp LengthExp //TODO: associativity according to C
+                //| LengthExp LengthBinOp LengthExp
                 | "(" LengthExp ")"
+                  LengthExp "*" LengthExp   [strict,left]
+                >
+                  LengthExp "+" LengthExp   [strict,left]
+                | LengthExp "-" LengthExp   [strict,left]
+                >
+                  LengthExp "<<" LengthExp   [strict,left]
+                | LengthExp ">>" LengthExp   [strict,left]
+
     syntax BitWidth ::= ConstValue | "*"
 
 
