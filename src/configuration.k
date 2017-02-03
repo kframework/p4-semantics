@@ -621,17 +621,33 @@ rule @deparseFields(I:InstanceName,F:FieldName : _:ConstValue ( _:FieldMods ) ; 
         @deparseField(I,F) ~> @deparseFields(I,Rest)        [structural]
 rule @deparseFields(_:InstanceName,.FieldDecs) => .        [structural]
 
-//TODO: replace this with readfield
+
 syntax KItem ::= "@deparseField" "(" InstanceName "," FieldName ")"
-rule <k> @deparseField(I:InstanceName,F:FieldName) => . ...</k>
+rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(@FieldVal2String(V,@getAttr(F,Fs))) ...</k>
          <instances>
-             <instance> <name> I </name> <fieldVals> F |-> @val(V:Int,W:Int,S:Bool) ... </fieldVals>  ... </instance>
+             <instance> <name> I </name> <typeName> H:HeaderTypeName </typeName> <fieldVals> F |-> V:Val ...</fieldVals> ... </instance>
              ...
          </instances>
-         <packetout>
-            P:String => (P +String Base2String(V,2) )
-         </packetout>
-         //TODO: fix this for signedness and correct width
+         <headers>
+            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+            ...
+         </headers>
+
+
+syntax KResult ::= String
+syntax KItem ::= "@packetOut" "(" K /* String */ ")" [strict]
+rule <k> @packetOut(S:String) => . ... </k>
+     <packetout> P:String => P +String S </packetout>
+
+syntax KItem ::= "@FieldVal2String" "(" K /* Val */ "," FieldDec ")" [strict(1)]
+rule @FieldVal2String(@val(I,_,_), _:FieldName : W:UnsignedValue ( .FieldMods );)  =>
+    @addPadding(Base2String(I,2),USgnVal2Int(W),"0")
+//TODO: complete this
+
+syntax String ::= "@addPadding" "(" String "," Int "," String ")" [function] /* String , width , char */
+rule @addPadding(S,0,C) => S
+rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
+
 
 
 //----------------header and field ref--------------------
