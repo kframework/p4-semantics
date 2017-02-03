@@ -433,7 +433,7 @@ rule <k> @writeField(N,F,V:Val) => . ...</k>
 
 
 //TODO: change FieldDec to FieldAttr which should be custom format for field attributes
-syntax FieldDec ::= "@getAttr" "(" FieldName "," FieldDecs ")" [fucntion]
+syntax FieldDec ::= "@getAttr" "(" FieldName "," FieldDecs ")" [function]
 rule @getAttr (F:FieldName, F : W:BitWidth ( M:FieldMods ); _:FieldDecs) => F : W (M);
 rule @getAttr (F1:FieldName, F2:FieldName : _:BitWidth ( _:FieldMods ); Rest:FieldDecs) =>
         @getAttr(F1,Rest) when  F1 =/=K F2
@@ -681,12 +681,12 @@ rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
       </instances>
 
 syntax KItem /* Bool */ ::= "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
-rule <k> @readField(H:HeaderInstanceName . _:FieldName) => V ... </k>
+rule <k> @isValid(H:HeaderInstanceName . _:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
 
-rule <k> @readField(H:HeaderInstanceName) => V ... </k>
+rule <k> @isValid(H:HeaderInstanceName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
