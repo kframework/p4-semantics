@@ -125,11 +125,11 @@ rule N:FieldName : W:BitWidth ; => N : W ( .FieldMods ) ; [macro]
 
 rule metadata H:HeaderTypeName  I:InstanceName ; => metadata H I { .FieldValueAssignments }  [macro]
 
-rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => . ... </k>
+rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => @initFields(Name,Asgn,@getFieldsSet(Fields,.Set)) ... </k>
     <instances>  (.Bag =>
         <instance>
              <valid> true </valid>
-                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <fieldVals> @initFields(Asgn,@fieldSet(Fields,.Set),.Map) </fieldVals>  ...
+                <metadata> true </metadata> <typeName> Type </typeName> <name> Name </name> <fieldVals> .Map </fieldVals>  ...
         </instance>
     ) ... </instances>
     <headers>  <header>  <name> Type </name>  <fields> Fields:FieldDecs </fields> ... </header> ... </headers>
@@ -149,21 +149,18 @@ rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... <
 //    ) ... </instances>
 //TODO: array is not supported yet
 
-syntax Set ::= "@fieldSet" "(" FieldDecs "," Set ")" [function]
-rule @fieldSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs, Acc:Set) => @fieldSet(Rest, SetItem(N) Acc)
-rule @fieldSet(.FieldDecs, Acc:Set) => Acc
-//TODO: ask if we can get rid of the Acc
+syntax Set ::= "@getFieldsSet" "(" FieldDecs "," Set ")" [function]
+rule @getFieldsSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs, Acc:Set) => @getFieldsSet(Rest, SetItem(N) Acc)
+rule @getFieldsSet(.FieldDecs, Acc:Set) => Acc
 //TODO: check a field is not decrlared twice
 
 
-syntax Map ::= "@initFields" "(" FieldValueAssignments "," Set "," Map ")" [function]
-rule @initFields(.FieldValueAssignments, .Set, Acc:Map) => Acc
-rule @initFields(.FieldValueAssignments, SetItem(N:FieldName) Fields:Set, Acc:Map) =>
-        @initFields(.FieldValueAssignments, Fields, N |-> @val(0,0,false)  Acc)
-//TODO: fix the token thing
-rule @initFields(N:FieldName : V:FieldValue ; Rest:FieldValueAssignments, SetItem(N:FieldName) Fields:Set, Acc:Map) =>
-        @initFields(Rest, Fields, N |-> V  Acc)
-
+syntax Map ::= "@initFields" "(" InstanceName "," FieldValueAssignments "," Set ")"
+rule @initFields(I, .FieldValueAssignments, .Set) => .
+rule @initFields(I, .FieldValueAssignments, SetItem(F:FieldName) Rest:Set) =>
+        @writeField(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
+rule @initFields(I, F:FieldName : V:FieldValue ; ARest:FieldValueAssignments, SetItem(F:FieldName) FRest:Set) =>
+        @writeField(I,F,V) ~> @initFields(I, ARest, FRest)
 
 //parser
 
@@ -400,29 +397,57 @@ rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest
         @extractField(N,F,CW) ~> @extract(N,Rest)
 
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
-rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => . ... </k>
-     <instances>
-        <instance> <name> N </name> <fieldVals>  (.Map => (F |-> @val(String2Base(substrString(Packet,I,Val2Int(W)),2),Val2Int(W),false))) ... </fieldVals> ... </instance>
-        ...
-     </instances>
-     <packet> Packet </packet>
-     <index> I:Int => I +Int Val2Int(W) </index>
-//TODO: the sign should be extracted according to field_mod more imporantly the Int should be change according to the sign */
-//TODO: support *
-//TODO: change the string to number value
-//TODO: add _:Map to <fieldVals>
-//rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@String2FieldVal(substrString(Packet,I,Val2Int(W)))) ... </k>
-//     <instances>
-//        <instance> <name> N </name>  <typeName> H:HeaderTypeName </typename>  ... </instance>
-//        ...
-//     </instances>
-//     <packet> Packet </packet>
-//     <index> I:Int => I +Int Val2Int(W) </index>
-
-
 
 //TODO: array
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@String2FieldVal(substrString(Packet,I,Val2Int(W)),@getAttr(F,Fs))) ... </k>
+     <instances>
+        <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
+        ...
+     </instances>
+     <headers>
+              <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+              ...
+     </headers>
+     <packet> Packet </packet>
+     <index> I:Int => I +Int Val2Int(W) </index>
 
+
+
+syntax KItem ::= "@writeFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+rule <k> @writeFieldAdjusted(N,F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
+          <instances>
+             <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
+             ...
+          </instances>
+          <headers>
+            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+            ...
+          </headers>
+
+syntax KItem ::= "@writeField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+rule <k> @writeField(N,F,V:Val) => . ...</k>
+        <instances>
+            <instance> <name> N </name>  <fieldVals> FV:Map => FV [ F <- V ] </fieldVals>  ... </instance>
+            ...
+        </instances>
+
+
+//TODO: change FieldDec to FieldAttr which should be custom format for field attributes
+syntax FieldDec ::= "@getAttr" "(" FieldName "," FieldDecs ")" [fucntion]
+rule @getAttr (F:FieldName, F : W:BitWidth ( M:FieldMods ); _:FieldDecs) => F : W (M);
+rule @getAttr (F1:FieldName, F2:FieldName : _:BitWidth ( _:FieldMods ); Rest:FieldDecs) =>
+        @getAttr(F1,Rest) when  F1 =/=K F2
+
+syntax KItem /* Val */ ::= "@adjustVal" "(" FieldDec "," Val ")"
+rule @adjustVal( _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;, @val(I,Ws,Ss) )
+    => @val(I,USgnVal2Int(Wd),false)
+//TODO: IMPORTANT: fix and complete this (also remember to support * )
+
+
+syntax KItem /* Val */ ::= "@String2FieldVal" "(" String "," FieldDec ")"
+rule @String2FieldVal( S:String , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
+    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
+//TODO: IMPORTANT: fix and complete this (also remember to support * )
 
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
@@ -665,6 +690,7 @@ rule <k> @readField(H:HeaderInstanceName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
+
 
 
 syntax KItem /* Val */ ::= "@applyMask" "(" K /* Val */ "," K /* Val */ ")" [strict]
