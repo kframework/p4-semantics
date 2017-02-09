@@ -31,10 +31,10 @@ imports HEADER-SYNTAX //only for header reference
     syntax Args ::= List{Arg, ","}                          [klabel('Args)]
 
     syntax Arg ::=
-        //  ParamName         [klabel('ArgParamName)] //TODO(SYNTAX): causes ambiguity with HeaderRef (What it is exactly)
-          FieldValue        [klabel('ArgFieldValue)]
-        | FieldRef          [klabel('ArgFieldRef)]
-        | HeaderRef         [klabel('ArgHeaderRef)]
+        //  ParamName         [klabel('ArgParamName)] //TODO ISSUE(SYNTAX): causes ambiguity with HeaderRef
+          FieldValue        //[klabel('ArgFieldValue)]
+        | FieldRef          //[klabel('ArgFieldRef)]
+        | HeaderRef         //[klabel('ArgHeaderRef)]
 
 endmodule
 

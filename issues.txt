@@ -123,6 +123,11 @@ What is const_expr? Is it const_value?
    Generally, any two actions that have overlapping effects.
 
 
+- What kind of values a table entry's action parameter can have? Is it only
+  const_value or can it be for example a reference to field or header or ...?
+  SOLVED: only VAL
+
+
 - Just to make sure: if a default action in a table is defined and
   the default action is taken, 1) is it a hit or miss? 2) does the default case
   in a apply and select block gets gets elected?

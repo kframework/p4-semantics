@@ -64,7 +64,9 @@ configuration
         </control>
     </controlFlows>
 
-
+   <frameStack>
+        .List
+   </frameStack>
 
 
     <packet>
@@ -292,7 +294,7 @@ rule  @exec => @init ~> @parse&ingress ~> @egress
 //syntax Matchs ::= List{Match,","} [klable('Matchs)]
 //syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
 
-syntax Rule ::= "$rule" "(" Criteria "," ActionName ")"
+syntax Rule ::= "$rule" "(" Criteria "," ActionCall ")"
 syntax Criteria ::= "$ctr" "(" List ")"
 
 //temporary
@@ -307,7 +309,7 @@ rule <k> @init => . ... </k>
             <rules> .List => ListItem(
                                 $rule(
                                     $ctr(ListItem( @val ( 279611477 , 48 , false )))
-                                , String2Id("meter_pkt")  )
+                                , @call(String2Id("meter_pkt") , $resolved( @val(10,0,false) , .Args ) ))
                             )</rules>
         </table>
         ...
@@ -526,7 +528,7 @@ rule @val(V1,_,_) > @val(V2,_,_) => V1 >Int V2
 rule @val(V1,_,_) >= @val(V2,_,_) => V1 >=Int V2
 rule @val(V1,_,_) < @val(V2,_,_) => V1 <Int V2
 rule @val(V1,_,_) <= @val(V2,_,_) => V1 <=Int V2
-//TODO: is there is problem if width/signedness is different?
+//TODO: is there any problem if width/signedness is different?
 
 
 rule @val(V1,_,_) + @val(V2,_,_) => @val(V1 +Int V2,0,true)
@@ -537,7 +539,7 @@ rule @val(V1,_,_) >> @val(V2,_,_) => @val(V1 >>Int V2,0,true)
 rule @val(V1,_,_) & @val(V2,_,_) => @val(V1 &Int V2,0,true)
 rule @val(V1,_,_) | @val(V2,_,_) => @val(V1 |Int V2,0,true)
 rule @val(V1,_,_) ^ @val(V2,_,_) => @val(V1 ^Int V2,0,true)
-// TODO ISSUE: the semantics of non of these operators is exactly
+// TODO ISSUE: the semantics of none of these operators is exactly
 // defined specially when it comes to width, so leaving it like this
 // for now.
 
@@ -561,8 +563,8 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 syntax ActionName ::= "@miss" [token]
 rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
-rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),A:ActionName)) Rest:List)
-    => @if @matchAll(FM,R) @then @call(A) ~> A  @else @checkNextRule(FM,Rest)
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),@call(A:ActionName,$resolved(Ag:Args)) )) Rest:List)
+    => @if @matchAll(FM,R) @then @call(A,$resolved(Ag)) ~> A  @else @checkNextRule(FM,Rest)
 
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
@@ -570,7 +572,7 @@ rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListIt
     => @match(@readFMRef(FMR,MT),V,MT) =&&= @matchAll(R1,R2)
 
 syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
-rule @match(V1:Val,V2:Val,exact) => V1 == V2    //TODO: is this it?
+rule @match(V1:Val,V2:Val,exact) => V1 == V2    //TODO ISSUE: is this it?
 //TODO: rule @match(V:?,M:?,ternary)
 //TODO: rule @match(V:?,M:?,lmp)
 //TODO: rule @match(V:?,M:?,range)
@@ -589,10 +591,62 @@ rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
 
 
 //---------------actions----------------------------------
-syntax KItem ::= "@call" "(" ActionName ")"
+syntax Arg ::= Val
+syntax KItem ::= "@resolveArgs" "(" Args "," ResolvedArgs ")"
+rule @resolveArgs(.Args,R:ResolvedArgs) => R
+rule @resolveArgs(FR:FieldRef , Rest:Args,$resolved(R:Args)) => @resolveArgs(Rest,$resolved(FR , R)) //we do now evaluate fieldref
+rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R) //a workaround
+rule V:Val ~> @resolveArgs(Rest:Args,$resolved(R:Args)) => @resolveArgs(Rest,$resolved(V , R))
+rule <k> @resolveArgs(X:Id , Rest:Args,$resolved(R:Args)) =>
+            #if X in_keys(M) #then
+                @resolveArgs(Rest,$resolved((Map:lookup(M,X)) , R))
+            #else
+                @resolveArgs(Rest,$resolved(X , R))
+            #fi ... </k>
+     <frameStack> ListItem(M:Map) _:List </frameStack>
+     //used Id because ParamName and HeaderRef are ambiguous in  the syntax
 
-//TODO temporary
-rule @call( _ ) => .
+
+
+syntax ResolvedArgs ::= "$resolved" "(" Args ")"
+syntax KResult ::= ResolvedArgs
+syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
+
+//compund actions
+rule <k> @call( A:ActionName , $resolved(Ag:Args) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
+     <actions>
+        <action> <name> A </name> <params> P:ParamList </params> <body> B:ActionStatements </body> ... </action>
+        ...
+     </actions>
+
+
+syntax KItem ::= "@bindParams" "(" ParamList "," Args ")"
+rule @bindParams(.ParamList, .Args) => .
+rule <k> @bindParams((P:ParamName , PR:ParamList), (A:Arg , AR:Args)) => @bindParams(PR,AR) ... </k>
+     <frameStack> ListItem(M:Map => M [A <- P]) _:List  </frameStack>
+    //TODO: check action does not have same parameters
+
+
+syntax KItem ::= "@popstack" | "@pushstack"
+rule <k> @pushstack => . ...</k>
+     <frameStack>  (.List => ListItem(.Map))     </frameStack>
+rule <k> @pushstack => . ...</k>
+     <frameStack>  (. => ListItem(.Map)) _:List  </frameStack>
+rule <k> @popstack => . ...</k>
+     <frameStack>  ListItem(_:Map) => .  </frameStack>
+rule <k> @popstack => . ...</k>
+     <frameStack> (ListItem(_:Map) => .) _:List </frameStack>
+
+
+rule A:ActionStatement Rest:ActionStatements => A ~> Rest   [structural]
+rule .ActionStatements => .                                 [structural]
+
+
+rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.Args)))
+
+
+//primitive actions
+//TODO
 
 
 //-------------------deparsing------------------------------
