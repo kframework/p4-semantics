@@ -309,7 +309,7 @@ rule <k> @init => . ... </k>
             <rules> .List => ListItem(
                                 $rule(
                                     $ctr(ListItem( @val ( 279611477 , 48 , false )))
-                                , @call(String2Id("meter_pkt") , $resolved( @val(10,0,false) , .Args ) ))
+                                , @call(String2Id("meter_pkt") , $resolved( ListItem(@val(10,0,false)) ) ))
                             )</rules>
         </table>
         ...
@@ -563,7 +563,7 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 syntax ActionName ::= "@miss" [token]
 rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
-rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),@call(A:ActionName,$resolved(Ag:Args)) )) Rest:List)
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),@call(A:ActionName,$resolved(Ag)) )) Rest:List)
     => @if @matchAll(FM,R) @then @call(A,$resolved(Ag)) ~> A  @else @checkNextRule(FM,Rest)
 
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
@@ -594,46 +594,37 @@ rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
 syntax Arg ::= Val
 syntax KItem ::= "@resolveArgs" "(" Args "," ResolvedArgs ")"
 rule @resolveArgs(.Args,R:ResolvedArgs) => R
-rule @resolveArgs(FR:FieldRef , Rest:Args,$resolved(R:Args)) => @resolveArgs(Rest,$resolved(FR , R)) //we do now evaluate fieldref
+rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do now evaluate fieldref
 rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R) //a workaround
-rule V:Val ~> @resolveArgs(Rest:Args,$resolved(R:Args)) => @resolveArgs(Rest,$resolved(V , R))
-rule <k> @resolveArgs(X:Id , Rest:Args,$resolved(R:Args)) =>
-            #if X in_keys(M) #then
-                @resolveArgs(Rest,$resolved((Map:lookup(M,X)) , R))
-            #else
-                @resolveArgs(Rest,$resolved(X , R))
-            #fi ... </k>
-     <frameStack> ListItem(M:Map) _:List </frameStack>
-     //used Id because ParamName and HeaderRef are ambiguous in  the syntax
+rule (V:Val => .) ~> @resolveArgs(Rest:Args,$resolved(_:List (.List => ListItem(V))))
+rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>
+     <frameStack> ListItem((X |-> V:Arg) _:Map) _:List </frameStack>
+rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(X)))) ... </k>
+     <frameStack> ListItem(M:Map) _:List </frameStack> when notBool (X in keys(M))
 
 
-
-syntax ResolvedArgs ::= "$resolved" "(" Args ")"
+syntax ResolvedArgs ::= "$resolved" "(" List ")"
 syntax KResult ::= ResolvedArgs
 syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
 
 //compund actions
-rule <k> @call( A:ActionName , $resolved(Ag:Args) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
+rule <k> @call( A:ActionName , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
      <actions>
         <action> <name> A </name> <params> P:ParamList </params> <body> B:ActionStatements </body> ... </action>
         ...
      </actions>
 
 
-syntax KItem ::= "@bindParams" "(" ParamList "," Args ")"
-rule @bindParams(.ParamList, .Args) => .
-rule <k> @bindParams((P:ParamName , PR:ParamList), (A:Arg , AR:Args)) => @bindParams(PR,AR) ... </k>
-     <frameStack> ListItem(M:Map => M [A <- P]) _:List  </frameStack>
-    //TODO: check action does not have same parameters
+syntax KItem ::= "@bindParams" "(" ParamList "," List ")"
+rule @bindParams(.ParamList, .List) => .
+rule <k> @bindParams((P:ParamName , PR:ParamList), ListItem(A:Arg) AR:List) => @bindParams(PR,AR) ... </k>
+     <frameStack> ListItem(M:Map => M [P <- A]) _:List  </frameStack>
+    //TODO (CHECK): check action does not have same parameters
 
 
 syntax KItem ::= "@popstack" | "@pushstack"
 rule <k> @pushstack => . ...</k>
-     <frameStack>  (.List => ListItem(.Map))     </frameStack>
-rule <k> @pushstack => . ...</k>
-     <frameStack>  (. => ListItem(.Map)) _:List  </frameStack>
-rule <k> @popstack => . ...</k>
-     <frameStack>  ListItem(_:Map) => .  </frameStack>
+     <frameStack>  (.List => ListItem(.Map)) _:List  </frameStack>
 rule <k> @popstack => . ...</k>
      <frameStack> (ListItem(_:Map) => .) _:List </frameStack>
 
@@ -642,7 +633,7 @@ rule A:ActionStatement Rest:ActionStatements => A ~> Rest   [structural]
 rule .ActionStatements => .                                 [structural]
 
 
-rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.Args)))
+rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 
 
 //primitive actions
