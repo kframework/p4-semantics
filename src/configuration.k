@@ -221,7 +221,7 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
 //rule <k> @parseOrder(.K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
 //     <start> .K => H </start>
 //rule <k> @parseOrder(P:HeaderExtractRef, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
-//     <order> (. => P |-> SetItem(H)) M:Map </order> when notBool P in_keys(M)
+//     <order> (. => P |-> SetItem(H)) M:Map </order> when notBool P in keys(M)
 //rule <k> @parseOrder(P:HeaderExtractRef, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
 //     <order> (P |-> ((. => SetItem(H)) S:Set)) M:Map </order>
 ////TODO: more compact if possible
@@ -299,8 +299,11 @@ syntax Criteria ::= "$ctr" "(" List ")"
 
 //temporary
 syntax Id ::= "egress_meter" [token]
+
 rule <k> @init => . ... </k>
-     <packet> . => "0010000101010101000100001010101010001000010101010100010101010100010010000101010101000100001010101010001000010100100001010101010001000010101010100010000101001000010101010100010000101010101000100001010010000101010101000100001010101010001000010100100001010101010001000010101010100010000101001000010101010100010000101010101000100001010000101010101000101010101000100001010101010001010101010001000010101010100010000101010101000100001010101010" </packet>
+                    //00:00:00:00:00:01 00:00:00:00:00:02     .... 10.0.0.1 10.0.0.2
+                    //0000 0000 0001 0000 0000 0002 0800 4500 0044 ad0b 0000 4011 7272 0a00 0001 0a00 0002
+     <packet> . => "00000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000001000001000000000000100010100000000000000000100010010101101000010110000000000000000010000000001000101110010011100100000101000000000000000000000000100001010000000000000000000000010" </packet>
      <tables>
         ...
         <table>
@@ -401,7 +404,7 @@ rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
 //TODO: array
-rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@String2FieldVal(substrString(Packet,I,Val2Int(W)),@getAttr(F,Fs))) ... </k>
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@String2FieldVal(substrString(Packet,I,I +Int Val2Int(W)),@getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
         ...
