@@ -720,11 +720,11 @@ rule <k> @packetOut(S:String) => . ... </k>
 
 syntax KItem ::= "@FieldVal2String" "(" K /* Val */ "," FieldDec ")" [strict(1)]
 rule @FieldVal2String(@val(I,_,_), _:FieldName : W:UnsignedValue ( .FieldMods );)  =>
-    @addPadding(Base2String(I,2),USgnVal2Int(W),"0")
+    @addPadding(Base2String(I,2),USgnVal2Int(W) -Int lengthString(Base2String(I,2)) ,"0")
 //TODO: complete this
 
 syntax String ::= "@addPadding" "(" String "," Int "," String ")" [function] /* String , width , char */
-rule @addPadding(S,0,C) => S
+rule @addPadding(S,0,_) => S
 rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
 
 
