@@ -164,7 +164,9 @@ What is const_expr? Is it const_value?
   How about 6 - 5, 3 bits or 4 bits? (or 1 bit?)
   How about 5 - 6 ?
 
-
+- page 34 Table 5
+  for FLD, the type desciption says "A field reference of form header_instance.field_name which
+  refers to the Parsed Representation". Does this mean it can not be of the form for example h[0].f?
 
 
 

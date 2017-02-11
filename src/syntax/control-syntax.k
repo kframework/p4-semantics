@@ -68,7 +68,7 @@ imports PARSER-SYNTAX //for ControlFunctionName
           //Exp BinOp Exp [strict(1,3)]//,klabel('ExpBinOp)]
           //| UnOp Exp      [strict(2)]//,klabel('BExpUnOp)]
           "-" Exp       [strict,right,klabel(MinusExp)]
-        | "~" Exp       [strict,right]
+        | "~" Exp       [strict,right,klabel(NotExp)]
         >
           Exp "*" Exp   [strict,left]
         | Exp "/" Exp   [strict,left]

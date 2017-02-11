@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
 header_type ethernet_t {
     fields {
         dstAddr : 48;
@@ -42,11 +43,7 @@ parser start {
     return parse_ethernet;
 }
 
-table egress_meter {
-    actions{
-        no_op;
-    }
-}
+
 
 header ethernet_t ethernet;
 
@@ -59,7 +56,6 @@ parser parse_ethernet {
 }
 
 header ipv4_t ipv4;
-
 /*
 field_list ipv4_checksum_list {
         ipv4.version;
@@ -88,7 +84,6 @@ calculated_field ipv4.hdrChecksum {
     update ipv4_checksum;
 }
 */
-
 parser parse_ipv4 {
     extract(ipv4);
     return ingress;
@@ -136,9 +131,7 @@ table bd {
 
 action fib_hit_nexthop(nexthop_index) {
     modify_field(ingress_metadata.nexthop_index, nexthop_index);
-    modify_field(ingress_metadata.nexthop_index, 10);
     subtract_from_field(ipv4.ttl, 1);
-    set_vrf(1);
 }
 
 table ipv4_fib {

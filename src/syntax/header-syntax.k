@@ -9,7 +9,6 @@ imports VALUE-SYNTAX
     syntax HeaderTypeName ::= Id
     syntax InstanceName ::= Id
     syntax FieldName ::= Id
-    syntax HeaderInstanceName ::= Id
     syntax FieldListName ::= Id
 
 // 2.1 HeaderTypeDeclarations
@@ -86,8 +85,8 @@ imports VALUE-SYNTAX
 
 // 2.3 HeaderandFieldReferences
     syntax HeaderRef ::=
-              HeaderInstanceName
-            | HeaderInstanceName "[" Index "]" [strict(2)]
+              InstanceName
+            | InstanceName "[" Index "]" [strict(2)]
 
     syntax Index ::= ConstValue | "last"
 

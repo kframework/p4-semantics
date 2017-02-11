@@ -297,9 +297,12 @@ rule  @exec => @init ~> @parse&ingress ~> @egress
 syntax Rule ::= "$rule" "(" Criteria "," ActionCall ")"
 syntax Criteria ::= "$ctr" "(" List ")"
 
-//temporary
-syntax Id ::= "egress_meter" [token]
+
+
 syntax Id ::= "%standard_metadata_t" [token]
+
+syntax Id ::=   "port_mapping" [token] //note: String2Id("port_mapping") does not match, because String2Id is a function
+              | "bd"           [token]
 rule <k> @init => . ... </k>
                     //00:00:00:00:00:01 00:00:00:00:00:02     .... 10.0.0.1 10.0.0.2
                     //0000 0000 0001 0000 0000 0002 0800 4500 0044 ad0b 0000 4011 7272 0a00 0001 0a00 0002
@@ -325,26 +328,71 @@ rule <k> @init => . ... </k>
                     <typeName>  %standard_metadata_t </typeName>
                     <name> String2Id("standard_metadata") </name>
                     <fieldVals>
-                        String2Id("ingress_port") |-> @val(1,0,false)
-                        String2Id("egress_spec") |-> @val(0,0,true)
+                        String2Id("ingress_port") |-> @val(1,32,false)
+                        String2Id("egress_spec") |-> @val(0,32,true)
                     </fieldVals>
                     ...
                  </instance>
         )
         ...
      </instances>
-     //TODO: maybe instead of doing this it would be better to add it as a part of the program
+     //TODO: maybe instead of doing above, it would be better to add it as a part of the program
      <tables>
         ...
-
+        //temporary
+//        <table>
+//            ...
+//            <name> String2Id("egress_meter") </name>
+//            <rules> .List => ListItem(
+//                                $rule(
+//                                    $ctr(ListItem( @val ( 279611477 , 48 , false )))
+//                                , @call(String2Id("meter_pkt") , $resolved( ListItem(@val(10,0,false)) ) ))
+//                             )
+//            </rules>
+//        </table>
         <table>
             ...
-            <name> egress_meter </name>
-            <rules> .List => ListItem(
-                                $rule(
-                                    $ctr(ListItem( @val ( 279611477 , 48 , false )))
-                                , @call(String2Id("meter_pkt") , $resolved( ListItem(@val(10,0,false)) ) ))
-                            )</rules>
+            <name> port_mapping </name>
+            <rules> .List   => (
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 1 , 0 , false )))
+                                    , @call(String2Id("set_bd") , $resolved( ListItem(@val(10,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 2 , 0 , false )))
+                                    , @call(String2Id("set_bd") , $resolved( ListItem(@val(10,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 3 , 0 , false )))
+                                    , @call(String2Id("set_bd") , $resolved( ListItem(@val(20,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 4 , 0 , false )))
+                                    , @call(String2Id("set_bd") , $resolved( ListItem(@val(20,0,false)) ) ))
+                                 )
+                               )
+            </rules>
+        </table>
+        <table>
+            ...
+            <name> bd </name>
+            <rules> .List => (
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 10 , 0 , false )))
+                                    , @call(String2Id("set_vrf") , $resolved( ListItem(@val(30,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 10 , 0 , false )))
+                                    , @call(String2Id("set_vrf") , $resolved( ListItem(@val(30,0,false)) ) ))
+                                 )
+                             )
+            </rules>
         </table>
         ...
      </tables>
@@ -386,7 +434,7 @@ rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseR
 
 syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
 rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
-    => @if @concat(Vs) ==== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest)  //TODO: change this to == in Val when we have complete semantics for it
+    => @if @concat(Vs) %== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest)  //TODO: change this to == in Val when we have complete semantics for it
 
 syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
 rule @VMstoVals (.ValueOrMaskeds) => @nil
@@ -406,7 +454,7 @@ syntax KItem /* Vals */ ::= "@readFDRefs" "(" SelectExp ")"
 rule @readFDRefs(.FieldOrDataRefs) => @nil
 rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@readField(F),@readFDRefs(Rest))
 rule <k> @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons(@readField(H.FN),@readFDRefs(Rest)) ... </k>
-        <lastExt> H:HeaderInstanceName </lastExt>
+        <lastExt> H:InstanceName </lastExt>
 //TODO rule @readVals(current())
 
 
@@ -573,6 +621,7 @@ rule @val(V1,_,_) >> @val(V2,_,_) => @val(V1 >>Int V2,0,true)
 rule @val(V1,_,_) & @val(V2,_,_) => @val(V1 &Int V2,0,true)
 rule @val(V1,_,_) | @val(V2,_,_) => @val(V1 |Int V2,0,true)
 rule @val(V1,_,_) ^ @val(V2,_,_) => @val(V1 ^Int V2,0,true)
+rule NotExp(@val(V2,_,_)) => @val(~Int V2,0,true)
 // TODO ISSUE: the semantics of none of these operators is exactly
 // defined specially when it comes to width, so leaving it like this
 // for now.
@@ -581,7 +630,7 @@ rule @val(V1,_,_) ^ @val(V2,_,_) => @val(V1 ^Int V2,0,true)
 //rule MinusExp(@val(V:Int,W,_)) =>  @val(0 -Int V,W +Int 1,true) when W >Int 0
 //TODO: unify it with @negative
 
-rule BExpValid( H:HeaderInstanceName )   => @isValid(H)
+rule BExpValid( H:InstanceName )   => @isValid(H)
 
 rule B1:Bool or B2:Bool => B1 orBool B2
 rule B1:Bool and B2:Bool => B1 andBool B2
@@ -603,7 +652,7 @@ rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),@call(A:ActionNa
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
 rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListItem(V:K) R2:List)
-    => @match(@readFMRef(FMR,MT),V,MT) =&&= @matchAll(R1,R2)
+    => @match(@readFMRef(FMR,MT),V,MT) %&& @matchAll(R1,R2)
 
 syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
 rule @match(V1:Val,V2:Val,exact) => V1 == V2    //TODO ISSUE: is this it?
@@ -641,7 +690,7 @@ syntax ResolvedArgs ::= "$resolved" "(" List ")"
 syntax KResult ::= ResolvedArgs
 syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
 
-//compund actions
+//compound actions
 rule <k> @call( A:ActionName , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
      <actions>
         <action> <name> A </name> <params> P:ParamList </params> <body> B:ActionStatements </body> ... </action>
@@ -660,7 +709,7 @@ syntax KItem ::= "@popstack" | "@pushstack"
 rule <k> @pushstack => . ...</k>
      <frameStack>  (.List => ListItem(.Map)) _:List  </frameStack>
 rule <k> @popstack => . ...</k>
-     <frameStack> (ListItem(_:Map) => .) _:List </frameStack>
+     <frameStack> (ListItem(_:Map) => .List) _:List </frameStack>
 
 
 rule A:ActionStatement Rest:ActionStatements => A ~> Rest   [structural]
@@ -671,7 +720,28 @@ rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 
 
 //primitive actions
-//TODO
+syntax Id ::= "modify_field" [token]
+rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:FieldRef) Rest:List)) =>
+            @if @isValid(S) @then
+                @readField(S) ~> @call(modify_field,$resolved(ListItem(D) ListItem(S) Rest))
+            @else
+                .
+rule (V:Val => .) ~> @call(modify_field , $resolved(ListItem(_) ListItem(_:FieldRef => V) _:List))
+rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val) ListItem(M:Val))) =>
+           @if @isValid(I.F) @then
+                @writeFieldAdjusted(I,F, (@readField(I.F) %& (~ M)) %| (S %& M))
+           @else
+                .
+rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val))) =>
+           @if @isValid(I.F) @then
+                @writeFieldAdjusted(I,F, S)
+           @else
+                .
+//TODO: implement the rest of the primitive functions
+
+
+
+
 
 
 //-------------------deparsing------------------------------
@@ -730,11 +800,11 @@ rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
 
 
 //----------------header and field ref--------------------
-//syntax HRef ::= "@href" "(" HeaderInstanceName ")"
+//syntax HRef ::= "@href" "(" InstanceName ")"
 //syntax FieldRef ::= HRef "." FieldName
 //syntax KResult ::= HRef
 //
-//rule HI:HeaderInstanceName => @href(HI)
+//rule HI:InstanceName => @href(HI)
 //TODO: support array
 //TODO:maybe @href is not needed, instance name is enough
 
@@ -770,19 +840,19 @@ rule @concat(@cons(V:Val,@nil)) => V
 //TODO:temporary, maybe we want to resolve the referece to header first
 //If not, complete it is for array
 syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
-rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
+rule <k> @readField(H:InstanceName . F:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> true </valid> <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
       </instances>
 
 //TODO: same as above
 syntax KItem /* Bool */ ::= "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
-rule <k> @isValid(H:HeaderInstanceName . _:FieldName) => V ... </k>
+rule <k> @isValid(H:InstanceName . _:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
 
-rule <k> @isValid(H:HeaderInstanceName) => V ... </k>
+rule <k> @isValid(H:InstanceName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
@@ -793,11 +863,16 @@ syntax KItem /* Val */ ::= "@applyMask" "(" K /* Val */ "," K /* Val */ ")" [str
 rule @applyMask(V1:Val,V2:Val) => V1 & V2
 //TODO ISSUE: is this it?
 
-syntax KItem ::= K "====" K [seqstrict]
-rule V1 ==== V2 => V1 == V2
+syntax KItem ::=   K "%==" K [seqstrict]
+                 | K "%&&" K [seqstrict]
+                 | K "%&"  K [seqstrict]
+		 | K "%|"  K [seqstrict]
 
-syntax KItem ::= K "=&&=" K [seqstrict]
-rule B1:Bool =&&= B2:Bool => B1 andBool B2
+rule V1:Val %== V2:Val => V1 == V2
+rule V1:Val %& V2:Val => V1 & V2
+rule V1:Val %& V2:Val => V1 | V2
+rule B1:Bool %&& B2:Bool => B1 andBool B2
+
 
 
 //------------------const value--------------------------
