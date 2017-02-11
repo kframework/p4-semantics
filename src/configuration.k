@@ -5,7 +5,6 @@ require "syntax/p4-syntax.k"
 module CONFIGURATION
 imports P4-COMMON
 
-
 syntax KItem ::= "@exec"
 
 configuration
@@ -303,10 +302,11 @@ syntax Id ::= "%standard_metadata_t" [token]
 
 syntax Id ::=   "port_mapping" [token] //note: String2Id("port_mapping") does not match, because String2Id is a function
               | "bd"           [token]
+	      | "ipv4_fib"     [token]
 rule <k> @init => . ... </k>
-                    //00:00:00:00:00:01 00:00:00:00:00:02     .... 10.0.0.1 10.0.0.2
-                    //0000 0000 0001 0000 0000 0002 0800 4500 0044 ad0b 0000 4011 7272 0a00 0001 0a00 0002
-     <packet> . => "00000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000001000001000000000000100010100000000000000000100010010101101000010110000000000000000010000000001000101110010011100100000101000000000000000000000000100001010000000000000000000000010" </packet>
+                    //00:00:00:00:00:01 00:00:00:00:00:00     .... 10.0.0.1 10.0.0.0
+                    //0000 0000 0001 0000 0000 0000 0800 4500 0044 ad0b 0000 4011 7272 0a00 0001 0a00 0000
+     <packet> . => "00000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000001000000000000100010100000000000000000100010010101101000010110000000000000000010000000001000101110010011100100000101000000000000000000000000100001010000000000000000000000000" </packet>
      <headers>
                  (.Bag => <header>
                              <name> %standard_metadata_t </name>
@@ -390,6 +390,25 @@ rule <k> @init => . ... </k>
                                     $rule(
                                         $ctr(ListItem(@val ( 10 , 0 , false )))
                                     , @call(String2Id("set_vrf") , $resolved( ListItem(@val(30,0,false)) ) ))
+                                 )
+                             )
+            </rules>
+        </table>
+        <table>
+            ...
+            <name> ipv4_fib </name>
+            <rules> .List => (
+                                 ListItem(
+                                    $rule(
+                                                                                               //192.168.0.0
+                                        $ctr(ListItem(@val ( 30 , 0 , false )) ListItem(@val ( 3232235520 , 0 , false )))
+                                    , @call(String2Id("fib_hit_nexthop") , $resolved( ListItem(@val(1,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                                                                               //10.0.0.0
+                                        $ctr(ListItem(@val ( 30 , 0 , false )) ListItem(@val ( 167772160 , 0 , false )))
+                                    , @call(String2Id("fib_hit_nexthop") , $resolved( ListItem(@val(3,0,false)) ) ))
                                  )
                              )
             </rules>
@@ -720,13 +739,14 @@ rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 
 
 //primitive actions
+//replace multiple rules with check for KLabel (i.e K REFLECTION)
 syntax Id ::= "modify_field" [token]
 rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:FieldRef) Rest:List)) =>
             @if @isValid(S) @then
                 @readField(S) ~> @call(modify_field,$resolved(ListItem(D) ListItem(S) Rest))
             @else
                 .
-rule (V:Val => .) ~> @call(modify_field , $resolved(ListItem(_) ListItem(_:FieldRef => V) _:List))
+rule (V:Val => .) ~> @call(modify_field , $resolved(ListItem(_) ListItem(_ => V) _:List))
 rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val) ListItem(M:Val))) =>
            @if @isValid(I.F) @then
                 @writeFieldAdjusted(I,F, (@readField(I.F) %& (~ M)) %| (S %& M))
@@ -737,8 +757,28 @@ rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListIt
                 @writeFieldAdjusted(I,F, S)
            @else
                 .
-//TODO: implement the rest of the primitive functions
 
+syntax Id ::= "subtract_from_field" [token]
+rule @call (subtract_from_field, $resolved(ListItem(D:FieldRef) ListItem(V:K))) =>
+          @call (subtract, $resolved(ListItem(D) ListItem(D) ListItem(V))) 
+
+
+syntax Id ::= "subtract" [token]
+rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:FieldRef) ListItem(V2))) =>
+         @if @isValid(V1) @then
+		@readField(V1) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
+	 @else
+		.
+rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_ => V) _:List))
+rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:FieldRef))) =>
+         @if @isValid(V2) @then
+                @readField(V2) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
+         @else
+                .
+rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_) ListItem(_ => V)))
+rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val)))
+	=> V1 - V2 ~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
+//TODO: implement the rest of the primitive functions
 
 
 
