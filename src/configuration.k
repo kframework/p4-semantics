@@ -299,13 +299,44 @@ syntax Criteria ::= "$ctr" "(" List ")"
 
 //temporary
 syntax Id ::= "egress_meter" [token]
-
+syntax Id ::= "%standard_metadata_t" [token]
 rule <k> @init => . ... </k>
                     //00:00:00:00:00:01 00:00:00:00:00:02     .... 10.0.0.1 10.0.0.2
                     //0000 0000 0001 0000 0000 0002 0800 4500 0044 ad0b 0000 4011 7272 0a00 0001 0a00 0002
      <packet> . => "00000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000001000001000000000000100010100000000000000000100010010101101000010110000000000000000010000000001000101110010011100100000101000000000000000000000000100001010000000000000000000000010" </packet>
+     <headers>
+                 (.Bag => <header>
+                             <name> %standard_metadata_t </name>
+                             <opts> .HeaderOptionals </opts>
+                             <fields>
+                                String2Id("ingress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
+                                String2Id("egress_spec") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
+                                 .FieldDecs
+                             </fields>
+                             ...
+                         </header>
+                 )
+                 ...
+     </headers>
+     <instances>
+        (.Bag => <instance>
+                    <valid> true </valid>
+                    <metadata> true </metadata>
+                    <typeName>  %standard_metadata_t </typeName>
+                    <name> String2Id("standard_metadata") </name>
+                    <fieldVals>
+                        String2Id("ingress_port") |-> @val(1,0,false)
+                        String2Id("egress_spec") |-> @val(0,0,true)
+                    </fieldVals>
+                    ...
+                 </instance>
+        )
+        ...
+     </instances>
+     //TODO: maybe instead of doing this it would be better to add it as a part of the program
      <tables>
         ...
+
         <table>
             ...
             <name> egress_meter </name>
@@ -457,7 +488,7 @@ rule @String2FieldVal( S:String , _:FieldName : Wd:UnsignedValue ( _:FieldMods )
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
-rule { B:ControlStatement } => B                            [structural]
+rule { B:ControlStatements } => B                            [structural]
 
 //apply
 rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
@@ -550,7 +581,7 @@ rule @val(V1,_,_) ^ @val(V2,_,_) => @val(V1 ^Int V2,0,true)
 //rule MinusExp(@val(V:Int,W,_)) =>  @val(0 -Int V,W +Int 1,true) when W >Int 0
 //TODO: unify it with @negative
 
-//rule
+rule BExpValid( H:HeaderInstanceName )   => @isValid(H)
 
 rule B1:Bool or B2:Bool => B1 orBool B2
 rule B1:Bool and B2:Bool => B1 andBool B2
@@ -744,6 +775,7 @@ rule <k> @readField(H:HeaderInstanceName . F:FieldName) => V ... </k>
          <instance> <name> H </name> <valid> true </valid> <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
       </instances>
 
+//TODO: same as above
 syntax KItem /* Bool */ ::= "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
 rule <k> @isValid(H:HeaderInstanceName . _:FieldName) => V ... </k>
       <instances>

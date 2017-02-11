@@ -57,7 +57,7 @@ imports PARSER-SYNTAX //for ControlFunctionName
                       BoolExpr "and" BoolExpr   [strict,left]
                     >
                       BoolExpr "or" BoolExpr    [strict,left]
-                    |  "valid" "(" HeaderRef ")"         [klabel('BExpValid)]
+                    |  "valid" "(" HeaderRef ")"         [klabel(BExpValid)]
                     //| BoolExpr BoolOp BoolExpr          [strict(1,3)]//,klabel('BExpBinBoolOp)]
                     //| "not" BoolExpr                    [strict]//,klabel('BExpBinNot)]
                     | "(" BoolExpr ")"                  [braket]//, klabel('BExpBinNot)]
