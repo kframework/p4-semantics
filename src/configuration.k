@@ -63,9 +63,11 @@ configuration
         </control>
     </controlFlows>
 
-   <frameStack>
+    <cfset> .Set </cfset> //TODO: temporary fix for K issue #2279
+
+    <frameStack>
         .List
-   </frameStack>
+    </frameStack>
 
 
     <packet>
@@ -202,8 +204,8 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
                <control>
                     <name> Name </name> <body> Body </body>
                </control>
-         ) ... </controlFlows>
-
+         ) ...  </controlFlows>
+	<cfset> (.Set => SetItem(Name)) _ </cfset> //TODO: //TODO: temporary fix for K issue #2279
 
 //--------------------deparse order--------------------------
 
@@ -303,6 +305,8 @@ syntax Id ::= "%standard_metadata_t" [token]
 syntax Id ::=   "port_mapping" [token] //note: String2Id("port_mapping") does not match, because String2Id is a function
               | "bd"           [token]
 	      | "ipv4_fib"     [token]
+	      | "nexthop"      [token]
+	      | "rewrite_mac"  [token]
 rule <k> @init => . ... </k>
                     //00:00:00:00:00:01 00:00:00:00:00:00     .... 10.0.0.1 10.0.0.0
                     //0000 0000 0001 0000 0000 0000 0800 4500 0044 ad0b 0000 4011 7272 0a00 0001 0a00 0000
@@ -409,6 +413,65 @@ rule <k> @init => . ... </k>
                                                                                                //10.0.0.0
                                         $ctr(ListItem(@val ( 30 , 0 , false )) ListItem(@val ( 167772160 , 0 , false )))
                                     , @call(String2Id("fib_hit_nexthop") , $resolved( ListItem(@val(3,0,false)) ) ))
+                                 )
+                             )
+            </rules>
+        </table>
+        <table>
+            ...
+            <name> nexthop </name>
+            <rules> .List => (
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 1 , 0 , false )) )
+                                    , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(1,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 2 , 0 , false )) )
+                                    , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(2,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 3 , 0 , false )) )
+                                    , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(3,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 4 , 0 , false )) )
+                                    , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(4,0,false)) ) ))
+                                 )
+
+                             )
+            </rules>
+        </table>
+        <table>
+            ...
+            <name> rewrite_mac </name>
+            <rules> .List => (
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 1 , 0 , false )) )
+                                                                                          //01:01:01:01:01:01                   //00:01:01:01:01:01
+                                    , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1103823438081,0,false)) ListItem(@val(4311810305,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 2 , 0 , false )) )
+                                                                                          //01:02:02:02:02:02                   //00:02:02:02:02:02
+                                    , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1108135248386,0,false)) ListItem(@val(8623620610,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 3 , 0 , false )) )
+                                                                                          //01:03:03:03:03:03                   //00:03:03:03:03:03
+                                    , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1112447058691,0,false)) ListItem(@val(12935430915,0,false)) ) ))
+                                 )
+                                 ListItem(
+                                    $rule(
+                                        $ctr(ListItem(@val ( 4 , 0 , false )) )
+                                                                                          //01:04:04:04:04:04                   //00:04:04:04:04:04
+                                    , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1116758868996,0,false)) ListItem(@val(17247241220,0,false)) ) ))
                                  )
                              )
             </rules>
@@ -696,13 +759,15 @@ rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
 syntax Arg ::= Val
 syntax KItem ::= "@resolveArgs" "(" Args "," ResolvedArgs ")"
 rule @resolveArgs(.Args,R:ResolvedArgs) => R
-rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do now evaluate fieldref
-rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R) //a workaround
+rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do not evaluate fieldref
+rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R)  //a workaround 
 rule (V:Val => .) ~> @resolveArgs(Rest:Args,$resolved(_:List (.List => ListItem(V))))
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>
      <frameStack> ListItem((X |-> V:Arg) _:Map) _:List </frameStack>
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(X)))) ... </k>
+     <instances> <instance> <name> X </name> ... </instance> ... </instances>
      <frameStack> ListItem(M:Map) _:List </frameStack> when notBool (X in keys(M))
+     //TODO: IMPORTANT: it seems like a bug in K, X:Id matches FieldValues as well! so I used <intances> ... to make sure X in this case is a headerref
 
 
 syntax ResolvedArgs ::= "$resolved" "(" List ")"
@@ -775,7 +840,7 @@ rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V
                 @readField(V2) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
          @else
                 .
-rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_) ListItem(_ => V)))
+rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V)))
 rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val)))
 	=> V1 - V2 ~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
 //TODO: implement the rest of the primitive functions
@@ -785,9 +850,19 @@ rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V
 
 
 //-------------------deparsing------------------------------
-
-rule <k> @egress => @deparseNext(L) ... </k>
+syntax Id ::= "egress" [token]
+rule <k> @egress => (#if @egressDefined(/*<controlFlows>*/ S /*</controlFlows>*/) #then egress (); #else . #fi) ~> @deparseNext(L) ... </k>
      <dporder> L:List </dporder>
+//     <controlFlows> S </controlFlows>
+     <cfset> S </cfset> //TODO: temporary fix for K issue #2279
+
+syntax Bool ::= "@egressDefined" "(" Set ")" [function]
+rule @egressDefined(S) => (egress in S)
+
+//syntax Bool ::= "@egressDefined" "(" K ")" [function]
+//rule @egressDefined(<controlFlows> <control> <name> F:ControlFunctionName </name> ... </control> Rest </controlFlows>) =>
+//	#if F ==K egress #then true #else @egressDefined(<controlFlows> Rest </controlFlows> #fi
+//rule @egressDefined(<controlFlows> .Bag </controlFlows>) => false
 
 syntax KItem ::= "@deparseNext" "(" List ")"
 rule @deparseNext(ListItem(H:HeaderExtractRef) Rest:List) => @deparseHeader(H) ~> @deparseNext(Rest) [structural]
