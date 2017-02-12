@@ -857,7 +857,7 @@ rule <k> @egress => (#if @egressDefined(/*<controlFlows>*/ S /*</controlFlows>*/
      <cfset> S </cfset> //TODO: temporary fix for K issue #2279
 
 syntax Bool ::= "@egressDefined" "(" Set ")" [function]
-rule @egressDefined(S) => (egress in S)
+rule @egressDefined(S) => notBool notBool (egress in S) //workaround to get rid of ambiguities
 
 //syntax Bool ::= "@egressDefined" "(" K ")" [function]
 //rule @egressDefined(<controlFlows> <control> <name> F:ControlFunctionName </name> ... </control> Rest </controlFlows>) =>
