@@ -31,6 +31,7 @@ Get the latest commit from master branch and run:
 
 Where `path/to/input/file.k` is the input file containing the hard coded table entries and input packet.
 See (`test/semantics/basic_routing/input1.k`) for an example of such input. 
+If you do not want to add any inputs use `--no-input` instead of the input file.
 
 Example:
 ```
@@ -61,8 +62,11 @@ Example:
 The program will run until it is finished processing the input packet or it reaches a point where the semantics is not defined yet and will get stuck there.
 In either case, the configuration of the program in its last state will be printed.
 If the program is finished processing the input packet (when you see `<k> . </k>` in the configuration), the output packet can be seen in the `<packetout>` cell.
-If it is hard to read the configuration the way it is printed, you can put the output in an `.xml` file and open it in a browser. 
-If you want to see the computation step by step, you can run the program in debug (`--debugger`) mode and use `step` to step and `peak` to see the configuration in each step.
+Instead of looking at the output packet which is a binary string and is hard to read, you can look at the final value of the fields (`<fieldVals>`) in the instances (`<instance>`).
+Each value is of the form `@val(I,W,S)` where `I` is the decimal value, `W` is its width, and `S` indicates whether the value signed (`true`) or unsigned (`false`).
+If it is hard to read the configuration the way it is printed, you can put the output in an `.xml` file and view it in a browser.
+ 
+If you want to see the computation step by step, you can run the program in the debug (`--debugger`) mode and use `step` to step and `peak` to see the configuration in each step.
 
 Example:
 
