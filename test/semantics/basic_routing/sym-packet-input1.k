@@ -38,7 +38,7 @@
                                  )
                                  ListItem(
                                     $rule(
-                                        $ctr(ListItem(@val ( 10 , 0 , false )))
+                                        $ctr(ListItem(@val ( 20 , 0 , false )))
                                     , @call(String2Id("set_vrf") , $resolved( ListItem(@val(30,0,false)) ) ))
                                  )
                              )
@@ -125,7 +125,8 @@
         ...
      </tables>
 
-     <packet> . => ?P:String </packet>
+     <packet> . => ?P:List </packet>
+     //<packet> . => ?P:String </packet>
 syntax Id ::=      "port_mapping" [token]
                  | "bd"           [token]
 	             | "ipv4_fib"     [token]
