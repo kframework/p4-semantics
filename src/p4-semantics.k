@@ -76,7 +76,7 @@ configuration
 
 
     <packetout>
-        ""
+        .List
     </packetout>
 
 
@@ -302,7 +302,7 @@ syntax Criteria ::= "$ctr" "(" List ")"
 
 syntax Id ::= "%standard_metadata_t" [token]
 
-
+syntax Val ::= "@undef"
 rule <k> @init => . ... </k>
      <headers>
                  (.Bag => <header>
@@ -326,7 +326,7 @@ rule <k> @init => . ... </k>
                     <name> String2Id("standard_metadata") </name>
                     <fieldVals>
                         String2Id("ingress_port") |-> @val(1,32,false)
-                        String2Id("egress_spec") |-> @val(0,32,true)
+                        String2Id("egress_spec") |-> @undef
                     </fieldVals>
                     ...
                  </instance>
@@ -425,7 +425,7 @@ rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
 //TODO: array
-rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@String2FieldVal(substrString(Packet,I,I +Int Val2Int(W)),@getAttr(F,Fs))) ... </k>
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
         ...
@@ -434,9 +434,12 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,
               <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
               ...
      </headers>
-     <packet> Packet </packet>
-     <index> I:Int => I +Int Val2Int(W) </index>
+     <packet> Packet:List </packet>
+     <index> I:Int => I +Int 1 </index>
 
+syntax Val ::= "@packetAt" "(" List ","  Int ")" [function]
+rule @packetAt(ListItem(X) _:List, 0) => X
+rule @packetAt(ListItem(_) Rest:List, I:Int) => @packetAt(Rest, I -Int 1) when I >Int 0
 
 
 syntax KItem ::= "@writeFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
@@ -470,9 +473,13 @@ rule @adjustVal( _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;, @val(I,Ws,Ss)
 //TODO: IMPORTANT: fix and complete this (also remember to support * )
 
 
-syntax KItem /* Val */ ::= "@String2FieldVal" "(" String "," FieldDec ")"
-rule @String2FieldVal( S:String , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
-    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
+//syntax KItem /* Val */ ::= "@String2FieldVal" "(" String "," FieldDec ")"
+//rule @String2FieldVal( S:String , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
+//    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
+syntax KItem /* Val */ ::= "@extractFieldValFromPacket" "(" Val "," FieldDec ")"
+rule @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
+    => @val(V,W,S)  when W ==Int USgnVal2Int(Wd)
+                                 //    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
 //TODO: IMPORTANT: fix and complete this (also remember to support * )
 
 //----------------control flow-------------------------
@@ -747,30 +754,35 @@ rule @deparseFields(_:InstanceName,.FieldDecs) => .        [structural]
 
 
 syntax KItem ::= "@deparseField" "(" InstanceName "," FieldName ")"
-rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(@FieldVal2String(V,@getAttr(F,Fs))) ...</k>
+rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(V /*@FieldVal2String(V,@getAttr(F,Fs))*/) ...</k>
          <instances>
              <instance> <name> I </name> <typeName> H:HeaderTypeName </typeName> <fieldVals> F |-> V:Val ...</fieldVals> ... </instance>
              ...
          </instances>
-         <headers>
-            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
-            ...
-         </headers>
+//         <headers>
+//            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+//            ...
+//         </headers>
 
 
-syntax KResult ::= String
-syntax KItem ::= "@packetOut" "(" K /* String */ ")" [strict]
-rule <k> @packetOut(S:String) => . ... </k>
-     <packetout> P:String => P +String S </packetout>
+//syntax KResult ::= String
+//syntax KItem ::= "@packetOut" "(" K /* String */ ")" [strict]
+//rule <k> @packetOut(S:String) => . ... </k>
+//     <packetout> P:String => P +String S </packetout>
+syntax KItem ::= "@packetOut" "(" K /* Val */ ")" [strict]
+rule <k> @packetOut(V:Val) => . ... </k>
+       <packetout> _:List (.List => ListItem(V)) </packetout>
 
-syntax KItem ::= "@FieldVal2String" "(" K /* Val */ "," FieldDec ")" [strict(1)]
-rule @FieldVal2String(@val(I,_,_), _:FieldName : W:UnsignedValue ( .FieldMods );)  =>
-    @addPadding(Base2String(I,2),USgnVal2Int(W) -Int lengthString(Base2String(I,2)) ,"0")
+
+
+//syntax KItem ::= "@FieldVal2String" "(" K /* Val */ "," FieldDec ")" [strict(1)]
+//rule @FieldVal2String(@val(I,_,_), _:FieldName : W:UnsignedValue ( .FieldMods );)  =>
+//    @addPadding(Base2String(I,2),USgnVal2Int(W) -Int lengthString(Base2String(I,2)) ,"0")
 //TODO: complete this
 
-syntax String ::= "@addPadding" "(" String "," Int "," String ")" [function] /* String , width , char */
-rule @addPadding(S,0,_) => S
-rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
+//syntax String ::= "@addPadding" "(" String "," Int "," String ")" [function] /* String , width , char */
+//rule @addPadding(S,0,_) => S
+//rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
 
 
 
@@ -801,8 +813,8 @@ rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replace
 
 syntax K ::= "@if" K /* Bool */ "@then" K "@else" K [strict(1)]
 syntax KResult ::= Bool
-rule @if true @then T:K @else F:K => T
-rule @if false @then T:K @else F:K => F
+rule @if true @then T:K @else F:K => T  [transition]
+rule @if false @then T:K @else F:K => F [transition]
 
 
 syntax Val ::= "@concat" "(" Vals ")" [function]
