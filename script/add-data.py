@@ -6,8 +6,8 @@ if len(sys.argv) < 2:
     data="//no input"
 else:
     data=open(sys.argv[1],'r').read()
-config=open('src/p4-semantics.k','r').read()
+config=open('src/initialization-t.k','r').read()
 config = config.replace("#include_data",data)
-open('src/configuration.k','w').write(config)
+open('src/initialization.k','w').write(config)
 
 

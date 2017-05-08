@@ -15,4 +15,4 @@ else
     fi
 fi
 python script/add-data.py $DATA
-kompile src/configuration.k --syntax-module P4-SYNTAX $@
+kompile src/p4-semantics.k --syntax-module P4-SYNTAX --main-module P4-SEMANTICS $@

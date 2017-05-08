@@ -125,8 +125,10 @@
         ...
      </tables>
 
-     <packet> . => ?P:List </packet>
+     <buffer> <in> .List => ListItem($packet(?P:List, 1)) </in> ... </buffer>
+     //<packet> . => ?P:List </packet>
      //<packet> . => ?P:String </packet>
+
 syntax Id ::=      "port_mapping" [token]
                  | "bd"           [token]
 	             | "ipv4_fib"     [token]

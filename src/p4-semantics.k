@@ -1,101 +1,11 @@
-require "syntax/p4-syntax.k"
+require "configuration.k"
+require "initialization.k"
 
 
-
-module CONFIGURATION
+module P4-SEMANTICS
 imports P4-COMMON
-
-syntax KItem ::= "@exec"
-
-configuration
-<T>
-    <k>  $PGM:P4Program ~> @parseOrder (start) ~> @exec  </k>
-
-
-    <headers>
-        <header multiplicity="*">
-            <name> .K </name>
-            <opts> .K </opts>
-            <fields> .K </fields>
-        </header>
-    </headers>
-
-    <instances>
-        <instance multiplicity="*">
-            <valid> .K </valid>
-            <metadata> .K </metadata>
-            <typeName> .K </typeName>
-            <name> .K </name>
-            <fieldVals> .Map </fieldVals>
-        </instance>
-    </instances>
-
-    <parserStates>
-        <state multiplicity="*">
-            <name> .K </name>
-            <body> .K </body>
-        </state>
-    </parserStates>
-
-
-    <actions>
-        <action multiplicity="*">
-            <name> .K </name>
-            <params> .K </params>
-            <body> .K </body>
-        </action>
-    </actions>
-
-    <tables>
-        <table multiplicity="*">
-            <name> .K </name>
-            <reads> .K </reads>
-            <acts> .K </acts>
-            <opts> .K </opts>
-            <rules> .List </rules>
-        </table>
-    </tables>
-
-    <controlFlows>
-        <control multiplicity="*">
-            <name> .K </name>
-            <body> .K </body>
-        </control>
-    </controlFlows>
-
-    <cfset> .Set </cfset> //TODO: temporary fix for K issue #2279
-
-    <frameStack>
-        .List
-    </frameStack>
-
-
-    <packet>
-        .K
-    </packet>
-
-
-    <packetout>
-        .List
-    </packetout>
-
-
-    <parser>
-        <graph>
-            <marked> .Set </marked>
-            <dporder> .List </dporder>
-        </graph>
-        <index> 0 </index>
-        <lastExt> .K </lastExt>
-    </parser>
-
-    //<input stream="stdin">
-    //    .List
-    //</input>
-
-
-</T>
-
+imports CONFIGURATION
+imports INITIALIZATION
 
 //macros
 
@@ -244,7 +154,7 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
 
 //TODO: assuming it is a dag
 //TODO: assuming no header stacks
-syntax KItem ::=  "@parseOrder" "(" K ")"
+
 rule <k> @parseOrder(C:ParserStateName) => @parseOrder(B) ... </k>
      <parserStates>
         <state> <name> C </name> <body> B:ParserFunctionBody   </body> </state>
@@ -280,68 +190,44 @@ rule <k> @push(H:HeaderExtractRef) => . ... </k>
 
 // --------------------init------------------------------------
 
-syntax KItem ::= "@init" | "@parse&ingress" | "@egress"
-
-rule  @exec => @init ~> @parse&ingress ~> @egress
+// moved to initialization.k
 
 
+// ------------------------exec-----------------------------
+rule  @exec => @nextPacket
 
-//syntax Input ::= "packet" "(" String ")"
-
-//syntax Packet ::= "packet" "(" Int ")"
-
-//syntax Rule ::= "$rule" "(" Criteria  ","  ActionName ")"
-//syntax Criteria ::= "$ctr" "(" Matchs ")"
-//syntax Matchs ::= List{Match,","} [klable('Matchs)]
-//syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
-
-syntax Rule ::= "$rule" "(" Criteria "," ActionCall ")"
-syntax Criteria ::= "$ctr" "(" List ")"
-
-
-
-syntax Id ::= "%standard_metadata_t" [token]
-
-syntax Val ::= "@undef"
-rule <k> @init => . ... </k>
-     <headers>
-                 (.Bag => <header>
-                             <name> %standard_metadata_t </name>
-                             <opts> .HeaderOptionals </opts>
-                             <fields>
-                                String2Id("ingress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
-                                String2Id("egress_spec") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
-                                 .FieldDecs
-                             </fields>
-                             ...
-                         </header>
-                 )
-                 ...
-     </headers>
+syntax KItem ::= "@nextPacket"
+syntax Id ::= "standard_metadata" [token]
+rule <k> @nextPacket => @parse&ingress ~> @egress ~> @txenPacket ~> @nextPacket ... </k>
+     <buffer> <in> (ListItem($packet(P:List, Port:Int)) => .) _:List </in> ... </buffer>
+     <packet> _ => P </packet>
      <instances>
-        (.Bag => <instance>
-                    <valid> true </valid>
-                    <metadata> true </metadata>
-                    <typeName>  %standard_metadata_t </typeName>
-                    <name> String2Id("standard_metadata") </name>
-                    <fieldVals>
-                        String2Id("ingress_port") |-> @val(1,32,false)
-                        String2Id("egress_spec") |-> @undef
-                    </fieldVals>
-                    ...
-                 </instance>
-        )
+        <instance>
+            <name> standard_metadata </name>
+            <fieldVals> _:Map => (String2Id("ingress_port") |-> @val(Port,32,false) String2Id("egress_spec") |-> @undef) </fieldVals>
+            ...
+        </instance>
         ...
-     </instances>
-     //TODO: maybe instead of doing above, it would be better to add it as a part of the program
-//======Hardcoded input packet and table entries=====
-#include_data
-//===================================================
+    </instances>
 
-//note: String2Id("port_mapping") does not match, because String2Id is a function and can not be used in LHS
+syntax KItem ::= "@txenPacket"
+syntax Id ::= "egress_spec" [token]
+rule <k> @txenPacket => . ... </k>
+     <packetout> P:List => . </packetout>
+     <buffer> <out>   _:List (.List => ListItem($packet(P,Port))) </out> ... </buffer>
+      <instances>
+          <instance>
+              <name> standard_metadata </name>
+              <fieldVals>  egress_spec |-> @val(Port:Int,_,_) ... </fieldVals>
+              ...
+          </instance>
+          ...
+      </instances>
+
+
 
 //--------------------parsing------------------------------
-syntax Id ::= "start" [token]
+syntax KItem ::= "@parse&ingress" | "@egress"
 rule <k> @parse&ingress => Body  ... </k>
      <parserStates> <state>  <name> start </name> <body> Body </body> ... </state> ...</parserStates>
      <lastExt> _ => .K </lastExt>
@@ -637,9 +523,8 @@ rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => List
      //TODO: IMPORTANT: it seems like a bug in K, X:Id matches FieldValues as well! so I used <intances> ... to make sure X in this case is a headerref
 
 
-syntax ResolvedArgs ::= "$resolved" "(" List ")"
-syntax KResult ::= ResolvedArgs
-syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
+
+
 
 //compound actions
 rule <k> @call( A:ActionName , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
@@ -865,7 +750,7 @@ rule B1:Bool %&& B2:Bool => B1 andBool B2
 //------------------const value--------------------------
 
 
-syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
+
 syntax Vals ::= "@nil" | "@cons" "(" Val "," Vals ")"
 syntax KResult ::= Val | Vals
 
