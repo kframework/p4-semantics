@@ -191,15 +191,14 @@ rule <k> @push(H:HeaderExtractRef) => . ... </k>
 // --------------------init------------------------------------
 
 // moved to initialization.k
-
-
-// ------------------------exec-----------------------------
 rule  @exec => @nextPacket
+
+// ------------------------packet to/from buffer-----------------------------
 
 syntax KItem ::= "@nextPacket"
 syntax Id ::= "standard_metadata" [token]
 rule <k> @nextPacket => @parse&ingress ~> @egress ~> @txenPacket ~> @nextPacket ... </k>
-     <buffer> <in> (ListItem($packet(P:List, Port:Int)) => .) _:List </in> ... </buffer>
+     <buffer> <in> (ListItem($packet(P:List, Port:Int)) => .List) _:List </in> ... </buffer>
      <packet> _ => P </packet>
      <instances>
         <instance>
@@ -209,11 +208,12 @@ rule <k> @nextPacket => @parse&ingress ~> @egress ~> @txenPacket ~> @nextPacket 
         </instance>
         ...
     </instances>
+//TODO: IMPORTANT: instances must be reset
 
 syntax KItem ::= "@txenPacket"
 syntax Id ::= "egress_spec" [token]
 rule <k> @txenPacket => . ... </k>
-     <packetout> P:List => . </packetout>
+     <packetout> P:List => .List </packetout>
      <buffer> <out>   _:List (.List => ListItem($packet(P,Port))) </out> ... </buffer>
       <instances>
           <instance>
@@ -223,7 +223,7 @@ rule <k> @txenPacket => . ... </k>
           </instance>
           ...
       </instances>
-
+//TODO: check if needs to be dropped
 
 
 //--------------------parsing------------------------------
