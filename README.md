@@ -112,14 +112,14 @@ Example:
 ```
 
 
-Note: Currently there seem to be a problem with the latest release of K that prevents symbolic execution using this semantics.
-I have made some minor hacks to K to have a temporary fix for this problem.
+Note: Currently there seems to be a problem with the latest release of K that prevents symbolic execution using this semantics.
+I have made some minor hacks to K to have a temporary fix for the problem.
 Because of that, if you want run P4 programs in symbolic mode, you should check out [this branch](https://github.com/kframework/k/tree/p4k-hacks) of K and build it.  
 
 
 ### Semantic Coverage Measurement
 
-You can use the interpreter to check what percentages of the semantics rules are covered by the tests that you run. There is only a proof of concept available at the current moment
+You can use the interpreter to check what percentages of the semantic rules are covered by the tests that you run. There is only a proof of concept available at the current moment.
 You can take a look at the `coverage` directory for that. For example, to measure coverage for `basic_routing example`, do as follows:
 
 ```
@@ -134,7 +134,8 @@ You can take a look at the `coverage` directory for that. For example, to measur
  total:		161
 ```
 
-Note: Similar to symbolic execution, for semantic coverage measurement, due to some minor problems in latest version of K, you checkout [this branch](https://github.com/kframework/k/tree/p4k-hacks) of K and build it.  
+Note: Similar to symbolic execution, for semantic coverage measurement, due to some minor problems in the latest version of K, you should checkout [this branch](https://github.com/kframework/k/tree/p4k-hacks) of K and build it.  
+
 
 ### Dataplane Verification
 
@@ -143,9 +144,8 @@ The work is still under development, but you can check the `network-verification
 Basically you need to provide an input program that contains all the P4 programs that are intended for the nodes in the network, separated by `----`. 
 The first program goes to the first node, second program to second node, and so on ...
 Take a look at `network-verification/basic_routingX3.p4` as an example. 
-Then you again need hardcode the topology, input tables, and input packets (look at `network-verification/network-configuration.k` for more info (though it is not very clean at the current moment).
+Then you need to hardcode the topology, input tables, and input packets (look at `network-verification/network-configuration.k` for more info -- though it is not very clean at the current moment).
 And then kompile the semantics and then run the input program with it. 
-
 
 
 ### Misc. 
