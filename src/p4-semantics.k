@@ -25,13 +25,23 @@ rule <k> (.P4Declarations => .) ... </k>
 
 
 // header dec
-rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opt:HeaderOptionals }) => . ... </k>
+rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opts:HeaderOptionals }) => . ... </k>
     <headers>  (.Bag =>
-        <header>  <name> Name </name> <opts> Opt </opts> <fields> Fields </fields>   </header>)
+        <header>  <name> Name </name> <opts> @processHeaderOpts(Opts, .Map) @sumofFixedWidthBits(Fields, 0) </opts> <fields> Fields </fields>  </header>)
     ... </headers>
 
-
 rule N:FieldName : W:BitWidth ; => N : W ( .FieldMods ) ; [macro]
+
+syntax Map ::= "@processHeaderOpts" "(" HeaderOptionals "," Map ")" [function]
+rule @processHeaderOpts(.HeaderOptionals, M:Map) => M
+rule @processHeaderOpts(length : LE:LengthExp ; Rest:HeaderOptionals, M:Map) => @processHeaderOpts(Rest, ("length" |-> LE) M)
+rule @processHeaderOpts(max_length : MW:UnsignedValue ; Rest:HeaderOptionals, M:Map) => @processHeaderOpts(Rest, ("max_length" |-> USgnVal2Int(MW)) M) //TODO(minor): MW should be ConstValue
+
+syntax Map ::= "@sumofFixedWidthBits" "(" FieldDecs "," Int ")" [function]
+rule @sumofFixedWidthBits(.FieldDecs, I:Int) => "$fixed_width" |-> I
+rule @sumofFixedWidthBits(_:FieldName : W:UnsignedValue ( _:FieldMods); Rest:FieldDecs, I:Int) => @sumofFixedWidthBits(Rest, I +Int USgnVal2Int(W)) //TODO(minor): W should be ConstValue
+rule @sumofFixedWidthBits(_:FieldName : * ( _:FieldMods); Rest:FieldDecs, I:Int) => @sumofFixedWidthBits(Rest, I)
+
 
 
 // header instance
@@ -307,6 +317,36 @@ rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
 
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
+rule <k> @extract(N:InstanceName, F:FieldName : * (_:FieldMods); Rest:FieldDecs) =>
+    @setVarWidth(@evalLengthExp(LE,N) * @val(8,0,false) - @val(FW,0,false)) ~> @extractField(N,F,@getVarWidth) ~> @extract(N,Rest) ... </k>
+    <instances>
+        <instance> <name> N </name> <typeName> H:HeaderTypeName </typeName> ... </instance> ...
+    </instances>
+    <headers>
+        <header> <name> H </name> <opts> ("length" |-> LE:LengthExp) ("$fixed_width" |-> FW:Int) _:Map </opts>  ... </header> ...
+    </headers>
+//TODO: exception if more than max_length
+
+syntax KItem ::= "@setVarWidth" "(" K /* Val */ ")" [strict]
+rule <k> @setVarWidth(V:Val) => . ... </k>
+     <parser> <varWidth> .K => V </varWidth> ... </parser>
+
+syntax KItem ::= "@getVarWidth"
+rule <k> @getVarWidth => V ... </k>
+     <parser> <varWidth> V:Val </varWidth> ... </parser>
+
+syntax LengthExp ::= Val
+syntax LengthExp ::= "@evalLengthExp" "(" LengthExp ","  InstanceName ")"
+rule @evalLengthExp(CV:ConstValue, _:InstanceName) => CV
+rule <k> @evalLengthExp(F:FieldName, N:InstanceName) => V ... </k>
+    <instances>
+        <instance> <name> N </name> <fieldVals> F |-> V:Val _:Map </fieldVals>  ... </instance> ...
+    </instances>
+rule @evalLengthExp(LE1:LengthExp * LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) * @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp + LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) + @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp - LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) - @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp << LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) << @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) >> @evalLengthExp(LE2, N)
 
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
@@ -366,8 +406,11 @@ syntax KItem /* Val */ ::= "@extractFieldValFromPacket" "(" Val "," FieldDec ")"
 rule @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
     => @val(V,W,S)  when W ==Int USgnVal2Int(Wd)
                                  //    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
-//TODO: IMPORTANT: fix and complete this (also remember to support * )
-
+//TODO: IMPORTANT: fix and complete this
+rule <k> @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : * ( _:FieldMods ) ;)
+    => @val(V,W,S) ... </k>
+    <parser> <varWidth> @val(Wd:Int,_,_) </varWidth> ... </parser>
+    when W ==Int Wd
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
@@ -635,6 +678,8 @@ rule <k> @deparseHeader(I:InstanceName) => #if M ==Bool false #then .K #else @de
 syntax KItem ::= "@deparseFields" "(" InstanceName "," FieldDecs ")"
 rule @deparseFields(I:InstanceName,F:FieldName : _:ConstValue ( _:FieldMods ) ; Rest:FieldDecs) =>
         @deparseField(I,F) ~> @deparseFields(I,Rest)        [structural]
+rule @deparseFields(I:InstanceName,F:FieldName : * ( _:FieldMods ) ; Rest:FieldDecs) =>
+        @deparseField(I,F) ~> @deparseFields(I,Rest)        [structural]
 rule @deparseFields(_:InstanceName,.FieldDecs) => .        [structural]
 
 
@@ -714,7 +759,7 @@ rule @concat(@cons(V:Val,@nil)) => V
 syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
 rule <k> @readField(H:InstanceName . F:FieldName) => V ... </k>
       <instances>
-         <instance> <name> H </name> <valid> true </valid> <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
+         <instance> <name> H </name> <valid> true </valid> <fieldVals> (F |-> V:Val) _:Map </fieldVals> ...  </instance> ...
       </instances>
 
 //TODO: same as above
@@ -780,7 +825,7 @@ rule @setWidth(@val(W:Int,0,false),@val(I:Int,0,false)) => @val(I,W,false) when 
 
 
 
-
+syntax KItem ::= "$pause"
 
 
 endmodule

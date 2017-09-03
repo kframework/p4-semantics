@@ -47,16 +47,16 @@ imports VALUE-SYNTAX
     //syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>" //priorities according to C
     syntax LengthExp ::=
                   ConstValue
-                | FieldName //TODO ISSUE: what does it mean?
+                | FieldName //what does it mean? reference to a field whose runtime value we will use
                 //| LengthExp LengthBinOp LengthExp
-                | "(" LengthExp ")"
-                  LengthExp "*" LengthExp   [strict,left]
+                | "(" LengthExp ")"         [bracket]
+                |  LengthExp "*" LengthExp   [strict,left,klabel(LenExpMult), prefer]
                 >
-                  LengthExp "+" LengthExp   [strict,left]
-                | LengthExp "-" LengthExp   [strict,left]
+                  LengthExp "+" LengthExp   [strict,left, klabel(LenExpPlus), prefer]
+                | LengthExp "-" LengthExp   [strict,left, klabel(LenExpMinus), prefer]
                 >
-                  LengthExp "<<" LengthExp   [strict,left]
-                | LengthExp ">>" LengthExp   [strict,left]
+                  LengthExp "<<" LengthExp   [strict,left, klabel(LenExpShftL), prefer]
+                | LengthExp ">>" LengthExp   [strict,left, klabel(LenExpShftR), prefer]
 
     syntax BitWidth ::= ConstValue | "*"
 

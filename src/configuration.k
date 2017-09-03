@@ -16,7 +16,7 @@ configuration
     <headers>
         <header multiplicity="*">
             <name> .K </name>
-            <opts> .K </opts>
+            <opts> .Map </opts>
             <fields> .K </fields>
         </header>
     </headers>
@@ -88,6 +88,7 @@ configuration
         </graph>
         <index> 0 </index>
         <lastExt> .K </lastExt>
+        <varWidth> .K </varWidth>
     </parser>
 
     //<input stream="stdin">

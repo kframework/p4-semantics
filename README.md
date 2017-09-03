@@ -152,7 +152,7 @@ And then kompile the semantics and then run the input program with it.
 
 #### Currently unsupported features
 
-- Variable length header fields
+- ~~Variable length header fields~~ (now supported)
 - Saturating fields 
 - Negative numbers
 - Header stacks (array instances)

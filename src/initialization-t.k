@@ -45,7 +45,7 @@ rule <k> @init => . ... </k>
      <headers>
                  (.Bag => <header>
                              <name> %standard_metadata_t </name>
-                             <opts> .HeaderOptionals </opts>
+                             <opts> .Map </opts>
                              <fields>
                                 String2Id("ingress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
                                 String2Id("egress_spec") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
