@@ -1,0 +1,60 @@
+- (Done) support for Variable length header fields
+  - there are no tests in p4c test suit. There is one test but the var-length part is commented
+
+- Saturating fields
+- Negative numbers
+  "15.7 FieldValueConversions
+  As mentioned in Section 1.5.1, values may need to be converted when used in an ex- pression or assigned to a field instance. The conversion will depend the the source and destination widths and signedness, and whether the destination is saturating.
+  A value is signed if (1) it has an explicit minus ("-") preceding its representation; or (2) it is a field instance with the signed attribute in its declaration. Otherwise it is un- signed.
+  The rules for conversion are as follows:
+  • If the source and destinations have the same width, the binary value of the source is used, but the interpretation may change if the signedness is different.
+  – Example: source is unsigned, 7 bits with a value of 127 and the dest is signed, 7 bits, the result will be interpreted as -1.
+  • If the source width is less than the destination width, the source is extended based on its own signedness.
+  – Example:Source is signed,7’b1111111 and dest is 8 bits;the result is 8’b11111111. 2 There is an open issue whether all P4 keywords will in fact be reserved.
+
+   – Example:Source is unsigned 4’b1100 and dest is 8bits;the result is8’b00001100.
+  • If the source width is greater than the destination width, the result depends on whether the destination is saturating. The effect should be the same as adding the value represented by the source to the destination when the destination is 0.
+  – Example:Source is signed,and negative,destination is saturating.the result is 0.
+  – Example: Source is unsigned, has value 17 and the destination is 4 bits, un- signed and saturating; the result is 15 as that is the saturated value of the destination.
+  – Example: As above, but the destination is not saturating; the result is 1 as the destination would wrap above 15. This is equivalent to truncating the source.
+  For expressions, the value with largest bit width is identified and all other values are converted to this width according to their own signedness. The expression is then evaluated and the result is converted as necessary according to its use.
+  "
+
+
+- Header stacks (array instances)
+
+- (Done) Field lists
+  -field_list declaration: how to handle payload? Can we reference metadata (yes)? what is payload in that case?
+  -"The identifier payload indicates that the contents of the packet following the header of the previously mentioned field is included in the field list."
+    -what is "previously mentioned field"? what if that is metadata? what if it is of kind field_list fl1 { h1.f1; fl2; payload } what is payload in that case ?
+  -is it possible to have more than one payload in a field_list?
+  -TODO: payload
+
+- (Done) Field lists calculations
+ -A field instance is excluded from the calculation (i.e., it is treated as if the instance is not
+     listed in the input list) if the field’s header is not valid.
+ -TODO: K hooks for checksum functions
+
+- (Done) Calculated fields
+ -"The syntax associates a sequence of update or verify directives to a specific field in- stance, each of which may have a condition associated with it. The first entry with a condition satisfied by the packet (or with no condition specified) determines the as- sociation."
+   -just to make sure: the "first entry satisfying condition" of update and verify are separate. Yes?
+   -"Note that the conditions are evaluated at the point the verify or update operations are carried out."
+ -"Note that although this declaration may occur anywhere in the P4 program, the declaration should be placed immediately after the header instance declaration for the field referenced."
+   -what if the instance is an array? should we create a calculated field for each element?
+ -"calculated_field field_ref { update_verify_spec + }"
+   -can field_ref be array reference?
+   -can "last" be used as index of array? ...
+ -"The verify option ... This check occurs at the end of parsing and is performed only if field_ref is valid."
+   -when is "end of parsing" exactly?
+   -what if exceptions occur? what if parsing is not continued?
+   -in what order the calculated fields are verified? in the order of definition, order of parsing, or non-deterministically? Does it matter(for example the order of possible exceptions)
+ -"The update optopn ... he update to the field occurs when the packet is deparsed for egress. If no update clause applies, the field retains its value from the match+action pipeline."
+   -in what order the calculated fields are updated? in the order of definition, order of deparsing (probably this), non-deterministically? Does it matter(for example the order affects the calculated values)
+
+
+Parser exceptions
+Value set declarations
+Counters, meters, and registers
+Action profiles
+Any matching type other than exact and valid (ternary, lpm, range)
+Any primitive action other than modify_field,subtract_from_field, and subtract

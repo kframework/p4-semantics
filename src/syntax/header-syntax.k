@@ -106,10 +106,14 @@ imports HEADER-SYNTAX
                     FieldListEntryItems
                 "}"
     syntax FieldListEntryItems ::= NeList{FieldListEntryItem,""}        [klabel('FieldListEntryItems)]
-    syntax FieldListEntryItem ::= FieldListEntry ";"
+    syntax FieldListEntryItem ::= FieldListEntry ";"                    [klabel('FieldListEntryItem)]
 
     //syntax FieldListEntry ::= ObjectRef | FieldValue
-    syntax FieldListEntry ::= FieldRef | HeaderRef | FieldValue | FieldListName | "payload"
+    syntax FieldListEntry ::=     FieldRef
+                                | HeaderRef
+                                | FieldValue
+                                | FieldListName     [klabel('FieldListEntryListName)]
+                                | "payload"
     //The identifier payload indicates that the contents of the packet following the header of the previously mentioned field is included in the field list
     //TODO ISSUE: what if no field was previously mentioned? what does previously exactly mean?
 
@@ -124,7 +128,7 @@ imports HEADER-SYNTAX
                 "output_width" ":" ConstValue ";"
             "}"
     syntax FieldListNameItems ::= NeList{FieldListNameItem,""}          [klabel('FieldListNameItems)]
-    syntax FieldListNameItem ::= FieldListName ";"
+    syntax FieldListNameItem ::= FieldListName ";"                      [klabel('FieldListNameItem)]
 
 
 // 3.1 Checksums
@@ -147,7 +151,7 @@ imports HEADER-SYNTAX
     syntax IfCond ::= "if" "(" CalcBoolCond ")"
     syntax CalcBoolCond ::=
                   "valid" "(" HeaderOrFieldRef ")"  [klabel(CalcBCValid)]
-                | FieldRef "==" FieldRef
+                | FieldRef "==" FieldValue          [klabel(CalcBCEq)]
 
     syntax HeaderOrFieldRef ::= HeaderRef | FieldRef
 

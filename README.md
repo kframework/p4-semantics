@@ -156,9 +156,9 @@ And then kompile the semantics and then run the input program with it.
 - Saturating fields 
 - Negative numbers
 - Header stacks (array instances)
-- Field lists
-- Field lists calculations 
-- Calculated fields (so the checksum of packets won't be verified or updated)
+- ~~Field lists~~
+- ~~Field lists calculations~~ 
+- ~~Calculated fields (so the checksum of packets won't be verified or updated)~~
 - Parser exceptions
 - Value set declarations
 - Counters, meters, and registers

@@ -42,6 +42,42 @@ rule @sumofFixedWidthBits(.FieldDecs, I:Int) => "$fixed_width" |-> I
 rule @sumofFixedWidthBits(_:FieldName : W:UnsignedValue ( _:FieldMods); Rest:FieldDecs, I:Int) => @sumofFixedWidthBits(Rest, I +Int USgnVal2Int(W)) //TODO(minor): W should be ConstValue
 rule @sumofFixedWidthBits(_:FieldName : * ( _:FieldMods); Rest:FieldDecs, I:Int) => @sumofFixedWidthBits(Rest, I)
 
+// field_list dec
+rule <k> @processDec(field_list Name:FieldListName { FL:FieldListEntryItems }) => . ... </k>
+     <fieldLists>
+         (.Bag => <fieldList> <name> Name </name> <fields> FL </fields> ... </fieldList>
+         ) ...
+     </fieldLists>
+
+
+// field_list_calculation dec
+rule <k> @processDec(field_list_calculation Name:FieldListCalculationName { input { FLs:FieldListNameItems }  algorithm : A:StreamFunctionAlgorithmName ; output_width : W:UnsignedValue ; } ) => . ... </k> //TODO(minor): W should be ConstValue
+     <fieldListCalcs>
+        (.Bag => <fieldListCalc> <name> Name </name> <fLists> @FLAsList(FLs, .List) </fLists> <algorithm> A </algorithm> <outWidth> USgnVal2Int(W) </outWidth> ... </fieldListCalc>
+        ) ...
+     </fieldListCalcs>
+
+syntax List ::= "@FLAsList" "(" FieldListNameItems "," List")" [function]
+rule @FLAsList(N:FieldListName; Rest:FieldListNameItems, L:List ) => @FLAsList(Rest, ListItem(N) L)
+rule @FLAsList(.FieldListNameItems, L:List ) => L
+
+
+// calculated_field dec
+rule <k> @processDec(calculated_field F:FieldRef { UV:UpdateVerifySpecs } ) => . ... </k>
+     <calcFields>
+        (.Bag => <calcField> <fieldRef> F </fieldRef> <updates> @getUpdateOrVerify(update, UV, .List) </updates> <verifies> @getUpdateOrVerify(verify, UV, .List) </verifies>  ... </calcField>
+        ) ...
+     </calcFields>
+     <calcFieldSet> (.Set => SetItem(F)) _:Set </calcFieldSet>
+
+
+syntax CalcBoolCond ::= Bool
+rule UV:UpdateOrVerify N:FieldListCalculationName ; => UV N if ( true ); [macro]
+
+syntax List ::= "@getUpdateOrVerify" "(" UpdateOrVerify "," UpdateVerifySpecs "," List ")" [function]
+rule @getUpdateOrVerify(T:UpdateOrVerify, UV:UpdateOrVerify N:FieldListCalculationName C:IfCond ;  Rest:UpdateVerifySpecs, L:List) =>
+    #if (T ==K UV) #then @getUpdateOrVerify(T, Rest, ListItem(UV N C;) L) #else @getUpdateOrVerify(T, Rest, L) #fi
+rule @getUpdateOrVerify(_, .UpdateVerifySpecs , L:List) => L
 
 
 // header instance
@@ -254,7 +290,7 @@ rule <k> return State:ParserStateName ; => Body ... </k>
      <lastExt> _ => .K </lastExt>
 
 //return to control function
-rule <k> return Control:ControlFunctionName ; => Control(); ... </k>
+rule <k> return Control:ControlFunctionName ; => @verifyCalcFields ~> Control(); ... </k>
     <controlFlows> <control> <name> Control </name> ... </control> ... </controlFlows>
 
 
@@ -393,7 +429,7 @@ rule @getAttr (F:FieldName, F : W:BitWidth ( M:FieldMods ); _:FieldDecs) => F : 
 rule @getAttr (F1:FieldName, F2:FieldName : _:BitWidth ( _:FieldMods ); Rest:FieldDecs) =>
         @getAttr(F1,Rest) when  F1 =/=K F2
 
-syntax KItem /* Val */ ::= "@adjustVal" "(" FieldDec "," Val ")"
+syntax KItem /* Val */ ::= "@adjustVal" "(" FieldDec "," K /* Val */ ")" [strict(2)]
 rule @adjustVal( _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;, @val(I,Ws,Ss) )
     => @val(I,USgnVal2Int(Wd),false)
 //TODO: IMPORTANT: fix and complete this (also remember to support * )
@@ -411,6 +447,86 @@ rule <k> @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : * 
     => @val(V,W,S) ... </k>
     <parser> <varWidth> @val(Wd:Int,_,_) </varWidth> ... </parser>
     when W ==Int Wd
+
+//----------------verify/update calc fields------------------
+//verify
+syntax KItem ::=   "@verifyCalcFields"
+                 | "@verifyCalcFields" "(" K ")"
+
+rule <k> @verifyCalcFields => @verifyCalcFields(S) ... </k>
+     <calcFieldSet> S:Set </calcFieldSet>
+
+rule @verifyCalcFields(.Set) => .
+rule @verifyCalcFields(SetItem(F:FieldRef) Rest:Set) => @verifyCalcField(F) ~> @verifyCalcFields(Rest)
+
+
+syntax KItem ::=   "@verifyCalcField" "(" FieldRef ")"
+                 | "@verifyCalcField" "(" FieldRef "," List ")"
+
+
+
+//TODO: array (?)
+rule <k> @verifyCalcField(H:InstanceName . F:FieldName) => .  ... </k>
+     <instances> <instance> <name> H </name> <valid> false </valid> ... </instance> ... </instances>
+rule <k> @verifyCalcField(H:InstanceName . F:FieldName) => @verifyCalcField(H.F, V)  ... </k>
+         <instances> <instance> <name> H </name> <valid> true </valid> ... </instance> ... </instances>
+         <calcFields> <calcField> <fieldRef> H.F </fieldRef> <verifies> V:List </verifies> ... </calcField> </calcFields>
+
+rule @verifyCalcField(_:FieldRef, .List) => .
+rule @verifyCalcField(F:FieldRef, ListItem(verify FLC:FieldListCalculationName if (C:CalcBoolCond);) Rest:List) =>
+        @if (C) @then
+            (@if (F %== @calculateFLC(FLC)) @then //probably should check width
+                .K
+             @else
+                //$pause right now the checksum is a dummy number
+                .K //TODO: parser exception
+            )
+        @else
+            @verifyCalcField(F, Rest)
+
+
+rule CalcBCEq(F:FieldRef, V:FieldValue) => V %== F
+
+syntax KItem ::= "@calculateFLC" "(" FieldListCalculationName ")"
+rule <k> @calculateFLC(N:FieldListCalculationName) => @calculateChecksum(@concat(@readFieldList(E)), A, W) ... </k>
+     <fieldListCalcs> <fieldListCalc> <name> N </name> <fLists> L:List </fLists> <algorithm> A:StreamFunctionAlgorithmName </algorithm> <outWidth> W:Int </outWidth> <fListIndex> I:Int </fListIndex> ... </fieldListCalc> ... </fieldListCalcs>
+     <fieldLists> <fieldList> <name> FN:FieldListName </name> <fields> E:FieldListEntryItems </fields> ... </fieldList> ... </fieldLists>
+     when L[I] ==K ListItem(FN)
+
+
+syntax KItem ::=   "@readFieldList" "(" FieldListEntryItems ")"
+
+rule @readFieldList(.FieldListEntryItems) => @nil
+rule @readFieldList(F:FieldRef ; Rest:FieldListEntryItems) => @if @isValid(F) @then @makeCons(@readField(F), @readFieldList(Rest)) @else @readFieldList(Rest)
+rule @readFieldList(V:FieldValue ; Rest:FieldListEntryItems) => @makeCons(V, @readFieldList(Rest))
+rule <k> @readFieldList(N:FieldListName ; Rest:FieldListEntryItems) => @makeConcat(@readFieldList(E),@readFieldList(Rest)) ... </k>
+     <fieldLists> <fieldList> <name> N </name> <fields> E:FieldListEntryItems </fields> ... </fieldList> ... </fieldLists>
+rule <k> @readFieldList(N:InstanceName ; Rest:FieldListEntryItems) => @readFieldList(@getFieldsAsFLI(N,F,Rest)) ... </k> //todo: array
+     <instances> <instance> <name> N </name> <typeName> H:HeaderTypeName </typeName> ...   </instance> ... </instances>
+     <headers> <header> <name> H </name> <fields> F:FieldDecs </fields> ... </header> ... </headers>
+//TODO rule @readFieldList(payload ; Rest:FieldListEntryItems) => @makeCons(V, @readFieldList(Rest))
+
+
+syntax FieldListEntryItems ::= "@getFieldsAsFLI" "(" HeaderRef "," FieldDecs ","  FieldListEntryItems ")" [function]
+rule @getFieldsAsFLI(H:HeaderRef , F:FieldName : _:BitWidth  ( _:FieldMods ); Rest:FieldDecs, FLI:FieldListEntryItems) => @getFieldsAsFLI(H,Rest, H.F ; FLI)
+rule @getFieldsAsFLI(_:HeaderRef , .FieldDecs , FLI:FieldListEntryItems) => FLI
+
+syntax KItem ::= "@calculateChecksum" "(" K /* Val */ "," StreamFunctionAlgorithmName "," Int ")" [strict(1)]
+//TODO: fix this, need to create a hook in k
+rule @calculateChecksum (_:Val,_:StreamFunctionAlgorithmName,W:Int) => @val(0,W,false)
+
+
+//update
+
+syntax KItem ::=   "@updateCalcField" "(" FieldRef "," List "," Val ")"
+
+rule @updateCalcField(_:FieldRef, .List, V:Val) => V
+rule @updateCalcField(F:FieldRef, ListItem(update FLC:FieldListCalculationName if (C:CalcBoolCond);) Rest:List, V:Val) =>
+        @if (C) @then
+            @calculateFLC(FLC)
+        @else
+            @updateCalcField(F, Rest, V)
+
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
@@ -689,11 +805,23 @@ rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(V /*@FieldVal2S
              <instance> <name> I </name> <typeName> H:HeaderTypeName </typeName> <fieldVals> F |-> V:Val ...</fieldVals> ... </instance>
              ...
          </instances>
+         <calcFieldSet> CF:Set </calcFieldSet>
+         when notBool (I.F in CF)
 //         <headers>
 //            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
 //            ...
 //         </headers>
 
+rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(@adjustVal(@getAttr(F,Fs),@updateCalcField(I.F,U,V))) ...</k>
+     <instances>
+          <instance> <name> I </name> <typeName> H:HeaderTypeName </typeName> <fieldVals> F |-> V:Val ...</fieldVals> ... </instance>
+          ...
+      </instances>
+      <headers>
+          <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+         ...
+      </headers>
+      <calcFields> <calcField> <fieldRef> I . F </fieldRef> <updates> U:List </updates> ... </calcField> ... </calcFields>
 
 //syntax KResult ::= String
 //syntax KItem ::= "@packetOut" "(" K /* String */ ")" [strict]
@@ -747,12 +875,16 @@ rule @if true @then T:K @else F:K => T  [transition]
 rule @if false @then T:K @else F:K => F [transition]
 
 
-syntax Val ::= "@concat" "(" Vals ")" [function]
+syntax KItem /* Val */ ::= "@concat" "(" K /* Vals */ ")" [strict]
 
 rule @concat(@cons(V:Val,@nil)) => V
-//todo: complete this
+rule @concat(@cons(@val(V1:Int,W1:Int,S1:Bool),@cons(@val(V2:Int,W2:Int,S2:Bool), Rest:Vals))) => @concat(@cons(@val((@intrepretUnsigned(@val(V1,W1,S1)) <<Int W2) +Int @intrepretUnsigned(@val(V2,W2,S2))   ,W1 +Int W2,false),Rest))
 
 
+
+syntax Int ::= "@intrepretUnsigned" "(" Val ")" [function]
+rule @intrepretUnsigned(@val(V:Int,_,false)) => V
+//rule @intrepretUnsigned(@val(V:Int,W:Int,true)) => V //TODO
 
 //TODO:temporary, maybe we want to resolve the referece to header first
 //If not, complete it is for array
@@ -802,6 +934,10 @@ syntax KResult ::= Val | Vals
 syntax KItem /* Vals */ ::= "@makeCons" "(" K /* Val */ "," K /* Vals */ ")" [seqstrict]
 
 rule @makeCons(V:Val,Vs:Vals) => @cons (V,Vs)
+
+syntax KItem /* Vals */ ::= "@makeConcat" "(" K /* Vals */ "," K /* Vals */ ")" [seqstrict]
+rule @makeConcat(@nil, Vs:Vals) => Vs
+rule @makeConcat(@cons(V:Val,Rest:Vals), Vs:Vals) => @makeCons(V,@makeConcat(Rest,Vs))
 
 
 rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)

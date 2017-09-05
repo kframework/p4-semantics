@@ -21,6 +21,32 @@ configuration
         </header>
     </headers>
 
+    <fieldLists>
+        <fieldList multiplicity="*">
+            <name> .K </name>
+            <fields> .K </fields>
+        </fieldList>
+    </fieldLists>
+
+    <fieldListCalcs>
+        <fieldListCalc multiplicity="*">
+            <name> .K </name>
+            <fLists> .List </fLists>
+            <algorithm> .K </algorithm>
+            <outWidth> .K </outWidth>
+            //Run time APIs allow the selection of one of the input field lists to be active at a time. The first listed name is used as the default.
+            <fListIndex> 0 </fListIndex>
+        </fieldListCalc>
+    </fieldListCalcs>
+
+    <calcFields>
+        <calcField multiplicity="*">
+            <fieldRef> .K </fieldRef>
+            <updates> .List </updates>
+            <verifies> .List </verifies>
+        </calcField>
+    </calcFields>
+
     <instances>
         <instance multiplicity="*">
             <valid> .K </valid>
@@ -65,6 +91,8 @@ configuration
     </controlFlows>
 
     <cfset> .Set </cfset> //TODO: temporary fix for K issue #2279
+    <calcFieldSet> .Set </calcFieldSet> //set or list? depens on which order the calc fields need to be verified
+
 
     <frameStack>
         .List

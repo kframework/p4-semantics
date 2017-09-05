@@ -28,9 +28,9 @@ module P4-COMMON
     syntax P4Declaration ::=
                   HeaderTypeDeclaration
                 | InstanceDeclaration
-    //            | FieldListDeclaration //TODO
-    //            | FieldListCalculationDeclaration //TODO
-    //            | CalculatedFieldDeclaration //TODO
+                | FieldListDeclaration
+                | FieldListCalculationDeclaration
+                | CalculatedFieldDeclaration
     //            | ValueSetDeclaration //TODO
                 | ParserFunctionDeclaration
     //            | ParserExceptionDeclaration //TODO
