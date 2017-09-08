@@ -154,7 +154,7 @@ And then kompile the semantics and then run the input program with it.
 
 - ~~Variable length header fields~~ (now supported)
 - Saturating fields 
-- Negative numbers
+- Signed numbers (partly supported)
 - Header stacks (array instances)
 - ~~Field lists~~
 - ~~Field lists calculations~~ 
@@ -163,8 +163,8 @@ And then kompile the semantics and then run the input program with it.
 - Value set declarations
 - Counters, meters, and registers
 - Action profiles
-- Any matching type other than exact and valid (ternary, lpm, range)
-- Any primitive action other than modify_field,subtract_from_field, and subtract 
+- ~~Any matching type other than exact and valid (ternary, lpm, range)~~
+- Any primitive action other than modify_field,add/subtract_from_field, and add/subtract 
 
 #### Parsing P4 programs into KAST 
 

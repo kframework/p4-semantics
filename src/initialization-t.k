@@ -18,6 +18,7 @@ syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [stric
 syntax ResolvedArgs ::= "$resolved" "(" List ")"
 syntax KResult ::= ResolvedArgs
 
+syntax KResult ::= "$pair" "(" Val "," Val ")"
 
 // --------------------init------------------------------------
 

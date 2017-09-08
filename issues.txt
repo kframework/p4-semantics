@@ -171,6 +171,7 @@ What is const_expr? Is it const_value?
 
 
 - Page 9
+  Minor:
   Is there any width limit in calculation of ((8 * length) - sum-of-fixed-width-fields) ?
   length is of type length_exp.
   If yes, how is it calculated? If no, why length_exp allows ConstValue which allows specification of width?

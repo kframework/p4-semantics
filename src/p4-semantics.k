@@ -650,11 +650,10 @@ rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListIt
 
 syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
 rule @match(V1:Val,V2:Val,exact) => V1 == V2    //TODO ISSUE: is this it?
-//TODO: rule @match(V:?,M:?,ternary)
-//TODO: rule @match(V:?,M:?,lmp)
-//TODO: rule @match(V:?,M:?,range)
-//TODO: rule @match(V:?,M:?,valid)
-
+rule @match(V1:Val,$pair(V2:Val,M:Val),ternary) => (V1 & M) == (V2 & M)
+rule @match(V1:Val,$pair(V2:Val,M:Val),lpm) => (V1 & M) == (V2 & M)
+rule @match(V1:Val,$pair(L:Val,H:Val),range) => (V1 >= L) and (V1 <= H)
+rule @match(B1:Bool,B2:Bool,valid) => B1 ==Bool B2
 
 syntax KItem /* KResult */ ::= "@readFMRef" "(" FieldOrMaskedRef "," FieldMatchType  ")"
 
@@ -718,42 +717,53 @@ rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 //replace multiple rules with check for KLabel (i.e K REFLECTION)
 syntax Id ::= "modify_field" [token]
 rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:FieldRef) Rest:List)) =>
-            @if @isValid(S) @then
+            //@if @isValid(S) @then
                 @readField(S) ~> @call(modify_field,$resolved(ListItem(D) ListItem(S) Rest))
-            @else
-                .
+            //@else
+            //  .
+
 rule (V:Val => .) ~> @call(modify_field , $resolved(ListItem(_) ListItem(_ => V) _:List))
 rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val) ListItem(M:Val))) =>
-           @if @isValid(I.F) @then
+           //@if @isValid(I.F) @then
                 @writeFieldAdjusted(I,F, (@readField(I.F) %& (~ M)) %| (S %& M))
-           @else
-                .
+           //@else
+           //     .
+
 rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val))) =>
-           @if @isValid(I.F) @then
+           //@if @isValid(I.F) @then
                 @writeFieldAdjusted(I,F, S)
-           @else
-                .
+           //@else
+           //    .
 
-syntax Id ::= "subtract_from_field" [token]
+
+syntax Id ::= "subtract_from_field" | "add_to_field" [token]
 rule @call (subtract_from_field, $resolved(ListItem(D:FieldRef) ListItem(V:K))) =>
-          @call (subtract, $resolved(ListItem(D) ListItem(D) ListItem(V))) 
+          @call (subtract, $resolved(ListItem(D) ListItem(D) ListItem(V)))
+
+rule @call (add_to_field, $resolved(ListItem(D:FieldRef) ListItem(V:K))) =>
+          @call (add, $resolved(ListItem(D) ListItem(D) ListItem(V)))
 
 
-syntax Id ::= "subtract" [token]
-rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:FieldRef) ListItem(V2))) =>
-         @if @isValid(V1) @then
-		@readField(V1) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
-	 @else
-		.
-rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_ => V) _:List))
-rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:FieldRef))) =>
-         @if @isValid(V2) @then
+syntax Id ::= "subtract" | "add" [token]
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:FieldRef) ListItem(V2))) =>
+        //@if @isValid(V1) @then
+		    @readField(V1) ~> @call(F,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
+	    //@else
+		//    .
+		when (F ==K subtract) orBool (F ==K add)
+
+rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_ => V) _:List)) when (F ==K subtract) orBool (F ==K add)
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:FieldRef))) =>
+         //@if @isValid(V2) @then
                 @readField(V2) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
-         @else
-                .
-rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V)))
-rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val)))
-	=> V1 - V2 ~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
+         //@else
+         //      .
+        when (F ==K subtract) orBool (F ==K add)
+
+rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V))) when (F ==K subtract) orBool (F ==K add)
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val)))
+	=> #if (F ==K add) #then V1 + V2 #else V1 - V2 #fi ~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
+	when (F ==K subtract) orBool (F ==K add)
 //TODO: implement the rest of the primitive functions
 
 
@@ -893,6 +903,15 @@ rule <k> @readField(H:InstanceName . F:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> true </valid> <fieldVals> (F |-> V:Val) _:Map </fieldVals> ...  </instance> ...
       </instances>
+
+//new in version 1.0.4
+rule <k> @readField(H:InstanceName . F:FieldName) => @undef ... </k>
+      <instances>
+         <instance> <name> H </name> <valid> false </valid>  ...  </instance> ...
+      </instances>
+
+
+
 
 //TODO: same as above
 syntax KItem /* Bool */ ::= "@isValid" "(" K /* FieldRef or HeaderRef */ ")"

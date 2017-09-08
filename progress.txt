@@ -56,5 +56,10 @@ Parser exceptions
 Value set declarations
 Counters, meters, and registers
 Action profiles
-Any matching type other than exact and valid (ternary, lpm, range)
-Any primitive action other than modify_field,subtract_from_field, and subtract
+
+- (Done) Any matching type other than exact and valid (ternary, lpm, range)
+  - tables with more than one lmp match, how the priority is decided?
+  - range: "Signedness of the field is used in evaluating the order." what does it mean ?
+
+
+Any primitive action other than modify_field,add/subtract_from_field, and add/subtract
