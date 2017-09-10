@@ -131,6 +131,76 @@ rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) =>
     ) ... </parserStates>
 
 
+// stateful
+   syntax StatefulType ::= "$counter" | "$meter" | "$register"
+
+rule <k> @processDec(counter Name:Id { type : T:CounterType ; SOpt:StatefulOptionals COpt:CounterOptionals }) => . ... </k>
+     <statefuls>
+        (.Bag =>
+            <stateful>
+                <stype> $counter </stype>
+                <name> Name </name>
+                <opts> ("counter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> "static_global")) @processCounterOpts(COpt, ("$saturating" |-> false)) </opts>
+                <width> 0 </width> // = inf
+                ...
+            </stateful>
+        ) ...
+     </statefuls>
+
+rule <k> @processDec(meter Name:Id { type : T:MeterType ; MOpt:MeterOptionals SOpt:StatefulOptionals }) => . ... </k>
+     <statefuls>
+        (.Bag =>
+            <stateful>
+                <stype> $meter </stype>
+                <name> Name </name>
+                <opts> ("meter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> "static_global")) @processMeterOpts(MOpt, .Map) </opts>
+                <width> 2 </width>
+                ...
+            </stateful>
+        ) ...
+     </statefuls>
+
+rule <k> @processDec(register Name:Id { width : W:UnsignedValue ; SOpt:StatefulOptionals ROpt:RegisterOptionals }) => . ... </k>     //TODO(minor): W should be ConstValue
+     <statefuls>
+        (.Bag =>
+            <stateful>
+                <stype> $register </stype>
+                <name> Name </name>
+                <opts> @processStatefulOpts(SOpt, ("$binding" |-> "static_global")) @processRegisterOpts(ROpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
+                <width> USgnVal2Int(W) </width>
+                ...
+            </stateful>
+        ) ...
+     </statefuls>
+
+syntax Map ::= "@processStatefulOpts" "(" StatefulOptionals "," Map ")" [function]
+rule @processStatefulOpts(.StatefulOptionals, M:Map) => M
+rule @processStatefulOpts(direct : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- "direct"])
+rule @processStatefulOpts(static : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- "static"])
+rule @processStatefulOpts(instance_count : IC:UnsignedValue ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest, ("$instant_count" |-> USgnVal2Int(IC)) M ) //TODO(minor): IC should be ConstValue
+
+syntax Map ::= "@processCounterOpts" "(" CounterOptionals "," Map ")" [function]
+rule @processCounterOpts(.CounterOptionals, M:Map) => M
+rule @processCounterOpts(min_width : MW:UnsignedValue ; Rest:CounterOptionals, M:Map ) => @processCounterOpts(Rest, ("$min_width" |-> USgnVal2Int(MW)) M) //TODO(minor): MW should be ConstValue
+rule @processCounterOpts(saturating ; Rest:CounterOptionals, M:Map ) => @processCounterOpts(Rest, M["$saturating" <- true])
+
+syntax Map ::= "@processMeterOpts" "(" MeterOptionals "," Map ")" [function]
+rule @processMeterOpts(.MeterOptionals, M:Map) => M
+rule @processMeterOpts(result : F:FieldRef ; Rest:MeterOptionals, M:Map ) => @processMeterOpts(Rest, ("$result" |-> F) M)
+
+syntax Map ::=    "@processRegisterOpts" "(" RegisterOptionals "," Map ")" [function]
+                | "@processRegisterOpts" "(" AttrEntries "," Map ")" [function]
+rule @processRegisterOpts(.RegisterOptionals, M:Map) => M
+rule @processRegisterOpts(attributes : A:AttrEntries ; Rest:RegisterOptionals, M:Map ) => @processRegisterOpts(Rest, @processRegisterOpts(A, M))
+rule @processRegisterOpts(.AttrEntries, M:Map) => M
+rule @processRegisterOpts(signed , Rest:AttrEntries, M:Map) => @processRegisterOpts(Rest, M["$signed" <- true])
+rule @processRegisterOpts(saturating , Rest:AttrEntries, M:Map) => @processRegisterOpts(Rest, M["$saturating" <- true])
+
+
+
+// syntax KItem ::= "@initStateful" "(" Id ")"
+// init on first use
+
 //action
 
 rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>

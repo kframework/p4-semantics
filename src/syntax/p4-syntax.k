@@ -1,6 +1,6 @@
 require "value-syntax.k"
 require "table-syntax.k"
-//require "stateful-syntax.k"
+require "stateful-syntax.k"
 require "action-syntax.k"
 require "parser-syntax.k"
 require "header-syntax.k"
@@ -11,7 +11,7 @@ require "control-syntax.k"
 module P4-COMMON
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
-   // imports STATEFUL-SYNTAX //TODO
+    imports STATEFUL-SYNTAX
    // imports CHECKSUM-SYNTAX //TODO
     imports PARSER-SYNTAX
     //imports PARSER-EXCEPTION-SYNTAX //TODO
@@ -34,9 +34,9 @@ module P4-COMMON
     //            | ValueSetDeclaration //TODO
                 | ParserFunctionDeclaration
     //            | ParserExceptionDeclaration //TODO
-    //            | CounterDeclaration //TODO
-    //            | MeterDeclaration //TODO
-    //            | RegisterDeclaration //TODO
+                | CounterDeclaration
+                | MeterDeclaration
+                | RegisterDeclaration
                 | ActionFunctionDeclaration
     //            | ActionProfileDeclaration //TODO
     //            | ActionSelectorDeclaration //TODO

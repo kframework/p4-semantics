@@ -64,6 +64,17 @@ configuration
         </state>
     </parserStates>
 
+    <statefuls>
+        <stateful multiplicity="*">
+            <stype> .K </stype>
+            <name> .K </name>
+            <opts> .Map </opts>
+            <vals> .Map </vals>
+            //Run time APIs should be provided to indicate the actual width of a given counter.
+            <width> .K </width>
+        </stateful>
+    </statefuls>
+
 
     <actions>
         <action multiplicity="*">

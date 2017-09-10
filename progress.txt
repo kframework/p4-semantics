@@ -54,7 +54,18 @@
 
 Parser exceptions
 Value set declarations
-Counters, meters, and registers
+
+- Counters
+  - "Run time APIs should be provided to indicate the actual width of a given counter."
+  - "The instance_count attribute is required if the counter is not declared with the direct attribute. The compiler should raise an error if both instance_count and direct are specified together, or if neither direct nor instance_count are speci- fied."
+  - counters should be initialized to zero, right?
+  - (TODO) what is the default min_width or counter? what is default width of counter (specially if min_width is not present)? For now setting infinit
+- Meters
+  - what is a initial value of meter?
+- Registers
+  - what is the initial value of a register, 0 or undef?
+
+
 Action profiles
 
 - (Done) Any matching type other than exact and valid (ternary, lpm, range)

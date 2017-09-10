@@ -13,25 +13,44 @@ imports TABLE-SYNTAX //forst ConstValue TableName FieldRef
     syntax CounterDeclaration ::=
                     "counter" CounterName "{"
                         "type" ":" CounterType ";"
-                        OptionalDirectOrStatic
-                        OptionalInstantCount
-                        OptionalMinWidth
-                        OptionalSaturating
+                        StatefulOptionals
+                        CounterOptionals
+    //                    OptionalDirectOrStatic
+    //                    OptionalInstantCount
+    //                    OptionalMinWidth
+    //                    OptionalSaturating
                     "}"
-    syntax OptionalDirectOrStatic ::= None |  DirectOrStatic ";"
+    //syntax OptionalDirectOrStatic ::= None |  DirectOrStatic ";"
     //syntax OptionalInstantCount ::= None | "instance_count" ":" ConstExpr ";"
     //syntax OptionalMinWidth ::= None | "min_width" ":" ConstExpr ";"
     //TODO ISSUE: what is ConstExpr? For now, assuming it is ConstValue
-    syntax OptionalInstantCount ::= None | "instance_count" ":" ConstValue ";"
-    syntax OptionalMinWidth ::= None | "min_width" ":" ConstValue ";"
+    //syntax OptionalInstantCount ::= None | "instance_count" ":" ConstValue ";"
+    //syntax OptionalMinWidth ::= None | "min_width" ":" ConstValue ";"
+    //syntax OptionalSaturating ::= None | "saturating" ";"
 
-    syntax OptionalSaturating ::= None | "saturating" ";"
+    syntax CounterOptionals ::= List{CounterOptional,""} [klabel('CounterOptionals)]
+    syntax CounterOptional ::=
+//                      DirectOrStatic ";"                [klabel('CODirectOrStatic)]
+//                    | InstantCount ";"                  [klabel('COInstanceCount)]
+                      "min_width" ":" ConstValue ";"
+                    | "saturating" ";"
 
-    syntax CounterType ::= "bytes" | "packets" | "bytes_and_packets"
+
+    syntax CounterType ::=
+                          "bytes"       [klabel('CTBytes)]
+                        | "packets"     [klabel('CTPackets)]
+                        | "bytes_and_packets"
     syntax DirectOrStatic ::= DirectAttribute | StaticAttribute
     syntax DirectAttribute ::= "direct" ":" TableName
     syntax StaticAttribute ::= "static" ":" TableName
 
+    syntax InstantCount ::= "instance_count" ":" ConstValue
+
+
+    syntax StatefulOptionals ::= List{StatefulOptional, ""} [klabel('StatefulOptionals)]
+    syntax StatefulOptional ::=
+                          DirectOrStatic ";"
+                        | InstantCount ";"
 
 
 // 7.2 Meters
@@ -39,35 +58,53 @@ imports TABLE-SYNTAX //forst ConstValue TableName FieldRef
     syntax MeterDeclaration ::=
             "meter" MeterName "{"
                 "type" ":" MeterType ";"
-                OptionalResult
-                OptionalDirectOrStatic
-                OptionalInstantCount
+                MeterOptionals
+                StatefulOptionals
+                //OptionalResult
+                //OptionalDirectOrStatic
+                //OptionalInstantCount
             "}"
 
-    syntax OptionalResult ::= None | "result" ":" FieldRef ";"
+    //syntax OptionalResult ::= None | "result" ":" FieldRef ";"
     //syntax OptionalInstantCount ::= None | "instance_count" ":" ConstExpr ";"
     //TODO ISSUE: what is ConstExpr? For now, assuming it is ConstValue
-    syntax OptionalInstantCount ::= None | "instance_count" ":" ConstValue ";"
+    //syntax OptionalInstantCount ::= None | "instance_count" ":" ConstValue ";"
 
-    syntax MeterType ::= "bytes" | "packets"
+    syntax MeterOptionals ::= List{MeterOptional,""} [klabel('MeterOptionals)]
+    syntax MeterOptional ::=
+                          "result" ":" FieldRef ";"
+//                        | DirectOrStatic ";"        [klabel('MODirectOrStatic)]
+//                        | InstantCount ";"          [klabel('MOInstanceCount)]
+
+
+    syntax MeterType ::=  "bytes"       [klabel('MTBytes)]
+                        | "packets"     [klabel('MTPackets)]
 
 
 // 7.3 Registers
 
     syntax RegisterDeclaration ::=
             "register" RegisterName "{"
-                //WidthOrLayout ";"
                 WidthDeclaration ";"
-                OptionalDirectOrStatic
-                OptionalInstantCount
-                OptionalAttributeList
+                StatefulOptionals
+                RegisterOptionals
+                //OptionalDirectOrStatic
+                //OptionalInstantCount
+                //OptionalAttributeList
             "}"
 
-    syntax OptionalAttributeList ::= None | AttributeList ";"
+    //syntax OptionalAttributeList ::= None | AttributeList ";"
+
+    syntax RegisterOptionals ::= List{RegisterOptional,""} [klabel('RegisterOptionals)]
+    syntax RegisterOptional ::=
+//                          DirectOrStatic ";"        [klabel('RODirectOrStatic)]
+//                        | InstantCount ";"          [klabel('ROInstanceCount)]
+                           AttributeList ";"
 
     syntax WidthDeclaration ::= "width" ":" ConstValue
-    syntax AttributeList ::= "attributes" ":" AttrEntry
+    syntax AttributeList ::= "attributes" ":" AttrEntries
 
-    syntax AttrEntry ::= "signed" | "saturated" | AttrEntry "," AttrEntry
+    syntax AttrEntries ::= List{AttrEntry,","} [klabel('AttrEntries)]
+    syntax AttrEntry ::= "signed" | "saturating" //| AttrEntry "," AttrEntry
 
 endmodule
