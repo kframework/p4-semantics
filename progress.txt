@@ -59,11 +59,23 @@ Value set declarations
   - "Run time APIs should be provided to indicate the actual width of a given counter."
   - "The instance_count attribute is required if the counter is not declared with the direct attribute. The compiler should raise an error if both instance_count and direct are specified together, or if neither direct nor instance_count are speci- fied."
   - counters should be initialized to zero, right?
-  - (TODO) what is the default min_width or counter? what is default width of counter (specially if min_width is not present)? For now setting infinit
+  - what is the default min_width or counter? what is default width of counter (specially if min_width is not present)? For now setting infinit
+  - (minor) if counter (or meter) type bytes, what if the size of packet is not multiple of bytes?
+  - why in "count" it is an error to reference a direct-mapped counter array from the action, but in "execute_meter" and "register_read" and "register_write" if the meter is direct, the index is ignored and table entry determines which entry?
+    - for register it makes sense a bit, but definately there is inconsistency between meter and counter in this case
+  - is the index 0 base or 1 base?
+  - TODO: packet_and_bytes type
 - Meters
   - what is a initial value of meter?
+  - it errata section it is mentioned that "The mechanism to refer to the output of a meter is over-specified. The output of
+                                            a meter (the metadata field into which the “color” returned by a meter is stored)
+                                            is allowed to be specified both in the declaration of the meter as well as when the
+                                            meter is invoked."
+    - if both things are specified which one should be chosen ? for now will use the execute_meter parameter
+  - TODO: the meter currently does nothing
 - Registers
   - what is the initial value of a register, 0 or undef?
+  - what does a direct register mean? what if instance count is not defined for a register? (solved: one register per each entry)
 
 
 Action profiles

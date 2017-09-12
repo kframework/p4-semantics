@@ -32,7 +32,7 @@ syntax KResult ::= "$pair" "(" Val "," Val ")"
 //syntax Matchs ::= List{Match,","} [klable('Matchs)]
 //syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
 
-syntax Rule ::= "$rule" "(" Criteria "," ActionCall ")"
+syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCall ")"
 syntax Criteria ::= "$ctr" "(" List ")"
 
 

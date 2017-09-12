@@ -71,7 +71,7 @@ counter my_direct_counter {
 
 action m_action(idx) {
     count(my_indirect_counter, idx);
-    drop();
+    //drop(); //Ali
 }
 
 table m_table {

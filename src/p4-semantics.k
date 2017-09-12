@@ -126,34 +126,35 @@ rule @initFields(I, F:FieldName : V:FieldValue ; ARest:FieldValueAssignments, Se
 rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
     <parserStates> (.Bag =>
           <state>
-            <name> Name </name> <body> Body </body>
+            <name> Name </name> <body> Body </body> ...
           </state>
     ) ... </parserStates>
 
 
 // stateful
    syntax StatefulType ::= "$counter" | "$meter" | "$register"
+   syntax BindingType ::= "$direct" | "$static" | "$static_global"
 
-rule <k> @processDec(counter Name:Id { type : T:CounterType ; SOpt:StatefulOptionals COpt:CounterOptionals }) => . ... </k>
+rule <k> @processDec(counter Name:Id { type : T:CounterType ; SOpt:StatefulOptionals COpt:CounterOptionals }) => @addTableDirect(Name) ... </k>
      <statefuls>
         (.Bag =>
             <stateful>
                 <stype> $counter </stype>
                 <name> Name </name>
-                <opts> ("counter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> "static_global")) @processCounterOpts(COpt, ("$saturating" |-> false)) </opts>
+                <opts> ("$counter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processCounterOpts(COpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
                 <width> 0 </width> // = inf
                 ...
             </stateful>
         ) ...
      </statefuls>
 
-rule <k> @processDec(meter Name:Id { type : T:MeterType ; MOpt:MeterOptionals SOpt:StatefulOptionals }) => . ... </k>
+rule <k> @processDec(meter Name:Id { type : T:MeterType ; MOpt:MeterOptionals SOpt:StatefulOptionals }) =>  @addTableDirect(Name) ... </k>
      <statefuls>
         (.Bag =>
             <stateful>
                 <stype> $meter </stype>
                 <name> Name </name>
-                <opts> ("meter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> "static_global")) @processMeterOpts(MOpt, .Map) </opts>
+                <opts> ("$meter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processMeterOpts(MOpt, .Map) </opts>
                 <width> 2 </width>
                 ...
             </stateful>
@@ -166,7 +167,7 @@ rule <k> @processDec(register Name:Id { width : W:UnsignedValue ; SOpt:StatefulO
             <stateful>
                 <stype> $register </stype>
                 <name> Name </name>
-                <opts> @processStatefulOpts(SOpt, ("$binding" |-> "static_global")) @processRegisterOpts(ROpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
+                <opts> @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processRegisterOpts(ROpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
                 <width> USgnVal2Int(W) </width>
                 ...
             </stateful>
@@ -175,8 +176,8 @@ rule <k> @processDec(register Name:Id { width : W:UnsignedValue ; SOpt:StatefulO
 
 syntax Map ::= "@processStatefulOpts" "(" StatefulOptionals "," Map ")" [function]
 rule @processStatefulOpts(.StatefulOptionals, M:Map) => M
-rule @processStatefulOpts(direct : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- "direct"])
-rule @processStatefulOpts(static : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- "static"])
+rule @processStatefulOpts(direct : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- $direct])
+rule @processStatefulOpts(static : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- $static])
 rule @processStatefulOpts(instance_count : IC:UnsignedValue ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest, ("$instant_count" |-> USgnVal2Int(IC)) M ) //TODO(minor): IC should be ConstValue
 
 syntax Map ::= "@processCounterOpts" "(" CounterOptionals "," Map ")" [function]
@@ -197,6 +198,20 @@ rule @processRegisterOpts(signed , Rest:AttrEntries, M:Map) => @processRegisterO
 rule @processRegisterOpts(saturating , Rest:AttrEntries, M:Map) => @processRegisterOpts(Rest, M["$saturating" <- true])
 
 
+syntax KItem ::= "@addTableDirect" "(" Id ")"
+rule <k> @addTableDirect(N:Id) => . ...</k>
+     <statefuls> <stateful> <name> N </name> <opts> "$binding" |-> $direct "$table" |-> T:TableName _:Map </opts> ... </stateful> ... </statefuls>
+     <tableDirects> T |-> ((.Set => SetItem(N)) _:Set) _:Map </tableDirects>
+
+rule <k> @addTableDirect(N:Id) => . ...</k>
+     <statefuls> <stateful> <name> N </name> <opts> "$binding" |-> $direct "$table" |-> T:TableName _:Map </opts> ... </stateful> ... </statefuls>
+     <tableDirects> (.Map => (T |-> SetItem(N))) Rest:Map</tableDirects>
+     when notBool #in_keys(T, Rest)
+
+rule <k> @addTableDirect(N:Id) => . ...</k>
+     <statefuls> <stateful> <name> N </name> <opts> "$binding" |-> B:BindingType _:Map</opts> ... </stateful> ... </statefuls>
+     when B =/=K $direct
+
 
 // syntax KItem ::= "@initStateful" "(" Id ")"
 // init on first use
@@ -206,7 +221,7 @@ rule @processRegisterOpts(saturating , Rest:AttrEntries, M:Map) => @processRegis
 rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>
     <actions> (.Bag =>
           <action>
-            <name> Name </name> <params> Params </params> <body> Body </body>
+            <name> Name </name> <params> Params </params> <body> Body </body> ...
           </action>
     ) ... </actions>
 
@@ -218,7 +233,7 @@ rule table N:TableName { A:TableActions O:TableOptionals } => table N { reads { 
 rule <k> @processDec(table Name:TableName { reads { FM:FieldMatchs }  Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
                <table>
-                 <name> Name </name> <reads> FM </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules>
+                 <name> Name </name> <reads> FM </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules> ...
                </table>
          ) ... </tables>
 
@@ -228,7 +243,7 @@ rule <k> @processDec(table Name:TableName { reads { FM:FieldMatchs }  Act:TableA
 rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements } ) => . ... </k>
          <controlFlows> (.Bag =>
                <control>
-                    <name> Name </name> <body> Body </body>
+                    <name> Name </name> <body> Body </body> ...
                </control>
          ) ...  </controlFlows>
 	<cfset> (.Set => SetItem(Name)) _ </cfset> //TODO: //TODO: temporary fix for K issue #2279
@@ -324,6 +339,13 @@ rule <k> @nextPacket => @parse&ingress ~> @egress ~> @txenPacket ~> @nextPacket 
         </instance>
         ...
     </instances>
+    <parser> <packetSize> .K => @calculatePacketSize(P , 0) </packetSize> ... </parser>
+
+
+syntax Val ::= "@calculatePacketSize" "(" List "," Int ")" [function]
+rule @calculatePacketSize(.List, I:Int) => @val(I /Int 8, 0, false)
+rule @calculatePacketSize(ListItem(@val(_,W:Int,_)) Rest:List, I:Int) => @calculatePacketSize(Rest, I +Int W)
+
 //TODO: IMPORTANT: instances must be reset
 
 syntax KItem ::= "@txenPacket"
@@ -500,10 +522,29 @@ rule @getAttr (F1:FieldName, F2:FieldName : _:BitWidth ( _:FieldMods ); Rest:Fie
         @getAttr(F1,Rest) when  F1 =/=K F2
 
 syntax KItem /* Val */ ::= "@adjustVal" "(" FieldDec "," K /* Val */ ")" [strict(2)]
-rule @adjustVal( _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;, @val(I,Ws,Ss) )
-    => @val(I,USgnVal2Int(Wd),false)
-//TODO: IMPORTANT: fix and complete this (also remember to support * )
+rule @adjustVal( _:FieldName : Wd:UnsignedValue ( FM:FieldMods ) ;, V:Val )  //TODO (minor) : Wd should be ConstValue
+    => @adjustVal(USgnVal2Int(Wd),@isSigned(FM),@isSaturating(FM), V)
+rule <k> @adjustVal (_:FieldName : * ( FM:FieldMods ) ;, V:Val) => @adjustVal(W,@isSigned(FM),@isSaturating(FM), V) ...</k>
+     <varWidth> @val(W:Int,_,_) </varWidth>
 
+syntax KItem /* Val */ ::= "@adjustVal" "(" Map "," K /* Val */ ")" [strict(2)]
+rule @adjustVal("$width" |-> W:Int "$signed" |-> Sg:Bool "$saturating" |-> St:Bool _:Map , V:Val) => @adjustVal(W,Sg,St,V)
+
+syntax KItem /* Val */ ::= "@adjustVal" "(" Int "," Bool "," Bool "," K /* Val */ ")" [strict(4)]
+rule @adjustVal(W2:Int,Sg2:Bool,St:Bool,@val(V,W1,Sg1)) =>
+       @val(V,W2,Sg2)
+//TODO: (VERY IMPORTANT ***): fix and complete this ***************************************
+
+syntax Bool ::= "@isSigned" "(" FieldMods ")" [function]
+rule @isSigned(.FieldMods) => false
+rule @isSigned(signed , Rest:FieldMods) => true
+rule @isSigned(saturating , Rest:FieldMods) => @isSigned(Rest:FieldMods)
+
+
+syntax Bool ::= "@isSaturating" "(" FieldMods ")" [function]
+rule @isSaturating(.FieldMods) => false
+rule @isSaturating(saturating , Rest:FieldMods) => true
+rule @isSaturating(signed , Rest:FieldMods) => @isSigned(Rest:FieldMods)
 
 //syntax KItem /* Val */ ::= "@String2FieldVal" "(" String "," FieldDec ")"
 //rule @String2FieldVal( S:String , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
@@ -607,14 +648,14 @@ rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 
 
 //TODO: for now assuming that a screenshot of current rules are taken before matching
-rule <k> apply (T:TableName) { C:CaseList } => @checkNextRule(FM,R) ~> C ... </k>
+rule <k> apply (T:TableName) { C:CaseList } => @setCrntTable(T) ~> @checkNextRule(FM,R) ~> @setCrntTable(.K) ~> C ... </k>
      <tables>
         <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
      ...
      </tables>
 
 //select
-rule A:ActionName ~> C:CaseList  => @checkNextAppSelCase (A,C)
+rule A:ActionName ~>  @setCrntTable(.K) ~> C:CaseList  => @setCrntTable(.K) ~> @checkNextAppSelCase (A,C)
 
 syntax KItem ::= "@checkNextAppSelCase" "(" ActionName "," CaseList ")"
 rule @checkNextAppSelCase(_,.ActionCases) => .
@@ -659,7 +700,6 @@ rule <k> F:ControlFunctionName () ; => Body  ... </k>
      </controlFlows>
 //should distinguish between action call with zero arguments and control function call
 //UPDATE: it is disinguishable because the former is Id ( .Args ) ; the later is Id () ;
-
 
 //-----------------expr and boolean expr---------------
 
@@ -710,8 +750,8 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 syntax ActionName ::= "@miss" [token]
 rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
-rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),@call(A:ActionName,$resolved(Ag)) )) Rest:List)
-    => @if @matchAll(FM,R) @then @call(A,$resolved(Ag)) ~> A  @else @checkNextRule(FM,Rest)
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),@call(A:ActionName,$resolved(Ag)) )) Rest:List)
+    => @if @matchAll(FM,R) @then @setCrntRule(Id) ~> @updateDirectStatefuls ~> @call(A,$resolved(Ag)) ~> @setCrntRule(.K) ~> A  @else @checkNextRule(FM,Rest)
 
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
@@ -734,7 +774,56 @@ rule @readFMRef(F:FieldRef mask M:ConstValue,_)  => @applyMask(@readField(F),M)
 rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
 
 
+syntax KItem ::= "@setCrntRule" "(" K ")"
+rule <k> @setCrntRule(V:K) => . ... </k>
+     <crntRule> _ => V </crntRule>
 
+syntax KItem ::= "@setCrntTable" "(" K ")"
+rule <k> @setCrntTable(V:K) => . ... </k>
+     <crntTable> _ => V </crntTable>
+
+//--------------statefuls--------------------------------
+
+syntax KItem ::=  "@updateDirectStatefuls"
+                | "@updateDirectStatefuls" "(" Set ")"
+rule <k> @updateDirectStatefuls => @updateDirectStatefuls(S) ... </k>
+     <tableDirects> T |-> S:Set _:Map </tableDirects>
+     <crntTable> T:TableName </crntTable>
+rule <k> @updateDirectStatefuls(SetItem(N:Id) Rest:Set) => #if (T ==K $counter) #then @updateCounter(N, CR) #else @updateMeter(N, CR) #fi ~> @updateDirectStatefuls(Rest) ... </k>
+      <statefuls> <stateful> <name> N </name> <stype> T:StatefulType </stype> ... </stateful> ... </statefuls>
+      <crntRule> CR:Int </crntRule>
+rule @updateDirectStatefuls(.Set) => .
+
+syntax KItem ::= "@updateCounter" "(" Id "," Int ")"
+rule <k> @updateCounter (C:Id , I:Int) => @writeStatefulAdjusted(C, I, @readStateful(C, I) %+ #if (T ==K #token("packets","CounterType@STATEFUL-SYNTAX")) #then @val(1,0,false) #else S #fi) ... </k>
+     <statefuls> <stateful> <name> C </name> <opts> "$counter_type" |-> T:CounterType _:Map </opts> ... </stateful> ... </statefuls>
+     <packetSize> S:Val </packetSize>
+
+syntax KItem ::=   "@updateMeter" "(" Id "," Int ")"
+                 | "@updateMeter" "(" Id "," Int "," FieldRef ")"
+
+syntax KItem ::= "@writeStatefulAdjusted" "(" Id "," Int "," K /*Val*/ ")" [strict(3)]
+rule <k> @writeStatefulAdjusted(N:Id, I:Int, V:Val) => @writeStateful(N, I, @adjustVal(Opts["$width" <- W],V)) ... </k>
+      <statefuls> <stateful> <name> N </name> <opts> Opts:Map </opts> <width> W:Int </width> ... </stateful> ... </statefuls>
+
+syntax KItem ::= "@writeStateful" "(" Id "," Int "," K /*Val*/ ")" [strict(3)]
+rule <k> @writeStateful (N:Id, I:Int, V:Val) => . ... </k>
+     <statefuls> <stateful> <name> N </name> <vals> M => M [I <- V] </vals> ... </stateful> ... </statefuls>
+
+syntax KItem /* Val */ ::= "@readStateful" "(" Id "," Int ")"
+rule <k> @readStateful (N:Id, I:Int) =>  V  ... </k>
+     <statefuls> <stateful> <name> N </name> <vals> (I |-> V:Val) _:Map </vals> ... </stateful> ... </statefuls>
+rule <k> @readStateful (N:Id, I:Int) => @writeStatefulAdjusted(N, I, @val(0,0,false)) ~> @readStateful(N, I) ... </k>          //TODO ISSUE: what should be inital value of meters and registers? for now, assuming 0
+     <statefuls> <stateful> <name> N </name> <vals> M:Map </vals> <width> W:Int </width> <opts> Opts:Map </opts> ... </stateful>  ... </statefuls>
+     when notBool #in_keys(I,M)
+
+
+
+//K's in_keys is not implemented
+syntax Bool ::= "#in_keys" "(" K "," Map ")" [function]
+rule #in_keys(_:K, .Map) => false
+rule #in_keys(K1:K, (K1 |-> V:K) _:Map) => true
+rule #in_keys(K1:K, (K2:K |-> V:K) Rest:Map) => #in_keys(K1,Rest) when K1 =/=K K2
 
 //---------------actions----------------------------------
 syntax Arg ::= Val
@@ -743,12 +832,14 @@ rule @resolveArgs(.Args,R:ResolvedArgs) => R
 rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do not evaluate fieldref
 rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R)  //a workaround 
 rule (V:Val => .) ~> @resolveArgs(Rest:Args,$resolved(_:List (.List => ListItem(V))))
+
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>
      <frameStack> ListItem((X |-> V:Arg) _:Map) _:List </frameStack>
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(X)))) ... </k>
      <instances> <instance> <name> X </name> ... </instance> ... </instances>
      <frameStack> ListItem(M:Map) _:List </frameStack> when notBool (X in keys(M))
-     //TODO: IMPORTANT: it seems like a bug in K, X:Id matches FieldValues as well! so I used <intances> ... to make sure X in this case is a headerref
+rule <k> @resolveArgs((X:Id , Rest:Args) => Rest, $resolved(_:List (.List => ListItem(X)))) ... </k>
+     <statefuls> <stateful> <name> X </name> ... </stateful> ... </statefuls>
 
 
 
@@ -784,6 +875,7 @@ rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 
 
 //primitive actions
+
 //replace multiple rules with check for KLabel (i.e K REFLECTION)
 syntax Id ::= "modify_field" [token]
 rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:FieldRef) Rest:List)) =>
@@ -838,6 +930,24 @@ rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Va
 
 
 
+syntax Id ::= "count" [token]
+rule <k> @call (count , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @updateCounter(C, 0) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $counter </stype>  ... </stateful> ... </statefuls>
+
+rule I:Int ~> @updateCounter(C:Id, 0) => @updateCounter(C, I)
+
+syntax KItem ::= "@getStatefulIndexInActionCall" "(" Id "," Int ")"
+rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then CR #else I #fi   ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> T:StatefulType </stype> <opts> "$binding" |-> B:BindingType M:Map </opts> ... </stateful> ... </statefuls>
+     <crntTable> CT:TableName </crntTable>
+     <crntRule> CR:Int </crntRule>
+     when
+        ((B ==K $direct) impliesBool (T =/=K $counter)) andBool
+        ((B =/=K $static_global) impliesBool (#in_keys("$table", M) andBool (M["$table"] ==K CT))) andBool
+        ((B =/=K $direct) impliesBool (#in_keys("$instant_count", M) andBool (I <Int #get_instant_count(M))))
+
+syntax Int ::= "#get_instant_count" "(" Map ")" [function]
+rule #get_instant_count ("$instant_count" |-> I:Int _:Map) => I
 
 
 //-------------------deparsing------------------------------
@@ -1004,11 +1114,13 @@ rule @applyMask(V1:Val,V2:Val) => V1 & V2
 syntax KItem ::=   K "%==" K [seqstrict]
                  | K "%&&" K [seqstrict]
                  | K "%&"  K [seqstrict]
+                 | K "%+" K [seqstrict]
 		 | K "%|"  K [seqstrict]
 
 rule V1:Val %== V2:Val => V1 == V2
 rule V1:Val %& V2:Val => V1 & V2
-rule V1:Val %& V2:Val => V1 | V2
+rule V1:Val %| V2:Val => V1 | V2
+rule V1:Val %+ V2:Val => V1 + V2
 rule B1:Bool %&& B2:Bool => B1 andBool B2
 
 

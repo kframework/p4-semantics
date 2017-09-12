@@ -75,6 +75,9 @@ configuration
         </stateful>
     </statefuls>
 
+    <tableDirects>
+        .Map //TableId -> Set  should it be Set or List?
+    </tableDirects>
 
     <actions>
         <action multiplicity="*">
@@ -104,10 +107,13 @@ configuration
     <cfset> .Set </cfset> //TODO: temporary fix for K issue #2279
     <calcFieldSet> .Set </calcFieldSet> //set or list? depens on which order the calc fields need to be verified
 
-
-    <frameStack>
-        .List
-    </frameStack>
+    <ctx>
+        <frameStack>
+            .List
+        </frameStack>
+        <crntTable> .K </crntTable>
+        <crntRule> .K </crntRule>
+    </ctx>
 
 
     <packet>
@@ -128,6 +134,7 @@ configuration
         <index> 0 </index>
         <lastExt> .K </lastExt>
         <varWidth> .K </varWidth>
+        <packetSize> .K </packetSize>
     </parser>
 
     //<input stream="stdin">

@@ -5,7 +5,7 @@
             <name> m_table </name>
             <rules> .List   => (
                                  ListItem(
-                                    $rule(
+                                    $rule(0,
                                         $ctr(ListItem(@val ( 0 , 0 , false )))
                                     , @call(String2Id("m_action") , $resolved( ListItem(@val(0,0,false)) ) ) )
                                  )
