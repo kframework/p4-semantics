@@ -63,8 +63,13 @@ Value set declarations
   - (minor) if counter (or meter) type bytes, what if the size of packet is not multiple of bytes?
   - why in "count" it is an error to reference a direct-mapped counter array from the action, but in "execute_meter" and "register_read" and "register_write" if the meter is direct, the index is ignored and table entry determines which entry?
     - for register it makes sense a bit, but definately there is inconsistency between meter and counter in this case
+    - actually section 7.2 mentions that "Consequently meter names declared as direct are not allowed to be referenced
+                                          in the execute_meter primitive, and a compiler must raise an error if this occurs."
+      - so inconsistency for meters
+      - https://github.com/p4lang/p4-spec/issues/414
   - is the index 0 base or 1 base?
   - TODO: packet_and_bytes type
+
 - Meters
   - what is a initial value of meter?
   - it errata section it is mentioned that "The mechanism to refer to the output of a meter is over-specified. The output of
