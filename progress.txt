@@ -77,6 +77,10 @@ Value set declarations
                                             is allowed to be specified both in the declaration of the meter as well as when the
                                             meter is invoked."
     - if both things are specified which one should be chosen ? for now will use the execute_meter parameter
+
+  - execute_meter(meter_ref, index, field)  ". If the parent header of field is not
+                                             valid, the meter state is updated, but the state of the meter is discarded."
+    - wouldn't it be more consistent to say the written value is undefined same as add and subtract primitive actions?
   - TODO: the meter currently does nothing
 - Registers
   - what is the initial value of a register, 0 or undef?
