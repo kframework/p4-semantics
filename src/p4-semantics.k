@@ -154,7 +154,7 @@ rule <k> @processDec(meter Name:Id { type : T:MeterType ; MOpt:MeterOptionals SO
             <stateful>
                 <stype> $meter </stype>
                 <name> Name </name>
-                <opts> ("$meter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processMeterOpts(MOpt, .Map) </opts>
+                <opts> ("$meter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processMeterOpts(MOpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
                 <width> 2 </width>
                 ...
             </stateful>
@@ -496,7 +496,9 @@ rule @packetAt(ListItem(X) _:List, 0) => X
 rule @packetAt(ListItem(_) Rest:List, I:Int) => @packetAt(Rest, I -Int 1) when I >Int 0
 
 
-syntax KItem ::= "@writeFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+syntax KItem ::=   "@writeFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+                 | "@writeFieldAdjusted" "(" FieldRef "," K /* Val */ ")" [strict(2)]
+rule @writeFieldAdjusted( I:InstanceName . F:FieldName, V:Val) => @writeFieldAdjusted(I,F,V) //todo array acceess
 rule <k> @writeFieldAdjusted(N,F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
           <instances>
              <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
@@ -785,13 +787,18 @@ rule <k> @setCrntTable(V:K) => . ... </k>
 //--------------statefuls--------------------------------
 
 syntax KItem ::=  "@updateDirectStatefuls"
-                | "@updateDirectStatefuls" "(" Set ")"
+                | "@updateDirectStatefuls" "(" K /* ::Set */ ")"
 rule <k> @updateDirectStatefuls => @updateDirectStatefuls(S) ... </k>
      <tableDirects> T |-> S:Set _:Map </tableDirects>
      <crntTable> T:TableName </crntTable>
-rule <k> @updateDirectStatefuls(SetItem(N:Id) Rest:Set) => #if (T ==K $counter) #then @updateCounter(N, CR) #else @updateMeter(N, CR) #fi ~> @updateDirectStatefuls(Rest) ... </k>
-      <statefuls> <stateful> <name> N </name> <stype> T:StatefulType </stype> ... </stateful> ... </statefuls>
+rule <k> @updateDirectStatefuls => . ... </k>
+     <tableDirects> M:Map </tableDirects>
+     <crntTable> T:TableName </crntTable>
+     when notBool #in_keys(T,M)
+rule <k> @updateDirectStatefuls(SetItem(N:Id) Rest:Set) => #if (T ==K $counter) #then @updateCounter(N, CR) #else @updateMeter(N, CR, #castToFieldRef(M["$result"])) #fi ~> @updateDirectStatefuls(Rest) ... </k>
+      <statefuls> <stateful> <name> N </name> <stype> T:StatefulType </stype> <opts> M:Map </opts> ... </stateful> ... </statefuls>
       <crntRule> CR:Int </crntRule>
+      when (T ==K $meter) impliesBool #in_keys("$result", M) //the result attribute is required if a meter is declared with the direct attribute
 rule @updateDirectStatefuls(.Set) => .
 
 syntax KItem ::= "@updateCounter" "(" Id "," Int ")"
@@ -799,8 +806,13 @@ rule <k> @updateCounter (C:Id , I:Int) => @writeStatefulAdjusted(C, I, @readStat
      <statefuls> <stateful> <name> C </name> <opts> "$counter_type" |-> T:CounterType _:Map </opts> ... </stateful> ... </statefuls>
      <packetSize> S:Val </packetSize>
 
-syntax KItem ::=   "@updateMeter" "(" Id "," Int ")"
-                 | "@updateMeter" "(" Id "," Int "," FieldRef ")"
+syntax KItem ::=  "@updateMeter" "(" Id "," Int "," FieldRef")"
+rule @updateMeter(M:Id, I:Int , F:FieldRef) => @writeStatefulAdjusted(M, I, @doUpdateMeter(M, I)) ~> @if @isValid(F) @then @writeFieldAdjusted(F, @readStateful(M,I)) @else .K
+
+
+syntax KItem ::= "@doUpdateMeter" "(" Id "," Int ")"
+rule @doUpdateMeter(_,_) => @val(0,2,false)
+//TODO (minor): doing nothing for the meter
 
 syntax KItem ::= "@writeStatefulAdjusted" "(" Id "," Int "," K /*Val*/ ")" [strict(3)]
 rule <k> @writeStatefulAdjusted(N:Id, I:Int, V:Val) => @writeStateful(N, I, @adjustVal(Opts["$width" <- W],V)) ... </k>
@@ -933,8 +945,12 @@ rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Va
 syntax Id ::= "count" [token]
 rule <k> @call (count , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @updateCounter(C, 0) ... </k>
      <statefuls> <stateful> <name> C </name> <stype> $counter </stype>  ... </stateful> ... </statefuls>
-
 rule I:Int ~> @updateCounter(C:Id, 0) => @updateCounter(C, I)
+
+syntax Id ::= "execute_meter" [token]
+rule <k> @call (execute_meter , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)) ListItem(F:FieldRef))) => @getStatefulIndexInActionCall(C, I) ~> @updateMeter(C, 0, F) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $meter </stype>  ... </stateful> ... </statefuls>
+rule I:Int ~> @updateMeter(C:Id, 0, F:FieldRef) => @updateMeter(C, I, F)
 
 syntax KItem ::= "@getStatefulIndexInActionCall" "(" Id "," Int ")"
 rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then CR #else I #fi   ... </k>
@@ -1155,6 +1171,10 @@ syntax KItem ::= "@setWidth" "(" K "," K ")" [seqstrict]
 rule @setWidth(@val(W:Int,0,false),@val(I:Int,0,false)) => @val(I,W,false) when I <Int (2 ^Int W)
 //TODO ISSUE: what happens if the unsigned value constant does not fit into the width specified
 
+
+//----------------------------casts-------------------------------------------
+syntax FieldRef ::= "#castToFieldRef" "(" K ")" [function]
+rule #castToFieldRef(X:FieldRef) => X
 
 
 //----------------------------temporary utils----------------------------------
