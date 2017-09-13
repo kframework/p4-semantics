@@ -965,6 +965,18 @@ rule <k> @call (execute_meter , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_
      <statefuls> <stateful> <name> C </name> <stype> $meter </stype>  ... </stateful> ... </statefuls>
 rule I:Int ~> @updateMeter(C:Id, 0, F:FieldRef) => @updateMeter(C, I, F)
 
+syntax Id ::= "register_read" [token]
+rule <k> @call (register_read , $resolved(ListItem(F:FieldRef) ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @writeFieldAdjusted(F, @readStateful(C, 0)) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $register </stype>  ... </stateful> ... </statefuls>
+rule I:Int ~> @writeFieldAdjusted(F, @readStateful(C, 0)) => @writeFieldAdjusted(F, @readStateful(C, I))
+
+syntax Id ::= "register_write" [token]
+rule @call (register_write , $resolved(ListItem(C:Id) ListItem(I:Val) ListItem(F:FieldRef) )) => @readField(F) ~> @call (register_write , $resolved(ListItem(C) ListItem(I) ListItem(F) ))
+rule V:Val ~> @call (register_write , $resolved(ListItem(C) ListItem(I) ListItem(F) )) => @call (register_write , $resolved(ListItem(C) ListItem(I) ListItem(V) ))
+rule <k> @call (register_write , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)) ListItem(V:Val) )) => @getStatefulIndexInActionCall(C, I) ~> @writeStatefulAdjusted(C, 0, V) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $register </stype>  ... </stateful> ... </statefuls>
+rule I:Int ~> @writeStatefulAdjusted(C, 0, V) => @writeStatefulAdjusted(C, I, V)
+
 syntax KItem ::= "@getStatefulIndexInActionCall" "(" Id "," Int ")"
 rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then CR #else I #fi   ... </k>
      <statefuls> <stateful> <name> C </name> <stype> T:StatefulType </stype> <opts> "$binding" |-> B:BindingType M:Map </opts> ... </stateful> ... </statefuls>
