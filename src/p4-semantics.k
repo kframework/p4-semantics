@@ -117,9 +117,16 @@ rule @getFieldsSet(.FieldDecs, Acc:Set) => Acc
 syntax Map ::= "@initFields" "(" InstanceName "," FieldValueAssignments "," Set ")"
 rule @initFields(I, .FieldValueAssignments, .Set) => .
 rule @initFields(I, .FieldValueAssignments, SetItem(F:FieldName) Rest:Set) =>
-        @writeField(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
+        @initField(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
 rule @initFields(I, F:FieldName : V:FieldValue ; ARest:FieldValueAssignments, SetItem(F:FieldName) FRest:Set) =>
-        @writeField(I,F,V) ~> @initFields(I, ARest, FRest)
+        @initField(I,F,V) ~> @initFields(I, ARest, FRest)
+
+syntax Map ::= "@initField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+rule <k> @initField(N,F,V:Val) => . ...</k>
+        <instances>
+            <instance> <name> N </name>  <fieldVals> (.Map => F |-> V) _:Map </fieldVals>  ... </instance>
+            ...
+        </instances>
 
 //parser
 
@@ -479,7 +486,7 @@ rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLeng
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
 //TODO: array
-rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
         ...
@@ -512,10 +519,16 @@ rule <k> @writeFieldAdjusted(N,F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F
 syntax KItem ::= "@writeField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 rule <k> @writeField(N,F,V:Val) => . ...</k>
         <instances>
-            <instance> <name> N </name>  <fieldVals> FV:Map => FV [ F <- V ] </fieldVals>  ... </instance>
+            <instance> <name> N </name> <valid> true </valid>  <fieldVals> FV:Map => FV [ F <- V ] </fieldVals>  ... </instance>
             ...
         </instances>
 
+rule <k> @writeField(N,F,V:Val) => . ...</k>
+        <instances>
+            <instance> <name> N </name> <valid> false </valid>  ... </instance>
+            ...
+        </instances>
+//no change if the field is not valid
 
 //TODO: change FieldDec to FieldAttr which should be custom format for field attributes
 syntax FieldDec ::= "@getAttr" "(" FieldName "," FieldDecs ")" [function]
