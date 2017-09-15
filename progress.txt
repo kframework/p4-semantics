@@ -11,6 +11,10 @@
       - resolved: the value_list is actually a set of values. Any of those values that match the (concatenated) field value will result in a match.
         - but this is not mentioned in the spec, I inferred it from p4c tests
         - maybe it would be good to double check it by asking on github
+  - There are lots of problems with inferring order of deparsing. For now, only supporting very simple cases
+    - if there a dag, a random topological order is made
+    - only self-loops are allowed, only for a case that we have extract(...[next]), and in that case the whole array will be ordered
+
 
 - (Done) support for Variable length header fields
   - there are no tests in p4c test suit. There is one test but the var-length part is commented
@@ -41,8 +45,9 @@
   - "header_ref ::= instance_name | instance_name "[" index "]" index ::= const_value | last   The keyword last can be
                                                                                               used as an index to refer to the largest-index valid instance of a header stack."
   - "header_extract_ref ::= instance_name "[" header_extract_index "]" header_extract_index ::= const_value | next Note that we use the special identifier next (rather than last) for header stacks as we
-                                                                                                                   are extracting into the next available free location"
-  - Important: is it possible to extract into a higher index element without extracting the lower index element ?
+                                                                                                   are extracting into the next available free location"
+  - Important: is it possible to extract into a higher index element without extracting the lower index elements first ?
+    - for now, assuming we can NOT do such a thing. Because first of all it is not useful to be able to do it, second this assumption makes implementation of some stuff easier, such as add_header(x[1]), or inferring deparsing order
 
 
 

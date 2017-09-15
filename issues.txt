@@ -177,4 +177,7 @@ What is const_expr? Is it const_value?
   If yes, how is it calculated? If no, why length_exp allows ConstValue which allows specification of width?
 
 
-
+- Page 12 section 2.2.2
+  Minor: "See the proposal in Appendix 17.8.2. Parser Repeat Loops
+          regarding how they may be parsed."
+          17.8.2 -> 15.9

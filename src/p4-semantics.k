@@ -318,8 +318,8 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
 //rule @parseOrder(P:K, _:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
 //        @parseOrder(P,Rest) ~> @parseOrder(P,@caseReturnToReturn(C))
 
-//TODO: assuming it is a dag
-//TODO: assuming no header stacks
+
+// assuming only dag or self loops with extract(hs[next]), refer to progress.txt
 
 rule <k> @parseOrder(C:ParserStateName) => @parseOrder(B) ... </k>
      <parserStates>
@@ -327,12 +327,46 @@ rule <k> @parseOrder(C:ParserStateName) => @parseOrder(B) ... </k>
         ...
      </parserStates>
 rule @parseOrder(S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(Rest Ret)
-rule <k> @parseOrder(extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>
-            @parseOrder(Rest Ret) ~> @push(H) ...</k>
-     <marked> (. => SetItem(H)) S:Set </marked> when notBool H in S
-rule <k> @parseOrder(extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(Rest Ret) ...</k>
-     <marked> S:Set </marked> when H in S
-//TODO: more compact if possible
+
+rule <k> @parseOrder(extract(H:InstanceName); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>
+            @if @on_path(H) @then //#if H in OP #then was not working correctly, probabely a bug in K
+                .K
+            @else
+                //A directed loop, discontinue
+            //    .K
+           // #else
+                @addOnPath(H) ~>
+                @if @is_marked(H) @then @parseOrder(Rest Ret) @else @mark(H) ~> @parseOrder(Rest Ret) ~> @addOrder(H) @fi
+                ~> @removeOnPath(H)
+            @fi
+           // #fi
+     ...
+     </k>
+//     <graph>
+//        <marked> S:Set </marked>
+//        <onpath> P:Set </onpath>
+//        ...
+//     </graph>
+
+
+syntax KItem ::= "@on_path" "(" HeaderExtractRef ")"
+rule <k> @on_path(H:HeaderExtractRef) => H in S ... </k>
+     <onpath> S:Set </onpath>
+
+syntax KItem ::= "@is_marked" "(" HeaderExtractRef ")"
+rule <k> @is_marked(H:HeaderExtractRef) => H in S ... </k>
+     <marked> S:Set </marked>
+
+// due to bug in K
+//syntax Bool ::= "#in_set" "(" K "," Set ")" [function]
+//rule #in_set(_:K, .Set) => false
+//rule #in_set(X, SetItem(X) _:Set) => true
+//rule #in_set(X, SetItem(Y) Rest:Set) => #in_set(X, Rest) when X =/=K Y
+
+rule @parseOrder(extract(H:InstanceName [ Idx:UnsignedValue ]); Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(extract($element(H,USgnVal2Int(Idx))); Rest Ret) //TODO(minor) Idx must be ConstValue
+rule @parseOrder(extract(H:InstanceName [ next ]); Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(extract(H); Rest Ret)
+
+
 rule @parseOrder(.ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(Ret)
 rule <k> @parseOrder(return S:ParserStateName;) =>  @parseOrder(S) ... </k>
       <parserStates>
@@ -349,9 +383,21 @@ rule @parseOrder(.CaseEntries) =>  .K
 rule @parseOrder(_:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
          @parseOrder(@caseReturnToReturn(C)) ~> @parseOrder(Rest) //dfs
 
-syntax KItem ::= "@push" "(" HeaderExtractRef ")"
-rule <k> @push(H:HeaderExtractRef) => . ... </k>
-     <dporder> (.List => ListItem (H)) ...  </dporder>
+syntax KItem ::= "@addOnPath" "(" HeaderExtractRef ")"
+                | "@removeOnPath" "(" HeaderExtractRef ")"
+rule <k> @addOnPath (H:HeaderExtractRef) => . ... </k>
+     <onpath> (.Set => SetItem(H)) S:Set </onpath>
+     when notBool H in S
+rule <k> @removeOnPath (H:HeaderExtractRef) => . ... </k>
+     <onpath> (SetItem(H) => .Set) _:Set </onpath>
+
+syntax KItem ::= "@mark" "(" HeaderExtractRef ")"
+rule <k> @mark (H:HeaderExtractRef) => . ... </k>
+     <marked> (.Set => SetItem(H)) _:Set </marked>
+
+syntax KItem ::= "@addOrder" "(" HeaderExtractRef ")"
+rule <k> @addOrder(H:HeaderExtractRef) => . ... </k>
+     <dporder> (.List => ListItem (H)) _:List  </dporder>
 
 
 // --------------------init------------------------------------
@@ -435,7 +481,7 @@ rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseR
 
 syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
 rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
-    => @if @concat(Vs) %== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest)  //TODO: change this to == in Val when we have complete semantics for it
+    => @if @concat(Vs) %== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest) @fi  //TODO: change this to == in Val when we have complete semantics for it
 
 syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
 rule @VMstoVals (.ValueOrMaskeds) => @nil
@@ -634,10 +680,11 @@ rule @verifyCalcField(F:FieldRef, ListItem(verify FLC:FieldListCalculationName i
              @else
                 //$pause right now the checksum is a dummy number
                 .K //TODO: parser exception
+             @fi
             )
         @else
             @verifyCalcField(F, Rest)
-
+        @fi
 
 rule CalcBCEq(F:FieldRef, V:FieldValue) => V %== F
 
@@ -651,7 +698,7 @@ rule <k> @calculateFLC(N:FieldListCalculationName) => @calculateChecksum(@concat
 syntax KItem ::=   "@readFieldList" "(" FieldListEntryItems ")"
 
 rule @readFieldList(.FieldListEntryItems) => @nil
-rule @readFieldList(F:FieldRef ; Rest:FieldListEntryItems) => @if @isValid(F) @then @makeCons(@readField(F), @readFieldList(Rest)) @else @readFieldList(Rest)
+rule @readFieldList(F:FieldRef ; Rest:FieldListEntryItems) => @if @isValid(F) @then @makeCons(@readField(F), @readFieldList(Rest)) @else @readFieldList(Rest) @fi
 rule @readFieldList(V:FieldValue ; Rest:FieldListEntryItems) => @makeCons(V, @readFieldList(Rest))
 rule <k> @readFieldList(N:FieldListName ; Rest:FieldListEntryItems) => @makeConcat(@readFieldList(E),@readFieldList(Rest)) ... </k>
      <fieldLists> <fieldList> <name> N </name> <fields> E:FieldListEntryItems </fields> ... </fieldList> ... </fieldLists>
@@ -680,7 +727,7 @@ rule @updateCalcField(F:FieldRef, ListItem(update FLC:FieldListCalculationName i
             @calculateFLC(FLC)
         @else
             @updateCalcField(F, Rest, V)
-
+        @fi
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
@@ -732,7 +779,7 @@ rule if ( B:BoolExpr ) C:ControlBlock Rest:ControlStatements => if ( B ) C else 
 rule else I:IfElseStatement => else { I } [macro]
 
 rule if ( B:BoolExpr ) T:ControlBlock else F:ControlBlock =>
-        @if B @then T @else F
+        @if B @then T @else F @fi
 
 
 //call
@@ -794,7 +841,7 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 syntax ActionName ::= "@miss" [token]
 rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
 rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
-    => @if @matchAll(FM,R) @then @setCrntRule(Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrntRule(.K)  @else @checkNextRule(FM,Rest)
+    => @if @matchAll(FM,R) @then @setCrntRule(Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrntRule(.K)  @else @checkNextRule(FM,Rest) @fi
 
 rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
 
@@ -850,7 +897,7 @@ rule <k> @updateCounter (C:Id , I:Int) => @writeStatefulAdjusted(C, I, @readStat
      <packetSize> S:Val </packetSize>
 
 syntax KItem ::=  "@updateMeter" "(" Id "," Int "," FieldRef")"
-rule @updateMeter(M:Id, I:Int , F:FieldRef) => @writeStatefulAdjusted(M, I, @doUpdateMeter(M, I)) ~> @if @isValid(F) @then @writeFieldAdjusted(F, @readStateful(M,I)) @else .K
+rule @updateMeter(M:Id, I:Int , F:FieldRef) => @writeStatefulAdjusted(M, I, @doUpdateMeter(M, I)) ~> @if @isValid(F) @then @writeFieldAdjusted(F, @readStateful(M,I)) @else .K @fi
 
 
 syntax KItem ::= "@doUpdateMeter" "(" Id "," Int ")"
@@ -1155,10 +1202,10 @@ rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),
 rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0x",""),16)
 
 
-syntax K ::= "@if" K /* Bool */ "@then" K "@else" K [strict(1)]
+syntax K ::= "@if" K /* Bool */ "@then" K "@else" K "@fi"[strict(1)]
 syntax KResult ::= Bool
-rule @if true @then T:K @else F:K => T  [transition]
-rule @if false @then T:K @else F:K => F [transition]
+rule @if true @then T:K @else F:K @fi => T  [transition]
+rule @if false @then T:K @else F:K @fi => F [transition]
 
 
 syntax KItem /* Val */ ::= "@concat" "(" K /* Vals */ ")" [strict]

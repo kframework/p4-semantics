@@ -148,6 +148,7 @@ configuration
 
     <parser>
         <graph>
+            <onpath> .Set </onpath>
             <marked> .Set </marked>
             <dporder> .List </dporder>
         </graph>
