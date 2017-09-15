@@ -100,13 +100,18 @@ rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... <
              <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  ...
         </instance>
     ) ... </instances>
-//rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstValue ] ; ) => . ... </k>
-//    <instances> ... (.Bag =>
-//        <instance>
-//            ... <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name> <arraysize> Size </arraysize>   ...
-//        </instance>
-//    ) ... </instances>
-//TODO: array is not supported yet
+rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:UnsignedValue ] ; ) => @createArrayElement(Type, Name, USgnVal2Int(Size)) ... </k> //TODO (minor) : Size should be ConstValue
+     <arrays> (.Map => Name |-> $array(USgnVal2Int(Size), 0, -1)) M:Map </arrays>
+
+syntax KItem ::= "@createArrayElement" "(" HeaderTypeName "," InstanceName "," Int ")"
+rule @createArrayElement(_,_,0) => .K
+rule <k> @createArrayElement(T:HeaderTypeName,N:InstanceName,(I:Int => (I -Int 1))) ... </k>
+     <instances> (.Bag =>
+             <instance>
+                  <valid> false </valid> <metadata> false </metadata> <typeName> T </typeName> <name> $element(N,I -Int 1) </name>  ...
+             </instance>
+         ) ... </instances>
+     when I >Int 0
 
 syntax Set ::= "@getFieldsSet" "(" FieldDecs "," Set ")" [function]
 rule @getFieldsSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs, Acc:Set) => @getFieldsSet(Rest, SetItem(N) Acc)
@@ -1132,6 +1137,10 @@ rule <k> @packetOut(V:Val) => . ... </k>
 
 
 
+//-----------------array-----------------------------
+
+syntax ArrayInfo ::= "$array" "(" Int "," Int "," Int ")" //size, next, last
+syntax InstanceName ::= "$element" "(" InstanceName "," Int ")"
 
 //------------------utils-------------------------------
 syntax Int ::= "Val2Int" "(" Val ")" [function]

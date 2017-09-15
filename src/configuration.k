@@ -21,6 +21,10 @@ configuration
         </header>
     </headers>
 
+    <arrays>
+        .Map
+    </arrays>
+
     <fieldLists>
         <fieldList multiplicity="*">
             <name> .K </name>

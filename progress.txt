@@ -1,3 +1,17 @@
+- (Done) Parsing
+
+  - "Select functions take a comma-separated list of fields and concatenate their values,
+     with the left-most field forming the most-significant bits of the concatenated value. The
+     select operation then compares the values in the order they occur in the program to the
+     entries to find a matching one."
+    "The comparison between the select expression and the case’s
+     value is limited to the bits set in the mask; that is, the select expression and value are
+     each ANDed with the mask before the comparison is made."
+    - How does it exactly apply the mask to the concatenated field values ? for example if we have  select (h1.f1 (3 bits),h1.f2 (2 bits)) { 4'1 mask 4'1 , 1'1 mask  1'1 }
+      - resolved: the value_list is actually a set of values. Any of those values that match the (concatenated) field value will result in a match.
+        - but this is not mentioned in the spec, I inferred it from p4c tests
+        - maybe it would be good to double check it by asking on github
+
 - (Done) support for Variable length header fields
   - there are no tests in p4c test suit. There is one test but the var-length part is commented
 
@@ -22,6 +36,15 @@
 
 
 - Header stacks (array instances)
+  - Only packet headers (not metadata instances) may be arrays (header stacks).
+  - "field_ref ::= header_ref . field_name"
+  - "header_ref ::= instance_name | instance_name "[" index "]" index ::= const_value | last   The keyword last can be
+                                                                                              used as an index to refer to the largest-index valid instance of a header stack."
+  - "header_extract_ref ::= instance_name "[" header_extract_index "]" header_extract_index ::= const_value | next Note that we use the special identifier next (rather than last) for header stacks as we
+                                                                                                                   are extracting into the next available free location"
+  - Important: is it possible to extract into a higher index element without extracting the lower index element ?
+
+
 
 - (Done) Field lists
   -field_list declaration: how to handle payload? Can we reference metadata (yes)? what is payload in that case?
@@ -53,7 +76,17 @@
 
 
 Parser exceptions
-Value set declarations
+
+
+- Value set declarations
+  - no tests in p4c. Found one test in bm repo
+  - "All values in a value set must correspond to the same transition. For example, all MPLS
+     labels corresponding to an IPv4 transition would exist in one set, while all MPLS labels
+     corresponding to an IPv6 transition would exist in a different set."
+     - what does it mean ?
+  - "The width of the values is inferred from the place where the value set is referenced. If the
+    set is used in multiple places and they would infer different widths, then the compiler
+    must raise an error."
 
 - Counters
   - "Run time APIs should be provided to indicate the actual width of a given counter."
