@@ -14,6 +14,9 @@ syntax Criteria
 
 syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
 syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
+syntax ActionProfileEntryRef ::= "@apref" "(" Int ")"
+syntax ActionCallOrActionProfileRef ::= ActionCall | ActionProfileEntryRef
+
 
 syntax ResolvedArgs ::= "$resolved" "(" List ")"
 syntax KResult ::= ResolvedArgs
@@ -32,7 +35,7 @@ syntax KResult ::= "$pair" "(" Val "," Val ")"
 //syntax Matchs ::= List{Match,","} [klable('Matchs)]
 //syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
 
-syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCall ")"
+syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCallOrActionProfileRef ")"
 syntax Criteria ::= "$ctr" "(" List ")"
 
 

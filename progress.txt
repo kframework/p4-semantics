@@ -70,7 +70,7 @@ Value set declarations
   - is the index 0 base or 1 base?
   - TODO: packet_and_bytes type
 
-- Meters
+- (Done) Meters
   - what is a initial value of meter?
   - it errata section it is mentioned that "The mechanism to refer to the output of a meter is over-specified. The output of
                                             a meter (the metadata field into which the “color” returned by a meter is stored)
@@ -78,15 +78,16 @@ Value set declarations
                                             meter is invoked."
     - if both things are specified which one should be chosen ? for now will use the execute_meter parameter
   - TODO: the meter currently does nothing
-- Registers
+- (Done) Registers
   - what is the initial value of a register, 0 or undef?
   - what does a direct register mean? what if instance count is not defined for a register? (solved: one register per each entry)
   - register_read/write does not say anything about what to do if the referenced field is invalid. What should we do ? for register_read it would be  consistent if nothing changes, for register_write it would be consistent if value is undefined
 
-- Statefuls
+- (Done) Statefuls
   - in what order the direct counters and meter are updated? does it matter?
 
-Action profiles
+- (Done) Action profiles
+  - https://github.com/p4lang/p4-spec/issues/418
 
 - (Done) Any matching type other than exact and valid (ternary, lpm, range)
   - tables with more than one lmp match, how the priority is decided?

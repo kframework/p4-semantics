@@ -87,6 +87,22 @@ configuration
         </action>
     </actions>
 
+    <actionProfiles>
+        <actionProfile multiplicity="*">
+            <name> .K </name>
+            <acts> .K </acts>
+            <opts> .Map </opts>
+            <entries> .Map </entries>
+        </actionProfile>
+    </actionProfiles>
+
+    <actionSelectors>
+        <actionSelector multiplicity="*">
+            <name> .K </name>
+            <key> .K </key>
+        </actionSelector>
+    </actionSelectors>
+
     <tables>
         <table multiplicity="*">
             <name> .K </name>

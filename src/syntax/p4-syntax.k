@@ -38,8 +38,8 @@ module P4-COMMON
                 | MeterDeclaration
                 | RegisterDeclaration
                 | ActionFunctionDeclaration
-    //            | ActionProfileDeclaration //TODO
-    //            | ActionSelectorDeclaration //TODO
+                | ActionProfileDeclaration
+                | ActionSelectorDeclaration
                 | TableDeclaration
                 | ControlFunctionDeclaration
 

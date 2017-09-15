@@ -233,7 +233,30 @@ rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionSt
     ) ... </actions>
 
 
-//table
+// action profile
+rule <k> @processDec(action_profile Name:ActionProfileName { Act:ActionSpecification Opt:ActionsProfileOptionals } ) => . ... </k>
+     <actionProfiles>
+        ( .Bag =>
+            <actionProfile>
+                <name> Name </name>
+                <acts> Act </acts>
+                <opts> @processActionProfileOptionals(Opt, .Map) </opts>
+                ...
+            </actionProfile>
+        ) ...
+     </actionProfiles>
+
+syntax Map ::= "@processActionProfileOptionals" "(" ActionsProfileOptionals "," Map ")" [function]
+rule @processActionProfileOptionals( .ActionsProfileOptionals , M:Map ) => M
+rule @processActionProfileOptionals( size : S:UnsignedValue ; Rest:ActionsProfileOptionals , M:Map ) => @processActionProfileOptionals( Rest:ActionsProfileOptionals , ("$size" |-> USgnVal2Int(S) ) M:Map ) //TODO (minor) S should be ConstValue
+rule @processActionProfileOptionals( dynamic_action_selection : S:SelectorName ; Rest:ActionsProfileOptionals , M:Map ) => @processActionProfileOptionals( Rest:ActionsProfileOptionals , ("$selector" |-> S ) M:Map )
+
+rule <k> @processDec(action_selector Name:SelectorName { selection_key : FLC:FieldListCalculationName ; } ) => . ... </k>
+     <actionSelectors>
+        ( .Bag => <actionSelector> <name> Name </name> <key> FLC </key> ... </actionSelector>) ...
+     </actionSelectors>
+
+// table
 
 rule table N:TableName { A:TableActions O:TableOptionals } => table N { reads { .FieldMatchs } A O } [macro]
 
@@ -765,8 +788,10 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 syntax ActionName ::= "@miss" [token]
 rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
-rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),@call(A:ActionName,$resolved(Ag)) )) Rest:List)
-    => @if @matchAll(FM,R) @then @setCrntRule(Id) ~> @updateDirectStatefuls ~> @call(A,$resolved(Ag)) ~> @setCrntRule(.K) ~> A  @else @checkNextRule(FM,Rest)
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
+    => @if @matchAll(FM,R) @then @setCrntRule(Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrntRule(.K)  @else @checkNextRule(FM,Rest)
+
+rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
 
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
@@ -989,6 +1014,27 @@ rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then
 
 syntax Int ::= "#get_instant_count" "(" Map ")" [function]
 rule #get_instant_count ("$instant_count" |-> I:Int _:Map) => I
+
+//-------------------action profile-------------------------
+syntax KItem ::= "@callOrDeref" "(" ActionCallOrActionProfileRef ")"
+rule @callOrDeref(@call(A:ActionName, X)) => @call(A,X) ~> A
+rule <k> @callOrDeref(@apref(Id:Int)) => @deref(P, Id) ... </k>
+     <tables> <table> <name> T </name> <acts> action_profile: P:ActionProfileName  ;</acts> ... </table> ... </tables>
+     <crntTable> T:TableName </crntTable>
+
+syntax KItem ::= "@deref" "(" ActionProfileName "," Int ")"
+rule <k> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(C) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> C:ActionCall _:Map </entries> ... </actionProfile> ... </actionProfiles>
+rule <k> @deref(P:ActionProfileName , Id:Int) => @calculateFLC(FLC) ~> @deref(P,Id) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> G:List _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
+     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
+rule <k> @val(I:Int,_,false) ~> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(#castToActionCall(G[I modInt size(G)])) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> (Id |-> G:List) _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
+     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
+
+syntax ActionCall ::= "#castToActionCall" "(" K ")" [function]
+//rule #castToActionCall(X:ActionCall) => X
+rule #castToActionCall(ListItem(X:ActionCall)) => X //workaround for K issue #2343
 
 
 //-------------------deparsing------------------------------
