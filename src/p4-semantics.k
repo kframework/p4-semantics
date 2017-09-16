@@ -472,20 +472,30 @@ rule <k> return Control:ControlFunctionName ; => @verifyCalcFields ~> Control();
 
 //return select
 
-rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@readFDRefs(SE),CE)
+rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@concat(@readFDRefs(SE)),CE)
 
-syntax KItem ::= "@select" "(" K /* Vals */ "," CaseEntries ")" [strict(1)]
-rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
-    => @selectCheckCase(Vs, @VMstoVals(VM), CA, Rest)
-rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseReturnToReturn(CA)
+syntax KItem ::= "@select" "(" K /* Val */ "," CaseEntries ")" [strict(1)]
+rule @select (V:Val,  VL:ValueList : CA:CaseReturnValueType; Rest:CaseEntries )
+    => @if @selected(V, VL) @then @caseReturnToReturn(CA) @else @select(V,Rest) @fi
 
-syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
-rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
-    => @if @concat(Vs) %== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest) @fi  //TODO: change this to == in Val when we have complete semantics for it
+syntax KItem ::= "@selected" "(" Val "," ValueList ")"
+rule @selected(_:Val, default ) => true
+rule @selected(_:Val, .ValueOrMaskeds) => false
+rule @selected(V:Val, F:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
+rule @selected(V:Val, F:FieldValue mask M:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,@makePair(F,M),ternary) @then true @else @selected(V,Rest) @fi
+//TODO rule @selected(V:Val, S:ValueSetName)
 
-syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
-rule @VMstoVals (.ValueOrMaskeds) => @nil
-rule @VMstoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMstoVals(Rest))
+//rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
+//    => @selectCheckCase(Vs, @VMstoVals(VM), CA, Rest)
+//rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseReturnToReturn(CA)
+
+//syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
+//rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
+//    => @if @concat(Vs) %== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest) @fi  //TODO: change this to == in Val when we have complete semantics for it
+
+//syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
+//rule @VMstoVals (.ValueOrMaskeds) => @nil
+//rule @VMstoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMstoVals(Rest))
 
 syntax ReturnValueType ::= "@caseReturnToReturn" "(" CaseReturnValueType ")" [function]
 rule @caseReturnToReturn(PS:ParserStateName) => return PS ;
@@ -508,6 +518,10 @@ rule <k> @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons
 
 
 //extract
+rule extract(N:InstanceName [ I:UnsignedValue ] ) ; => extract($element(N,USgnVal2Int(I))); //TODO (minor): I should be ConstValue
+//TODO: check bounds and through parser exception of necessary
+rule <k> extract(N:InstanceName [ next ]) ; => extract($element(N,Nx)); ... </k>
+     <arrays> N |-> $array(S:Int,Nx:Int => Nx +Int 1,L:Int => maxInt(L,Nx)) _:Map </arrays> when Nx <Int S //TODO: "The keyword last can be used as an index to refer to the largest-index valid instance of a header stack." since in extraction there may be parser exception this thing max(L,Nx) is not technically correct, same about => Nx+!
 rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
      <instances>
         <instance> <name> Name </name> <metadata> false </metadata> <typeName> Type:HeaderTypeName </typeName> ... </instance> ...
@@ -1118,7 +1132,12 @@ rule <k> @deparseHeader(I:InstanceName) => #if M ==Bool false #then .K #else @de
             <header> <name> H </name> <fields> F:FieldDecs </fields>  ... </header>
             ...
         </headers>
-//TODO:array
+rule <k> @deparseHeader(I:InstanceName) => @deparseArray(I,S -Int 1) ... </k>
+     <arrays> I |-> $array(S,_,_) _:Map </arrays>
+
+syntax KItem ::= "@deparseArray" "(" InstanceName "," Int ")"
+rule @deparseArray(I,0) => @deparseHeader($element(I,0))    [structural]
+rule @deparseArray(I,Idx) => @deparseArray(I, Idx -Int 1) ~> @deparseHeader($element(I,Idx)) when Idx >Int 0 [structural]
 
 syntax KItem ::= "@deparseFields" "(" InstanceName "," FieldDecs ")"
 rule @deparseFields(I:InstanceName,F:FieldName : _:ConstValue ( _:FieldMods ) ; Rest:FieldDecs) =>
@@ -1267,6 +1286,8 @@ rule V1:Val %+ V2:Val => V1 + V2
 rule B1:Bool %&& B2:Bool => B1 andBool B2
 
 
+syntax KItem /* KResult */ ::= "@makePair" "(" K /* Val */ "," K /* Val */ ")" [seqstrict]
+rule @makePair(V1:Val,V2:Val) => $pair(V1,V2)
 
 //------------------const value--------------------------
 

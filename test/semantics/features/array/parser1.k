@@ -25,6 +25,10 @@
                    ListItem(@val(0,3,false)) // pcp
                    ListItem(@val(1,1,false)) // cfi
                    ListItem(@val(2,12,false)) // vid
+                   ListItem(@val(33024,16,false)) // ethertype //vlan
+                   ListItem(@val(3,3,false)) // pcp
+                   ListItem(@val(0,1,false)) // cfi
+                   ListItem(@val(4,12,false)) // vid
                    ListItem(@val(2048,16,false)) // ethertype //ip
                    ListItem(@val(4,4,false)) //ip version
                    ListItem(@val(20,4,false)) //ihl
