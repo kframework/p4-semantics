@@ -85,8 +85,8 @@ imports VALUE-SYNTAX
 
 // 2.3 HeaderandFieldReferences
     syntax HeaderRef ::=
-              InstanceName
-            | InstanceName "[" Index "]" [strict(2)]
+              InstanceName                  [prefer]//[klabel(ScalarRef)]
+            | InstanceName "[" Index "]"    [prefer]//[klabel(ArrayRef)]
 
     syntax Index ::= ConstValue | "last"
 

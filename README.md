@@ -155,7 +155,7 @@ And then kompile the semantics and then run the input program with it.
 - ~~Variable length header fields~~ (now supported)
 - Saturating fields 
 - Signed numbers (partly supported)
-- Header stacks (array instances)
+- ~~Header stacks (array instances)~~
 - ~~Field lists~~
 - ~~Field lists calculations~~ 
 - ~~Calculated fields (so the checksum of packets won't be verified or updated)~~

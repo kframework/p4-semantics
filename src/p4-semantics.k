@@ -573,7 +573,6 @@ rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLeng
 
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
-//TODO: array
 rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
@@ -591,10 +590,10 @@ rule @packetAt(ListItem(X) _:List, 0) => X
 rule @packetAt(ListItem(_) Rest:List, I:Int) => @packetAt(Rest, I -Int 1) when I >Int 0
 
 
-syntax KItem ::=   "@writeFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+syntax KItem ::=   "@writeFieldAdjusted" "(" K /*ResolvedHeaderRef */ "," FieldName "," K /* Val */ ")" [strict(1,3)]
                  | "@writeFieldAdjusted" "(" FieldRef "," K /* Val */ ")" [strict(2)]
-rule @writeFieldAdjusted( I:InstanceName . F:FieldName, V:Val) => @writeFieldAdjusted(I,F,V) //todo array acceess
-rule <k> @writeFieldAdjusted(N,F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
+rule @writeFieldAdjusted( I:HeaderRef . F:FieldName, V:Val) => @writeFieldAdjusted(I,F,V)
+rule <k> @writeFieldAdjusted($href(N:InstanceName),F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
           <instances>
              <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
              ...
@@ -676,13 +675,15 @@ rule @verifyCalcFields(SetItem(F:FieldRef) Rest:Set) => @verifyCalcField(F) ~> @
 
 syntax KItem ::=   "@verifyCalcField" "(" FieldRef ")"
                  | "@verifyCalcField" "(" FieldRef "," List ")"
+                 | "@verifyCalcField" "(" K /* ResolvedHeaderRef */ "," FieldName ")" [strict(1)]
 
 
 
-//TODO: array (?)
-rule <k> @verifyCalcField(H:InstanceName . F:FieldName) => .  ... </k>
+
+rule @verifyCalcField(H:HeaderRef . F:FieldName) => @verifyCalcField(H, F)
+rule <k> @verifyCalcField(H:InstanceName , F:FieldName) => .  ... </k>
      <instances> <instance> <name> H </name> <valid> false </valid> ... </instance> ... </instances>
-rule <k> @verifyCalcField(H:InstanceName . F:FieldName) => @verifyCalcField(H.F, V)  ... </k>
+rule <k> @verifyCalcField(H:InstanceName , F:FieldName) => @verifyCalcField(H.F, V)  ... </k>
          <instances> <instance> <name> H </name> <valid> true </valid> ... </instance> ... </instances>
          <calcFields> <calcField> <fieldRef> H.F </fieldRef> <verifies> V:List </verifies> ... </calcField> </calcFields>
 
@@ -1001,15 +1002,15 @@ rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:FieldRef) R
             //  .
 
 rule (V:Val => .) ~> @call(modify_field , $resolved(ListItem(_) ListItem(_ => V) _:List))
-rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val) ListItem(M:Val))) =>
+rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:Val) ListItem(M:Val))) =>
            //@if @isValid(I.F) @then
-                @writeFieldAdjusted(I,F, (@readField(I.F) %& (~ M)) %| (S %& M))
+                @writeFieldAdjusted(D, (@readField(D) %& (~ M)) %| (S %& M))
            //@else
            //     .
 
-rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val))) =>
+rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:Val))) =>
            //@if @isValid(I.F) @then
-                @writeFieldAdjusted(I,F, S)
+                @writeFieldAdjusted(D, S)
            //@else
            //    .
 
@@ -1240,24 +1241,48 @@ rule @intrepretUnsigned(@val(V:Int,_,false)) => V
 
 //TODO:temporary, maybe we want to resolve the referece to header first
 //If not, complete it is for array
-syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
-rule <k> @readField(H:InstanceName . F:FieldName) => V ... </k>
+syntax KItem /* Val */ ::=     "@readField" "(" FieldRef  ")"
+                             | "@readField" "(" K /* ResolvedHeaderRef */ "," FieldName ")" [strict(1)]
+rule @readField(H:HeaderRef . F:FieldName) => @readField(H, F)
+rule <k> @readField($href(H:InstanceName) , F:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> true </valid> <fieldVals> (F |-> V:Val) _:Map </fieldVals> ...  </instance> ...
       </instances>
 
 //new in version 1.0.4
-rule <k> @readField(H:InstanceName . F:FieldName) => @undef ... </k>
+rule <k> @readField($href(H:InstanceName) , F:FieldName) => @undef ... </k>
       <instances>
          <instance> <name> H </name> <valid> false </valid>  ...  </instance> ...
       </instances>
 
+syntax ResolvedHeaderRef ::= "$href" "(" InstanceName ")"
 
+/*rule <k> ScalarRef(I:InstanceName) => $href(I) ... </k>
+     <instances> <instance> <name> I </name> ... </instance> ... </instances>
 
+rule <k> ArrayRef(I:InstanceName,Idx:UnsignedValue) => $href($element(I,USgnVal2Int(Idx))) ... </k> //TODO (minor): Idx should be ConstValue
+     <arrays> I |-> $array(S:Int,_,_) _:Map </arrays> when USgnVal2Int(Idx) <Int S //TODO: what to do for out of bound access
+
+rule <k> ArrayRef(I:InstanceName,last) => $href($element(I,L)) ... </k>
+     <arrays> I |-> $array(_:Int,_:Int,L:Int) _:Map </arrays> when L =/=Int -1*/
+// Some weired bug in K
+
+rule <k> I:InstanceName => $href(I) ... </k>
+     <instances> <instance> <name> I </name> ... </instance> ... </instances>
+rule <k> I:InstanceName [Idx:UnsignedValue] => $href($element(I,USgnVal2Int(Idx))) ... </k> //TODO (minor): Idx should be ConstValue
+     <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+     when USgnVal2Int(Idx) <Int S
+rule <k> I:InstanceName [last] => $href($element(I,L)) ... </k>
+     <arrays> I |-> $array(_:Int,_:Int,L:Int) _:Map </arrays>
+     when L =/=Int -1
+
+syntax KResult ::= ResolvedHeaderRef
 
 //TODO: same as above
-syntax KItem /* Bool */ ::= "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
-rule <k> @isValid(H:InstanceName . _:FieldName) => V ... </k>
+syntax KItem /* Bool */ ::=   "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
+                            | "@isValid" "(" K /*ResolvedHeaderRef*/ "," FieldName ")" [strict(1)]
+rule @isValid(H:HeaderRef . F:FieldName) => @isValid(H,F)
+rule <k> @isValid(H:InstanceName , _:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>

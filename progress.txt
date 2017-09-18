@@ -39,7 +39,7 @@
   "
 
 
-- Header stacks (array instances)
+- (Done) Header stacks (array instances)
   - Only packet headers (not metadata instances) may be arrays (header stacks).
   - "field_ref ::= header_ref . field_name"
   - "header_ref ::= instance_name | instance_name "[" index "]" index ::= const_value | last   The keyword last can be
@@ -48,7 +48,8 @@
                                                                                                    are extracting into the next available free location"
   - Important: is it possible to extract into a higher index element without extracting the lower index elements first ?
     - for now, assuming we can NOT do such a thing. Because first of all it is not useful to be able to do it, second this assumption makes implementation of some stuff easier, such as add_header(x[1]), or inferring deparsing order
-
+  - TODO: array access in calculated field will not work
+  - TODO (refactoring): maybe create a K result ResolvedFieldRef (similar to ResolvedHeaderRef) and change the KItems that take (K /* ResolvedHeaderRef */ , FieldName) and ( FieldRef ) to only take ( K /* ResolvedFieldRef */) (there are only 3 places that this happens (readfield,writefield,calcfield) so maybe not worth it)
 
 
 - (Done) Field lists
