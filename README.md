@@ -5,8 +5,7 @@ Based on this semantics, K provides various tools for the language, including an
 
 ## Using P4K:
 
-At the current moment, only the syntax of P4 is fully developed.
-The semantics of P4 is under development and is partial (see the last section)
+P4K is still under development but it is near completion (see the last section) and can handle most of the input programs. 
 
 ### Dependencies:
 - JRE 8
@@ -18,9 +17,9 @@ The semantics of P4 is under development and is partial (see the last section)
 ### Running simple P4 programs
 
 As mentioned, the semantics is not fully developed yet. 
-However, you can run very simple P4 program with the current partial semantics. 
+However, you can run most of the P4 programs with the current partial semantics. 
 
-In order to run a simple P4 program, you should first compile (kompile) the P4 language definition using K.
+In order to run a P4 program, you should first compile (kompile) the P4 language definition using K.
 At the current moment, the table entries and the input packet need to be hard-coded inside the semantics.
 So one needs to provide these inputs during kompilation. 
 
