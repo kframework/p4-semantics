@@ -1,0 +1,1 @@
+grep -e "^rule " -n $@

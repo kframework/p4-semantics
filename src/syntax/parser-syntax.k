@@ -32,8 +32,8 @@ imports VALUE-SYNTAX
 
 
     syntax HeaderExtractRef ::=
-                      InstanceName          [klabel('ScalarExtract)]
-                    | InstanceName "[" HeaderExtractIndex "]" [klabel('ArrayExtract)]
+                      InstanceName          [klabel(ScalarExtract)]
+                    | InstanceName "[" HeaderExtractIndex "]" [klabel(ArrayExtract)]
 
     syntax HeaderExtractIndex ::=
                   ConstValue
@@ -95,4 +95,5 @@ imports PARSER-SYNTAX
 
     syntax ReturnOrDrop ::= ReturnToControl | "parser_drop"
     syntax ReturnToControl ::= "return" ControlFunctionName
+
 endmodule

@@ -163,12 +163,21 @@ What is const_expr? Is it const_value?
   Does - 5 , if evaluated as - (5) , yields 3 bits or 4 bits?
   How about 6 - 5, 3 bits or 4 bits? (or 1 bit?)
   How about 5 - 6 ?
+  https://github.com/p4lang/p4-spec/issues/408
 
 - page 34 Table 5
   for FLD, the type desciption says "A field reference of form header_instance.field_name which
   refers to the Parsed Representation". Does this mean it can not be of the form for example h[0].f?
 
 
+- Page 9
+  Minor:
+  Is there any width limit in calculation of ((8 * length) - sum-of-fixed-width-fields) ?
+  length is of type length_exp.
+  If yes, how is it calculated? If no, why length_exp allows ConstValue which allows specification of width?
 
 
-
+- Page 12 section 2.2.2
+  Minor: "See the proposal in Appendix 17.8.2. Parser Repeat Loops
+          regarding how they may be parsed."
+          17.8.2 -> 15.9

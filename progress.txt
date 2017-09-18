@@ -1,0 +1,143 @@
+- (Done) Parsing
+  - "Select functions take a comma-separated list of fields and concatenate their values,
+     with the left-most field forming the most-significant bits of the concatenated value. The
+     select operation then compares the values in the order they occur in the program to the
+     entries to find a matching one."
+    "The comparison between the select expression and the case’s
+     value is limited to the bits set in the mask; that is, the select expression and value are
+     each ANDed with the mask before the comparison is made."
+    - How does it exactly apply the mask to the concatenated field values ? for example if we have  select (h1.f1 (3 bits),h1.f2 (2 bits)) { 4'1 mask 4'1 , 1'1 mask  1'1 }
+      - resolved: the value_list is actually a set of values. Any of those values that match the (concatenated) field value will result in a match.
+        - but this is not mentioned in the spec, I inferred it from p4c tests
+        - maybe it would be good to double check it by asking on github
+  - There are lots of problems with inferring order of deparsing. For now, only supporting very simple cases
+    - if there a dag, a random topological order is made
+    - only self-loops are allowed, only for a case that we have extract(...[next]), and in that case the whole array will be ordered
+  -TODO (important): set_metadata
+
+
+
+- (Done) support for Variable length header fields
+  - there are no tests in p4c test suit. There is one test but the var-length part is commented
+
+- Saturating fields
+- Negative numbers
+  "15.7 FieldValueConversions
+  As mentioned in Section 1.5.1, values may need to be converted when used in an ex- pression or assigned to a field instance. The conversion will depend the the source and destination widths and signedness, and whether the destination is saturating.
+  A value is signed if (1) it has an explicit minus ("-") preceding its representation; or (2) it is a field instance with the signed attribute in its declaration. Otherwise it is un- signed.
+  The rules for conversion are as follows:
+  • If the source and destinations have the same width, the binary value of the source is used, but the interpretation may change if the signedness is different.
+  – Example: source is unsigned, 7 bits with a value of 127 and the dest is signed, 7 bits, the result will be interpreted as -1.
+  • If the source width is less than the destination width, the source is extended based on its own signedness.
+  – Example:Source is signed,7’b1111111 and dest is 8 bits;the result is 8’b11111111. 2 There is an open issue whether all P4 keywords will in fact be reserved.
+
+   – Example:Source is unsigned 4’b1100 and dest is 8bits;the result is8’b00001100.
+  • If the source width is greater than the destination width, the result depends on whether the destination is saturating. The effect should be the same as adding the value represented by the source to the destination when the destination is 0.
+  – Example:Source is signed,and negative,destination is saturating.the result is 0.
+  – Example: Source is unsigned, has value 17 and the destination is 4 bits, un- signed and saturating; the result is 15 as that is the saturated value of the destination.
+  – Example: As above, but the destination is not saturating; the result is 1 as the destination would wrap above 15. This is equivalent to truncating the source.
+  For expressions, the value with largest bit width is identified and all other values are converted to this width according to their own signedness. The expression is then evaluated and the result is converted as necessary according to its use.
+  "
+
+
+- (Done) Header stacks (array instances)
+  - Only packet headers (not metadata instances) may be arrays (header stacks).
+  - "field_ref ::= header_ref . field_name"
+  - "header_ref ::= instance_name | instance_name "[" index "]" index ::= const_value | last   The keyword last can be
+                                                                                              used as an index to refer to the largest-index valid instance of a header stack."
+  - "header_extract_ref ::= instance_name "[" header_extract_index "]" header_extract_index ::= const_value | next Note that we use the special identifier next (rather than last) for header stacks as we
+                                                                                                   are extracting into the next available free location"
+  - Important: is it possible to extract into a higher index element without extracting the lower index elements first ?
+    - for now, assuming we can NOT do such a thing. Because first of all it is not useful to be able to do it, second this assumption makes implementation of some stuff easier, such as add_header(x[1]), or inferring deparsing order
+  - TODO: array access in calculated field will not work
+  - TODO (refactoring): maybe create a K result ResolvedFieldRef (similar to ResolvedHeaderRef) and change the KItems that take (K /* ResolvedHeaderRef */ , FieldName) and ( FieldRef ) to only take ( K /* ResolvedFieldRef */) (there are only 3 places that this happens (readfield,writefield,calcfield) so maybe not worth it)
+
+
+- (Done) Field lists
+  -field_list declaration: how to handle payload? Can we reference metadata (yes)? what is payload in that case?
+  -"The identifier payload indicates that the contents of the packet following the header of the previously mentioned field is included in the field list."
+    -what is "previously mentioned field"? what if that is metadata? what if it is of kind field_list fl1 { h1.f1; fl2; payload } what is payload in that case ?
+  -is it possible to have more than one payload in a field_list?
+  -TODO: payload
+
+- (Done) Field lists calculations
+ -A field instance is excluded from the calculation (i.e., it is treated as if the instance is not
+     listed in the input list) if the field’s header is not valid.
+ -TODO: K hooks for checksum functions
+
+- (Done) Calculated fields
+ -"The syntax associates a sequence of update or verify directives to a specific field in- stance, each of which may have a condition associated with it. The first entry with a condition satisfied by the packet (or with no condition specified) determines the as- sociation."
+   -just to make sure: the "first entry satisfying condition" of update and verify are separate. Yes?
+   -"Note that the conditions are evaluated at the point the verify or update operations are carried out."
+ -"Note that although this declaration may occur anywhere in the P4 program, the declaration should be placed immediately after the header instance declaration for the field referenced."
+   -what if the instance is an array? should we create a calculated field for each element?
+ -"calculated_field field_ref { update_verify_spec + }"
+   -can field_ref be array reference?
+   -can "last" be used as index of array? ...
+ -"The verify option ... This check occurs at the end of parsing and is performed only if field_ref is valid."
+   -when is "end of parsing" exactly?
+   -what if exceptions occur? what if parsing is not continued?
+   -in what order the calculated fields are verified? in the order of definition, order of parsing, or non-deterministically? Does it matter(for example the order of possible exceptions)
+ -"The update optopn ... he update to the field occurs when the packet is deparsed for egress. If no update clause applies, the field retains its value from the match+action pipeline."
+   -in what order the calculated fields are updated? in the order of definition, order of deparsing (probably this), non-deterministically? Does it matter(for example the order affects the calculated values)
+
+
+- (Done) Parser exceptions
+  - what to do if there are multiple handlers for same exception?
+    -for now, one will be selected non-deterministically
+  - "Note that setting metadata will only have an effect if return is executed."
+    -what is the difference if parser_drop drops the packet immediately
+  - "In the drop case, the packet may be immediately dropped by the parser. No match+ action processing is done on the packet. An implementation should provide one or more counters for such events."
+  -TODO (important): Complete the list of implicit exceptions
+
+- (Done) Value set declarations
+  - no tests in p4c. Found one test in bm repo
+  - "All values in a value set must correspond to the same transition. For example, all MPLS
+     labels corresponding to an IPv4 transition would exist in one set, while all MPLS labels
+     corresponding to an IPv6 transition would exist in a different set."
+     - what does it mean ?
+  - "The width of the values is inferred from the place where the value set is referenced. If the
+    set is used in multiple places and they would infer different widths, then the compiler
+    must raise an error."
+    - TODO: right now width is not checked/inferred
+
+- Counters
+  - "Run time APIs should be provided to indicate the actual width of a given counter."
+  - "The instance_count attribute is required if the counter is not declared with the direct attribute. The compiler should raise an error if both instance_count and direct are specified together, or if neither direct nor instance_count are speci- fied."
+  - counters should be initialized to zero, right?
+  - what is the default min_width or counter? what is default width of counter (specially if min_width is not present)? For now setting infinit
+  - (minor) if counter (or meter) type bytes, what if the size of packet is not multiple of bytes?
+  - why in "count" it is an error to reference a direct-mapped counter array from the action, but in "execute_meter" and "register_read" and "register_write" if the meter is direct, the index is ignored and table entry determines which entry?
+    - for register it makes sense a bit, but definately there is inconsistency between meter and counter in this case
+    - actually section 7.2 mentions that "Consequently meter names declared as direct are not allowed to be referenced
+                                          in the execute_meter primitive, and a compiler must raise an error if this occurs."
+      - so inconsistency for meters
+      - https://github.com/p4lang/p4-spec/issues/414
+  - is the index 0 base or 1 base?
+  - TODO: packet_and_bytes type
+
+- (Done) Meters
+  - what is a initial value of meter?
+  - it errata section it is mentioned that "The mechanism to refer to the output of a meter is over-specified. The output of
+                                            a meter (the metadata field into which the “color” returned by a meter is stored)
+                                            is allowed to be specified both in the declaration of the meter as well as when the
+                                            meter is invoked."
+    - if both things are specified which one should be chosen ? for now will use the execute_meter parameter
+  - TODO: the meter currently does nothing
+- (Done) Registers
+  - what is the initial value of a register, 0 or undef?
+  - what does a direct register mean? what if instance count is not defined for a register? (solved: one register per each entry)
+  - register_read/write does not say anything about what to do if the referenced field is invalid. What should we do ? for register_read it would be  consistent if nothing changes, for register_write it would be consistent if value is undefined
+
+- (Done) Statefuls
+  - in what order the direct counters and meter are updated? does it matter?
+
+- (Done) Action profiles
+  - https://github.com/p4lang/p4-spec/issues/418
+
+- (Done) Any matching type other than exact and valid (ternary, lpm, range)
+  - tables with more than one lmp match, how the priority is decided?
+  - range: "Signedness of the field is used in evaluating the order." what does it mean ?
+
+
+Any primitive action other than modify_field,add/subtract_from_field, and add/subtract

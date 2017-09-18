@@ -1,6 +1,6 @@
 require "value-syntax.k"
 require "table-syntax.k"
-//require "stateful-syntax.k"
+require "stateful-syntax.k"
 require "action-syntax.k"
 require "parser-syntax.k"
 require "header-syntax.k"
@@ -11,12 +11,10 @@ require "control-syntax.k"
 module P4-COMMON
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
-   // imports STATEFUL-SYNTAX //TODO
-   // imports CHECKSUM-SYNTAX //TODO
+    imports STATEFUL-SYNTAX
     imports PARSER-SYNTAX
-    //imports PARSER-EXCEPTION-SYNTAX //TODO
+    imports PARSER-EXCEPTION-SYNTAX
     imports ACTION-SYNTAX
-    //imports ACTION-PROFILE-SYNTAX //TODO
     imports TABLE-SYNTAX
     imports CONTROL-SYNTAX
 
@@ -28,18 +26,18 @@ module P4-COMMON
     syntax P4Declaration ::=
                   HeaderTypeDeclaration
                 | InstanceDeclaration
-    //            | FieldListDeclaration //TODO
-    //            | FieldListCalculationDeclaration //TODO
-    //            | CalculatedFieldDeclaration //TODO
-    //            | ValueSetDeclaration //TODO
+                | FieldListDeclaration
+                | FieldListCalculationDeclaration
+                | CalculatedFieldDeclaration
+                | ValueSetDeclaration
                 | ParserFunctionDeclaration
-    //            | ParserExceptionDeclaration //TODO
-    //            | CounterDeclaration //TODO
-    //            | MeterDeclaration //TODO
-    //            | RegisterDeclaration //TODO
+                | ParserExceptionDeclaration
+                | CounterDeclaration
+                | MeterDeclaration
+                | RegisterDeclaration
                 | ActionFunctionDeclaration
-    //            | ActionProfileDeclaration //TODO
-    //            | ActionSelectorDeclaration //TODO
+                | ActionProfileDeclaration
+                | ActionSelectorDeclaration
                 | TableDeclaration
                 | ControlFunctionDeclaration
 

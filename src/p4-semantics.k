@@ -1,101 +1,11 @@
-require "syntax/p4-syntax.k"
+require "configuration.k"
+require "initialization.k"
 
 
-
-module CONFIGURATION
+module P4-SEMANTICS
 imports P4-COMMON
-
-syntax KItem ::= "@exec"
-
-configuration
-<T>
-    <k>  $PGM:P4Program ~> @parseOrder (start) ~> @exec  </k>
-
-
-    <headers>
-        <header multiplicity="*">
-            <name> .K </name>
-            <opts> .K </opts>
-            <fields> .K </fields>
-        </header>
-    </headers>
-
-    <instances>
-        <instance multiplicity="*">
-            <valid> .K </valid>
-            <metadata> .K </metadata>
-            <typeName> .K </typeName>
-            <name> .K </name>
-            <fieldVals> .Map </fieldVals>
-        </instance>
-    </instances>
-
-    <parserStates>
-        <state multiplicity="*">
-            <name> .K </name>
-            <body> .K </body>
-        </state>
-    </parserStates>
-
-
-    <actions>
-        <action multiplicity="*">
-            <name> .K </name>
-            <params> .K </params>
-            <body> .K </body>
-        </action>
-    </actions>
-
-    <tables>
-        <table multiplicity="*">
-            <name> .K </name>
-            <reads> .K </reads>
-            <acts> .K </acts>
-            <opts> .K </opts>
-            <rules> .List </rules>
-        </table>
-    </tables>
-
-    <controlFlows>
-        <control multiplicity="*">
-            <name> .K </name>
-            <body> .K </body>
-        </control>
-    </controlFlows>
-
-    <cfset> .Set </cfset> //TODO: temporary fix for K issue #2279
-
-    <frameStack>
-        .List
-    </frameStack>
-
-
-    <packet>
-        .K
-    </packet>
-
-
-    <packetout>
-        ""
-    </packetout>
-
-
-    <parser>
-        <graph>
-            <marked> .Set </marked>
-            <dporder> .List </dporder>
-        </graph>
-        <index> 0 </index>
-        <lastExt> .K </lastExt>
-    </parser>
-
-    //<input stream="stdin">
-    //    .List
-    //</input>
-
-
-</T>
-
+imports CONFIGURATION
+imports INITIALIZATION
 
 //macros
 
@@ -115,13 +25,59 @@ rule <k> (.P4Declarations => .) ... </k>
 
 
 // header dec
-rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opt:HeaderOptionals }) => . ... </k>
+rule <k> @processDec(header_type Name:HeaderTypeName { fields { Fields:FieldDecs } Opts:HeaderOptionals }) => . ... </k>
     <headers>  (.Bag =>
-        <header>  <name> Name </name> <opts> Opt </opts> <fields> Fields </fields>   </header>)
+        <header>  <name> Name </name> <opts> @processHeaderOpts(Opts, .Map) @sumofFixedWidthBits(Fields, 0) </opts> <fields> Fields </fields>  </header>)
     ... </headers>
 
-
 rule N:FieldName : W:BitWidth ; => N : W ( .FieldMods ) ; [macro]
+
+syntax Map ::= "@processHeaderOpts" "(" HeaderOptionals "," Map ")" [function]
+rule @processHeaderOpts(.HeaderOptionals, M:Map) => M
+rule @processHeaderOpts(length : LE:LengthExp ; Rest:HeaderOptionals, M:Map) => @processHeaderOpts(Rest, ("length" |-> LE) M)
+rule @processHeaderOpts(max_length : MW:UnsignedValue ; Rest:HeaderOptionals, M:Map) => @processHeaderOpts(Rest, ("max_length" |-> USgnVal2Int(MW)) M) //TODO(minor): MW should be ConstValue
+
+syntax Map ::= "@sumofFixedWidthBits" "(" FieldDecs "," Int ")" [function]
+rule @sumofFixedWidthBits(.FieldDecs, I:Int) => "$fixed_width" |-> I
+rule @sumofFixedWidthBits(_:FieldName : W:UnsignedValue ( _:FieldMods); Rest:FieldDecs, I:Int) => @sumofFixedWidthBits(Rest, I +Int USgnVal2Int(W)) //TODO(minor): W should be ConstValue
+rule @sumofFixedWidthBits(_:FieldName : * ( _:FieldMods); Rest:FieldDecs, I:Int) => @sumofFixedWidthBits(Rest, I)
+
+// field_list dec
+rule <k> @processDec(field_list Name:FieldListName { FL:FieldListEntryItems }) => . ... </k>
+     <fieldLists>
+         (.Bag => <fieldList> <name> Name </name> <fields> FL </fields> ... </fieldList>
+         ) ...
+     </fieldLists>
+
+
+// field_list_calculation dec
+rule <k> @processDec(field_list_calculation Name:FieldListCalculationName { input { FLs:FieldListNameItems }  algorithm : A:StreamFunctionAlgorithmName ; output_width : W:UnsignedValue ; } ) => . ... </k> //TODO(minor): W should be ConstValue
+     <fieldListCalcs>
+        (.Bag => <fieldListCalc> <name> Name </name> <fLists> @FLAsList(FLs, .List) </fLists> <algorithm> A </algorithm> <outWidth> USgnVal2Int(W) </outWidth> ... </fieldListCalc>
+        ) ...
+     </fieldListCalcs>
+
+syntax List ::= "@FLAsList" "(" FieldListNameItems "," List")" [function]
+rule @FLAsList(N:FieldListName; Rest:FieldListNameItems, L:List ) => @FLAsList(Rest, ListItem(N) L)
+rule @FLAsList(.FieldListNameItems, L:List ) => L
+
+
+// calculated_field dec
+rule <k> @processDec(calculated_field F:FieldRef { UV:UpdateVerifySpecs } ) => . ... </k>
+     <calcFields>
+        (.Bag => <calcField> <fieldRef> F </fieldRef> <updates> @getUpdateOrVerify(update, UV, .List) </updates> <verifies> @getUpdateOrVerify(verify, UV, .List) </verifies>  ... </calcField>
+        ) ...
+     </calcFields>
+     <calcFieldSet> (.Set => SetItem(F)) _:Set </calcFieldSet>
+
+
+syntax CalcBoolCond ::= Bool
+rule UV:UpdateOrVerify N:FieldListCalculationName ; => UV N if ( true ); [macro]
+
+syntax List ::= "@getUpdateOrVerify" "(" UpdateOrVerify "," UpdateVerifySpecs "," List ")" [function]
+rule @getUpdateOrVerify(T:UpdateOrVerify, UV:UpdateOrVerify N:FieldListCalculationName C:IfCond ;  Rest:UpdateVerifySpecs, L:List) =>
+    #if (T ==K UV) #then @getUpdateOrVerify(T, Rest, ListItem(UV N C;) L) #else @getUpdateOrVerify(T, Rest, L) #fi
+rule @getUpdateOrVerify(_, .UpdateVerifySpecs , L:List) => L
 
 
 // header instance
@@ -144,13 +100,18 @@ rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... <
              <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  ...
         </instance>
     ) ... </instances>
-//rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:ConstValue ] ; ) => . ... </k>
-//    <instances> ... (.Bag =>
-//        <instance>
-//            ... <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name> <arraysize> Size </arraysize>   ...
-//        </instance>
-//    ) ... </instances>
-//TODO: array is not supported yet
+rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:UnsignedValue ] ; ) => @createArrayElement(Type, Name, USgnVal2Int(Size)) ... </k> //TODO (minor) : Size should be ConstValue
+     <arrays> (.Map => Name |-> $array(USgnVal2Int(Size), 0, -1)) M:Map </arrays>
+
+syntax KItem ::= "@createArrayElement" "(" HeaderTypeName "," InstanceName "," Int ")"
+rule @createArrayElement(_,_,0) => .K
+rule <k> @createArrayElement(T:HeaderTypeName,N:InstanceName,(I:Int => (I -Int 1))) ... </k>
+     <instances> (.Bag =>
+             <instance>
+                  <valid> false </valid> <metadata> false </metadata> <typeName> T </typeName> <name> $element(N,I -Int 1) </name>  ...
+             </instance>
+         ) ... </instances>
+     when I >Int 0
 
 syntax Set ::= "@getFieldsSet" "(" FieldDecs "," Set ")" [function]
 rule @getFieldsSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs, Acc:Set) => @getFieldsSet(Rest, SetItem(N) Acc)
@@ -161,38 +122,170 @@ rule @getFieldsSet(.FieldDecs, Acc:Set) => Acc
 syntax Map ::= "@initFields" "(" InstanceName "," FieldValueAssignments "," Set ")"
 rule @initFields(I, .FieldValueAssignments, .Set) => .
 rule @initFields(I, .FieldValueAssignments, SetItem(F:FieldName) Rest:Set) =>
-        @writeField(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
+        @initField(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
 rule @initFields(I, F:FieldName : V:FieldValue ; ARest:FieldValueAssignments, SetItem(F:FieldName) FRest:Set) =>
-        @writeField(I,F,V) ~> @initFields(I, ARest, FRest)
+        @initField(I,F,V) ~> @initFields(I, ARest, FRest)
+
+syntax Map ::= "@initField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+rule <k> @initField(N,F,V:Val) => . ...</k>
+        <instances>
+            <instance> <name> N </name>  <fieldVals> (.Map => F |-> V) _:Map </fieldVals>  ... </instance>
+            ...
+        </instances>
 
 //parser
 
 rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
     <parserStates> (.Bag =>
           <state>
-            <name> Name </name> <body> Body </body>
+            <name> Name </name> <body> Body </body> ...
           </state>
     ) ... </parserStates>
 
+// value set
+rule <k> @processDec(parser_value_set Name:ValueSetName ;) => . ... </k>
+     <valueSets>
+        (.Bag => <valueSet> <name> Name </name> ... </valueSet>)
+     ...
+     </valueSets>
+
+// exception
+rule <k> @processDec(parser_exception Name:ParserExceptionName { S:SetStatements R:ReturnOrDrop ;}) => . ... </k>
+     <exceptionHandlers>
+        (.Bag => <exceptionHandler> <name> Name </name> <pebody> <setsts> S </setsts> <return> R </return> ... </pebody> ... </exceptionHandler>)
+     ...
+     </exceptionHandlers>
+     <handledExceptions>
+        (.Set => SetItem(Name))_:Set
+     </handledExceptions>
+
+
+// stateful
+   syntax StatefulType ::= "$counter" | "$meter" | "$register"
+   syntax BindingType ::= "$direct" | "$static" | "$static_global"
+
+rule <k> @processDec(counter Name:Id { type : T:CounterType ; SOpt:StatefulOptionals COpt:CounterOptionals }) => @addTableDirect(Name) ... </k>
+     <statefuls>
+        (.Bag =>
+            <stateful>
+                <stype> $counter </stype>
+                <name> Name </name>
+                <opts> ("$counter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processCounterOpts(COpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
+                <width> 0 </width> // = inf
+                ...
+            </stateful>
+        ) ...
+     </statefuls>
+
+rule <k> @processDec(meter Name:Id { type : T:MeterType ; MOpt:MeterOptionals SOpt:StatefulOptionals }) =>  @addTableDirect(Name) ... </k>
+     <statefuls>
+        (.Bag =>
+            <stateful>
+                <stype> $meter </stype>
+                <name> Name </name>
+                <opts> ("$meter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processMeterOpts(MOpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
+                <width> 2 </width>
+                ...
+            </stateful>
+        ) ...
+     </statefuls>
+
+rule <k> @processDec(register Name:Id { width : W:UnsignedValue ; SOpt:StatefulOptionals ROpt:RegisterOptionals }) => . ... </k>     //TODO(minor): W should be ConstValue
+     <statefuls>
+        (.Bag =>
+            <stateful>
+                <stype> $register </stype>
+                <name> Name </name>
+                <opts> @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processRegisterOpts(ROpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
+                <width> USgnVal2Int(W) </width>
+                ...
+            </stateful>
+        ) ...
+     </statefuls>
+
+syntax Map ::= "@processStatefulOpts" "(" StatefulOptionals "," Map ")" [function]
+rule @processStatefulOpts(.StatefulOptionals, M:Map) => M
+rule @processStatefulOpts(direct : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- $direct])
+rule @processStatefulOpts(static : T:TableName ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest,  ("$table" |-> T) M["$binding" <- $static])
+rule @processStatefulOpts(instance_count : IC:UnsignedValue ; Rest:StatefulOptionals, M:Map ) => @processStatefulOpts(Rest, ("$instant_count" |-> USgnVal2Int(IC)) M ) //TODO(minor): IC should be ConstValue
+
+syntax Map ::= "@processCounterOpts" "(" CounterOptionals "," Map ")" [function]
+rule @processCounterOpts(.CounterOptionals, M:Map) => M
+rule @processCounterOpts(min_width : MW:UnsignedValue ; Rest:CounterOptionals, M:Map ) => @processCounterOpts(Rest, ("$min_width" |-> USgnVal2Int(MW)) M) //TODO(minor): MW should be ConstValue
+rule @processCounterOpts(saturating ; Rest:CounterOptionals, M:Map ) => @processCounterOpts(Rest, M["$saturating" <- true])
+
+syntax Map ::= "@processMeterOpts" "(" MeterOptionals "," Map ")" [function]
+rule @processMeterOpts(.MeterOptionals, M:Map) => M
+rule @processMeterOpts(result : F:FieldRef ; Rest:MeterOptionals, M:Map ) => @processMeterOpts(Rest, ("$result" |-> F) M)
+
+syntax Map ::=    "@processRegisterOpts" "(" RegisterOptionals "," Map ")" [function]
+                | "@processRegisterOpts" "(" AttrEntries "," Map ")" [function]
+rule @processRegisterOpts(.RegisterOptionals, M:Map) => M
+rule @processRegisterOpts(attributes : A:AttrEntries ; Rest:RegisterOptionals, M:Map ) => @processRegisterOpts(Rest, @processRegisterOpts(A, M))
+rule @processRegisterOpts(.AttrEntries, M:Map) => M
+rule @processRegisterOpts(signed , Rest:AttrEntries, M:Map) => @processRegisterOpts(Rest, M["$signed" <- true])
+rule @processRegisterOpts(saturating , Rest:AttrEntries, M:Map) => @processRegisterOpts(Rest, M["$saturating" <- true])
+
+
+syntax KItem ::= "@addTableDirect" "(" Id ")"
+rule <k> @addTableDirect(N:Id) => . ...</k>
+     <statefuls> <stateful> <name> N </name> <opts> "$binding" |-> $direct "$table" |-> T:TableName _:Map </opts> ... </stateful> ... </statefuls>
+     <tableDirects> T |-> ((.Set => SetItem(N)) _:Set) _:Map </tableDirects>
+
+rule <k> @addTableDirect(N:Id) => . ...</k>
+     <statefuls> <stateful> <name> N </name> <opts> "$binding" |-> $direct "$table" |-> T:TableName _:Map </opts> ... </stateful> ... </statefuls>
+     <tableDirects> (.Map => (T |-> SetItem(N))) Rest:Map</tableDirects>
+     when notBool #in_keys(T, Rest)
+
+rule <k> @addTableDirect(N:Id) => . ...</k>
+     <statefuls> <stateful> <name> N </name> <opts> "$binding" |-> B:BindingType _:Map</opts> ... </stateful> ... </statefuls>
+     when B =/=K $direct
+
+
+// syntax KItem ::= "@initStateful" "(" Id ")"
+// init on first use
 
 //action
 
 rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>
     <actions> (.Bag =>
           <action>
-            <name> Name </name> <params> Params </params> <body> Body </body>
+            <name> Name </name> <params> Params </params> <body> Body </body> ...
           </action>
     ) ... </actions>
 
 
-//table
+// action profile
+rule <k> @processDec(action_profile Name:ActionProfileName { Act:ActionSpecification Opt:ActionsProfileOptionals } ) => . ... </k>
+     <actionProfiles>
+        ( .Bag =>
+            <actionProfile>
+                <name> Name </name>
+                <acts> Act </acts>
+                <opts> @processActionProfileOptionals(Opt, .Map) </opts>
+                ...
+            </actionProfile>
+        ) ...
+     </actionProfiles>
+
+syntax Map ::= "@processActionProfileOptionals" "(" ActionsProfileOptionals "," Map ")" [function]
+rule @processActionProfileOptionals( .ActionsProfileOptionals , M:Map ) => M
+rule @processActionProfileOptionals( size : S:UnsignedValue ; Rest:ActionsProfileOptionals , M:Map ) => @processActionProfileOptionals( Rest:ActionsProfileOptionals , ("$size" |-> USgnVal2Int(S) ) M:Map ) //TODO (minor) S should be ConstValue
+rule @processActionProfileOptionals( dynamic_action_selection : S:SelectorName ; Rest:ActionsProfileOptionals , M:Map ) => @processActionProfileOptionals( Rest:ActionsProfileOptionals , ("$selector" |-> S ) M:Map )
+
+rule <k> @processDec(action_selector Name:SelectorName { selection_key : FLC:FieldListCalculationName ; } ) => . ... </k>
+     <actionSelectors>
+        ( .Bag => <actionSelector> <name> Name </name> <key> FLC </key> ... </actionSelector>) ...
+     </actionSelectors>
+
+// table
 
 rule table N:TableName { A:TableActions O:TableOptionals } => table N { reads { .FieldMatchs } A O } [macro]
 
 rule <k> @processDec(table Name:TableName { reads { FM:FieldMatchs }  Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
                <table>
-                 <name> Name </name> <reads> FM </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules>
+                 <name> Name </name> <reads> FM </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules> ...
                </table>
          ) ... </tables>
 
@@ -202,7 +295,7 @@ rule <k> @processDec(table Name:TableName { reads { FM:FieldMatchs }  Act:TableA
 rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements } ) => . ... </k>
          <controlFlows> (.Bag =>
                <control>
-                    <name> Name </name> <body> Body </body>
+                    <name> Name </name> <body> Body </body> ...
                </control>
          ) ...  </controlFlows>
 	<cfset> (.Set => SetItem(Name)) _ </cfset> //TODO: //TODO: temporary fix for K issue #2279
@@ -242,21 +335,55 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
 //rule @parseOrder(P:K, _:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
 //        @parseOrder(P,Rest) ~> @parseOrder(P,@caseReturnToReturn(C))
 
-//TODO: assuming it is a dag
-//TODO: assuming no header stacks
-syntax KItem ::=  "@parseOrder" "(" K ")"
+
+// assuming only dag or self loops with extract(hs[next]), refer to progress.txt
+
 rule <k> @parseOrder(C:ParserStateName) => @parseOrder(B) ... </k>
      <parserStates>
         <state> <name> C </name> <body> B:ParserFunctionBody   </body> </state>
         ...
      </parserStates>
 rule @parseOrder(S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(Rest Ret)
-rule <k> @parseOrder(extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>
-            @parseOrder(Rest Ret) ~> @push(H) ...</k>
-     <marked> (. => SetItem(H)) S:Set </marked> when notBool H in S
-rule <k> @parseOrder(extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(Rest Ret) ...</k>
-     <marked> S:Set </marked> when H in S
-//TODO: more compact if possible
+
+rule <k> @parseOrder(extract(H:InstanceName); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>
+            @if @on_path(H) @then //#if H in OP #then was not working correctly, probabely a bug in K
+                .K
+            @else
+                //A directed loop, discontinue
+            //    .K
+           // #else
+                @addOnPath(H) ~>
+                @if @is_marked(H) @then @parseOrder(Rest Ret) @else @mark(H) ~> @parseOrder(Rest Ret) ~> @addOrder(H) @fi
+                ~> @removeOnPath(H)
+            @fi
+           // #fi
+     ...
+     </k>
+//     <graph>
+//        <marked> S:Set </marked>
+//        <onpath> P:Set </onpath>
+//        ...
+//     </graph>
+
+
+syntax KItem ::= "@on_path" "(" HeaderExtractRef ")"
+rule <k> @on_path(H:HeaderExtractRef) => H in S ... </k>
+     <onpath> S:Set </onpath>
+
+syntax KItem ::= "@is_marked" "(" HeaderExtractRef ")"
+rule <k> @is_marked(H:HeaderExtractRef) => H in S ... </k>
+     <marked> S:Set </marked>
+
+// due to bug in K
+//syntax Bool ::= "#in_set" "(" K "," Set ")" [function]
+//rule #in_set(_:K, .Set) => false
+//rule #in_set(X, SetItem(X) _:Set) => true
+//rule #in_set(X, SetItem(Y) Rest:Set) => #in_set(X, Rest) when X =/=K Y
+
+rule @parseOrder(extract(H:InstanceName [ Idx:UnsignedValue ]); Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(extract($element(H,USgnVal2Int(Idx))); Rest Ret) //TODO(minor) Idx must be ConstValue
+rule @parseOrder(extract(H:InstanceName [ next ]); Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(extract(H); Rest Ret)
+
+
 rule @parseOrder(.ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(Ret)
 rule <k> @parseOrder(return S:ParserStateName;) =>  @parseOrder(S) ... </k>
       <parserStates>
@@ -273,75 +400,70 @@ rule @parseOrder(.CaseEntries) =>  .K
 rule @parseOrder(_:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
          @parseOrder(@caseReturnToReturn(C)) ~> @parseOrder(Rest) //dfs
 
-syntax KItem ::= "@push" "(" HeaderExtractRef ")"
-rule <k> @push(H:HeaderExtractRef) => . ... </k>
-     <dporder> (.List => ListItem (H)) ...  </dporder>
+syntax KItem ::= "@addOnPath" "(" HeaderExtractRef ")"
+                | "@removeOnPath" "(" HeaderExtractRef ")"
+rule <k> @addOnPath (H:HeaderExtractRef) => . ... </k>
+     <onpath> (.Set => SetItem(H)) S:Set </onpath>
+     when notBool H in S
+rule <k> @removeOnPath (H:HeaderExtractRef) => . ... </k>
+     <onpath> (SetItem(H) => .Set) _:Set </onpath>
+
+syntax KItem ::= "@mark" "(" HeaderExtractRef ")"
+rule <k> @mark (H:HeaderExtractRef) => . ... </k>
+     <marked> (.Set => SetItem(H)) _:Set </marked>
+
+syntax KItem ::= "@addOrder" "(" HeaderExtractRef ")"
+rule <k> @addOrder(H:HeaderExtractRef) => . ... </k>
+     <dporder> (.List => ListItem (H)) _:List  </dporder>
 
 
 // --------------------init------------------------------------
 
-syntax KItem ::= "@init" | "@parse&ingress" | "@egress"
+// moved to initialization.k
+rule  @exec => @nextPacket
 
-rule  @exec => @init ~> @parse&ingress ~> @egress
+// ------------------------packet to/from buffer-----------------------------
 
-
-
-//syntax Input ::= "packet" "(" String ")"
-
-//syntax Packet ::= "packet" "(" Int ")"
-
-//syntax Rule ::= "$rule" "(" Criteria  ","  ActionName ")"
-//syntax Criteria ::= "$ctr" "(" Matchs ")"
-//syntax Matchs ::= List{Match,","} [klable('Matchs)]
-//syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
-
-syntax Rule ::= "$rule" "(" Criteria "," ActionCall ")"
-syntax Criteria ::= "$ctr" "(" List ")"
-
-
-
-syntax Id ::= "%standard_metadata_t" [token]
-
-
-rule <k> @init => . ... </k>
-     <headers>
-                 (.Bag => <header>
-                             <name> %standard_metadata_t </name>
-                             <opts> .HeaderOptionals </opts>
-                             <fields>
-                                String2Id("ingress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
-                                String2Id("egress_spec") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
-                                 .FieldDecs
-                             </fields>
-                             ...
-                         </header>
-                 )
-                 ...
-     </headers>
+syntax KItem ::= "@nextPacket"
+syntax Id ::= "standard_metadata" [token]
+rule <k> @nextPacket => @parse&ingress ~> @egress ~> @txenPacket ~> @nextPacket ... </k>
+     <buffer> <in> (ListItem($packet(P:List, Port:Int)) => .List) _:List </in> ... </buffer>
+     <packet> _ => P </packet>
      <instances>
-        (.Bag => <instance>
-                    <valid> true </valid>
-                    <metadata> true </metadata>
-                    <typeName>  %standard_metadata_t </typeName>
-                    <name> String2Id("standard_metadata") </name>
-                    <fieldVals>
-                        String2Id("ingress_port") |-> @val(1,32,false)
-                        String2Id("egress_spec") |-> @val(0,32,true)
-                    </fieldVals>
-                    ...
-                 </instance>
-        )
+        <instance>
+            <name> standard_metadata </name>
+            <fieldVals> _:Map => (String2Id("ingress_port") |-> @val(Port,32,false) String2Id("egress_spec") |-> @undef) </fieldVals>
+            ...
+        </instance>
         ...
-     </instances>
-     //TODO: maybe instead of doing above, it would be better to add it as a part of the program
-//======Hardcoded input packet and table entries=====
-#include_data
-//===================================================
+    </instances>
+    <parser> <packetSize> .K => @calculatePacketSize(P , 0) </packetSize> ... </parser>
 
-//note: String2Id("port_mapping") does not match, because String2Id is a function and can not be used in LHS
+
+syntax Val ::= "@calculatePacketSize" "(" List "," Int ")" [function]
+rule @calculatePacketSize(.List, I:Int) => @val(I /Int 8, 0, false)
+rule @calculatePacketSize(ListItem(@val(_,W:Int,_)) Rest:List, I:Int) => @calculatePacketSize(Rest, I +Int W)
+
+//TODO: IMPORTANT: instances must be reset
+
+syntax KItem ::= "@txenPacket"
+syntax Id ::= "egress_spec" [token]
+rule <k> @txenPacket => . ... </k>
+     <packetout> P:List => .List </packetout>
+     <buffer> <out>   _:List (.List => ListItem($packet(P,Port))) </out> ... </buffer>
+      <instances>
+          <instance>
+              <name> standard_metadata </name>
+              <fieldVals>  egress_spec |-> @val(Port:Int,_,_) ... </fieldVals>
+              ...
+          </instance>
+          ...
+      </instances>
+//TODO: check if needs to be dropped
+
 
 //--------------------parsing------------------------------
-syntax Id ::= "start" [token]
+syntax KItem ::= "@parse&ingress" | "@egress"
 rule <k> @parse&ingress => Body  ... </k>
      <parserStates> <state>  <name> start </name> <body> Body </body> ... </state> ...</parserStates>
      <lastExt> _ => .K </lastExt>
@@ -358,29 +480,46 @@ rule <k> return State:ParserStateName ; => Body ... </k>
      <lastExt> _ => .K </lastExt>
 
 //return to control function
-rule <k> return Control:ControlFunctionName ; => Control(); ... </k>
+rule <k> return Control:ControlFunctionName ; => @verifyCalcFields ~> Control(); ... </k>
     <controlFlows> <control> <name> Control </name> ... </control> ... </controlFlows>
 
 
 //return parser_exception
-//TODO
+rule <k> parse_error Exception:ParserExceptionName ; => @throw(Exception) ... </k>
+     <exceptionHandlers> <exceptionHandler> <name> Exception </name> ... </exceptionHandler> ... </exceptionHandlers>
 
 //return select
 
-rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@readFDRefs(SE),CE)
+rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@concat(@readFDRefs(SE)),CE)
 
-syntax KItem ::= "@select" "(" K /* Vals */ "," CaseEntries ")" [strict(1)]
-rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
-    => @selectCheckCase(Vs, @VMstoVals(VM), CA, Rest)
-rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseReturnToReturn(CA)
+syntax KItem ::= "@select" "(" K /* Val */ "," CaseEntries ")" [strict(1)]
+rule @select (V:Val,  VL:ValueList : CA:CaseReturnValueType; Rest:CaseEntries )
+    => @if @selected(V, VL) @then @caseReturnToReturn(CA) @else @select(V,Rest) @fi
 
-syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
-rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
-    => @if @concat(Vs) %== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest)  //TODO: change this to == in Val when we have complete semantics for it
+syntax KItem ::=    "@selected" "(" Val "," ValueList ")"
+                  | "@selected" "(" Val "," Set ")"
+rule @selected(_:Val, default ) => true
+rule @selected(_:Val, .ValueOrMaskeds) => false
+rule @selected(V:Val, F:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
+rule @selected(V:Val, F:FieldValue mask M:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,@makePair(F,M),ternary) @then true @else @selected(V,Rest) @fi
+rule <k> @selected(V:Val, N:ValueSetName , Rest:ValueOrMaskeds) => @if @selected(V,S) @then true @else @selected(V, Rest) @fi ... </k>
+     <valueSets> <valueSet> <name> N </name> <vals> S:Set </vals> ... </valueSet> ... </valueSets>
+rule @selected(_:Val, .Set) => false
+rule @selected(V:Val, SetItem(F:Val) Rest:Set) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
+rule @selected(V:Val, SetItem($pair(F:Val,M:Val)) Rest:Set) => @if @match(V,$pair(F,M),ternary) @then true @else @selected(V,Rest) @fi
 
-syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
-rule @VMstoVals (.ValueOrMaskeds) => @nil
-rule @VMstoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMstoVals(Rest))
+//rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
+//    => @selectCheckCase(Vs, @VMstoVals(VM), CA, Rest)
+//rule @select (_:Vals, default : CA:CaseReturnValueType; _:CaseEntries) => @caseReturnToReturn(CA)
+
+//syntax KItem ::= "@selectCheckCase" "(" Vals "," K /* Vals */ "," CaseReturnValueType "," CaseEntries  ")" [strict(2)]
+//rule @selectCheckCase(Vs:Vals, Vss:Vals, CA:CaseReturnValueType, Rest:CaseEntries)
+//    => @if @concat(Vs) %== @concat(Vss)  @then @caseReturnToReturn(CA) @else @select(Vs,Rest) @fi  //TODO: change this to == in Val when we have complete semantics for it
+
+//syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
+//rule @VMstoVals (.ValueOrMaskeds) => @nil
+//rule @VMstoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMstoVals(Rest))
+//wrong interpretion of the specification
 
 syntax ReturnValueType ::= "@caseReturnToReturn" "(" CaseReturnValueType ")" [function]
 rule @caseReturnToReturn(PS:ParserStateName) => return PS ;
@@ -403,6 +542,10 @@ rule <k> @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons
 
 
 //extract
+rule extract(N:InstanceName [ I:UnsignedValue ] ) ; => extract($element(N,USgnVal2Int(I))); //TODO (minor): I should be ConstValue
+//TODO: check bounds and through parser exception of necessary
+rule <k> extract(N:InstanceName [ next ]) ; => extract($element(N,Nx)); ... </k>
+     <arrays> N |-> $array(S:Int,Nx:Int => Nx +Int 1,L:Int => maxInt(L,Nx)) _:Map </arrays> when Nx <Int S //TODO: "The keyword last can be used as an index to refer to the largest-index valid instance of a header stack." since in extraction there may be parser exception this thing max(L,Nx) is not technically correct, same about => Nx+!
 rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
      <instances>
         <instance> <name> Name </name> <metadata> false </metadata> <typeName> Type:HeaderTypeName </typeName> ... </instance> ...
@@ -421,11 +564,41 @@ rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
 
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
+rule <k> @extract(N:InstanceName, F:FieldName : * (_:FieldMods); Rest:FieldDecs) =>
+    @setVarWidth(@evalLengthExp(LE,N) * @val(8,0,false) - @val(FW,0,false)) ~> @extractField(N,F,@getVarWidth) ~> @extract(N,Rest) ... </k>
+    <instances>
+        <instance> <name> N </name> <typeName> H:HeaderTypeName </typeName> ... </instance> ...
+    </instances>
+    <headers>
+        <header> <name> H </name> <opts> ("length" |-> LE:LengthExp) ("$fixed_width" |-> FW:Int) _:Map </opts>  ... </header> ...
+    </headers>
+//TODO: exception if more than max_length
+
+syntax KItem ::= "@setVarWidth" "(" K /* Val */ ")" [strict]
+rule <k> @setVarWidth(V:Val) => . ... </k>
+     <parser> <varWidth> .K => V </varWidth> ... </parser>
+
+syntax KItem ::= "@getVarWidth"
+rule <k> @getVarWidth => V ... </k>
+     <parser> <varWidth> V:Val </varWidth> ... </parser>
+
+syntax LengthExp ::= Val
+syntax LengthExp ::= "@evalLengthExp" "(" LengthExp ","  InstanceName ")"
+rule @evalLengthExp(CV:ConstValue, _:InstanceName) => CV
+rule <k> @evalLengthExp(F:FieldName, N:InstanceName) => V ... </k>
+    <instances>
+        <instance> <name> N </name> <fieldVals> F |-> V:Val _:Map </fieldVals>  ... </instance> ...
+    </instances>
+rule @evalLengthExp(LE1:LengthExp * LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) * @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp + LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) + @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp - LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) - @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp << LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) << @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) >> @evalLengthExp(LE2, N)
 
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
-//TODO: array
-rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,@String2FieldVal(substrString(Packet,I,I +Int Val2Int(W)),@getAttr(F,Fs))) ... </k>
+
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
         ...
@@ -434,13 +607,32 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @writeField(N,F,
               <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
               ...
      </headers>
-     <packet> Packet </packet>
-     <index> I:Int => I +Int Val2Int(W) </index>
+     <packet> Packet:List </packet>
+     <index> I:Int => I +Int 1 </index>
+     when I <Int #listSize(Packet)
+     //when U <Int size(Packet)
+     //bug with K's build-in size(List)
+
+rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
+     <packet> Packet:List </packet>
+     <index> I:Int </index>
+     when I >=Int #listSize(Packet)
+
+//bug with K's build-in size(List)
+syntax Int ::= "#listSize" "(" List ")" [function]
+rule #listSize(.List) => 0
+rule #listSize(ListItem(_) L:List) => 1 +Int #listSize(L)
 
 
 
-syntax KItem ::= "@writeFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
-rule <k> @writeFieldAdjusted(N,F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
+syntax Val ::= "@packetAt" "(" List ","  Int ")" [function]
+rule @packetAt(ListItem(X) _:List, 0) => X
+rule @packetAt(ListItem(_) Rest:List, I:Int) => @packetAt(Rest, I -Int 1) when I >Int 0
+
+syntax KItem ::=   "@writeFieldAdjusted" "(" K /*ResolvedHeaderRef */ "," FieldName "," K /* Val */ ")" [strict(1,3)]
+                 | "@writeFieldAdjusted" "(" FieldRef "," K /* Val */ ")" [strict(2)]
+rule @writeFieldAdjusted( I:HeaderRef . F:FieldName, V:Val) => @writeFieldAdjusted(I,F,V)
+rule <k> @writeFieldAdjusted($href(N:InstanceName),F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
           <instances>
              <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
              ...
@@ -453,10 +645,16 @@ rule <k> @writeFieldAdjusted(N,F,V:Val) => @writeField(N,F,@adjustVal(@getAttr(F
 syntax KItem ::= "@writeField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 rule <k> @writeField(N,F,V:Val) => . ...</k>
         <instances>
-            <instance> <name> N </name>  <fieldVals> FV:Map => FV [ F <- V ] </fieldVals>  ... </instance>
+            <instance> <name> N </name> <valid> true </valid>  <fieldVals> FV:Map => FV [ F <- V ] </fieldVals>  ... </instance>
             ...
         </instances>
 
+rule <k> @writeField(N,F,V:Val) => . ...</k>
+        <instances>
+            <instance> <name> N </name> <valid> false </valid>  ... </instance>
+            ...
+        </instances>
+//no change if the field is not valid
 
 //TODO: change FieldDec to FieldAttr which should be custom format for field attributes
 syntax FieldDec ::= "@getAttr" "(" FieldName "," FieldDecs ")" [function]
@@ -464,17 +662,157 @@ rule @getAttr (F:FieldName, F : W:BitWidth ( M:FieldMods ); _:FieldDecs) => F : 
 rule @getAttr (F1:FieldName, F2:FieldName : _:BitWidth ( _:FieldMods ); Rest:FieldDecs) =>
         @getAttr(F1,Rest) when  F1 =/=K F2
 
-syntax KItem /* Val */ ::= "@adjustVal" "(" FieldDec "," Val ")"
-rule @adjustVal( _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;, @val(I,Ws,Ss) )
-    => @val(I,USgnVal2Int(Wd),false)
-//TODO: IMPORTANT: fix and complete this (also remember to support * )
+syntax KItem /* Val */ ::= "@adjustVal" "(" FieldDec "," K /* Val */ ")" [strict(2)]
+rule @adjustVal( _:FieldName : Wd:UnsignedValue ( FM:FieldMods ) ;, V:Val )  //TODO (minor) : Wd should be ConstValue
+    => @adjustVal(USgnVal2Int(Wd),@isSigned(FM),@isSaturating(FM), V)
+rule <k> @adjustVal (_:FieldName : * ( FM:FieldMods ) ;, V:Val) => @adjustVal(W,@isSigned(FM),@isSaturating(FM), V) ...</k>
+     <varWidth> @val(W:Int,_,_) </varWidth>
+
+syntax KItem /* Val */ ::= "@adjustVal" "(" Map "," K /* Val */ ")" [strict(2)]
+rule @adjustVal("$width" |-> W:Int "$signed" |-> Sg:Bool "$saturating" |-> St:Bool _:Map , V:Val) => @adjustVal(W,Sg,St,V)
+
+syntax KItem /* Val */ ::= "@adjustVal" "(" Int "," Bool "," Bool "," K /* Val */ ")" [strict(4)]
+rule @adjustVal(W2:Int,Sg2:Bool,St:Bool,@val(V,W1,Sg1)) =>
+       @val(V,W2,Sg2)
+//TODO: (VERY IMPORTANT ***): fix and complete this ***************************************
+
+syntax Bool ::= "@isSigned" "(" FieldMods ")" [function]
+rule @isSigned(.FieldMods) => false
+rule @isSigned(signed , Rest:FieldMods) => true
+rule @isSigned(saturating , Rest:FieldMods) => @isSigned(Rest:FieldMods)
 
 
-syntax KItem /* Val */ ::= "@String2FieldVal" "(" String "," FieldDec ")"
-rule @String2FieldVal( S:String , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
-    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
-//TODO: IMPORTANT: fix and complete this (also remember to support * )
+syntax Bool ::= "@isSaturating" "(" FieldMods ")" [function]
+rule @isSaturating(.FieldMods) => false
+rule @isSaturating(saturating , Rest:FieldMods) => true
+rule @isSaturating(signed , Rest:FieldMods) => @isSigned(Rest:FieldMods)
 
+//syntax KItem /* Val */ ::= "@String2FieldVal" "(" String "," FieldDec ")"
+//rule @String2FieldVal( S:String , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
+//    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
+syntax KItem /* Val */ ::= "@extractFieldValFromPacket" "(" Val "," FieldDec ")"
+rule @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
+    => @val(V,W,S)  when W ==Int USgnVal2Int(Wd)
+                                 //    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
+//TODO: IMPORTANT: fix and complete this
+rule <k> @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : * ( _:FieldMods ) ;)
+    => @val(V,W,S) ... </k>
+    <parser> <varWidth> @val(Wd:Int,_,_) </varWidth> ... </parser>
+    when W ==Int Wd
+
+//----------------exception handler------------------------
+
+syntax KItem ::= "@throw" "(" ParserExceptionName ")"
+rule <k> @throw(E:ParserExceptionName) => S ~> R ... </k>
+     <exceptionHandlers>
+        <exceptionHandler> <name> E </name> <pebody> <setsts> S:SetStatements </setsts> <return> R:ReturnOrDrop </return> ... </pebody> </exceptionHandler>
+     ...
+     </exceptionHandlers>
+     //TODO: set some metadata for the packet
+
+rule <k> @throw(E:ParserExceptionName) => #if p4_pe_default in S #then @throw(p4_pe_default) #else @throw($unhandled_exception) #fi  ... </k>
+     <handledExceptions> S:Set </handledExceptions>
+     when notBool E in S
+
+rule @throw($unhandled_exception) => parser_drop //TODO: actually change it an exception handler that sets some relevant metadata
+
+rule .SetStatements => .K                           [structural]
+rule S:SetStatement Rest:SetStatements => S ~> Rest [structural]
+
+
+rule return X => return X;
+
+rule <k> parser_drop ~> _:K => @nextPacket </k>
+// what else TODO?
+
+syntax Id ::=
+          "p4_pe_out_of_packet"   [token]
+        | "p4_pe_default"         [token]
+        | "$unhandled_exception"  [token]
+        //TODO: rest of the exceptions
+
+//----------------verify/update calc fields------------------
+//verify
+syntax KItem ::=   "@verifyCalcFields"
+                 | "@verifyCalcFields" "(" K ")"
+
+rule <k> @verifyCalcFields => @verifyCalcFields(S) ... </k>
+     <calcFieldSet> S:Set </calcFieldSet>
+
+rule @verifyCalcFields(.Set) => .
+rule @verifyCalcFields(SetItem(F:FieldRef) Rest:Set) => @verifyCalcField(F) ~> @verifyCalcFields(Rest)
+
+
+syntax KItem ::=   "@verifyCalcField" "(" FieldRef ")"
+                 | "@verifyCalcField" "(" FieldRef "," List ")"
+                 | "@verifyCalcField" "(" K /* ResolvedHeaderRef */ "," FieldName ")" [strict(1)]
+
+
+
+
+rule @verifyCalcField(H:HeaderRef . F:FieldName) => @verifyCalcField(H, F)
+rule <k> @verifyCalcField(H:InstanceName , F:FieldName) => .  ... </k>
+     <instances> <instance> <name> H </name> <valid> false </valid> ... </instance> ... </instances>
+rule <k> @verifyCalcField(H:InstanceName , F:FieldName) => @verifyCalcField(H.F, V)  ... </k>
+         <instances> <instance> <name> H </name> <valid> true </valid> ... </instance> ... </instances>
+         <calcFields> <calcField> <fieldRef> H.F </fieldRef> <verifies> V:List </verifies> ... </calcField> </calcFields>
+
+rule @verifyCalcField(_:FieldRef, .List) => .
+rule @verifyCalcField(F:FieldRef, ListItem(verify FLC:FieldListCalculationName if (C:CalcBoolCond);) Rest:List) =>
+        @if (C) @then
+            (@if (F %== @calculateFLC(FLC)) @then //probably should check width
+                .K
+             @else
+                //$pause right now the checksum is a dummy number
+                .K //TODO: parser exception
+             @fi
+            )
+        @else
+            @verifyCalcField(F, Rest)
+        @fi
+
+rule CalcBCEq(F:FieldRef, V:FieldValue) => V %== F
+
+syntax KItem ::= "@calculateFLC" "(" FieldListCalculationName ")"
+rule <k> @calculateFLC(N:FieldListCalculationName) => @calculateChecksum(@concat(@readFieldList(E)), A, W) ... </k>
+     <fieldListCalcs> <fieldListCalc> <name> N </name> <fLists> L:List </fLists> <algorithm> A:StreamFunctionAlgorithmName </algorithm> <outWidth> W:Int </outWidth> <fListIndex> I:Int </fListIndex> ... </fieldListCalc> ... </fieldListCalcs>
+     <fieldLists> <fieldList> <name> FN:FieldListName </name> <fields> E:FieldListEntryItems </fields> ... </fieldList> ... </fieldLists>
+     when L[I] ==K ListItem(FN)
+
+
+syntax KItem ::=   "@readFieldList" "(" FieldListEntryItems ")"
+
+rule @readFieldList(.FieldListEntryItems) => @nil
+rule @readFieldList(F:FieldRef ; Rest:FieldListEntryItems) => @if @isValid(F) @then @makeCons(@readField(F), @readFieldList(Rest)) @else @readFieldList(Rest) @fi
+rule @readFieldList(V:FieldValue ; Rest:FieldListEntryItems) => @makeCons(V, @readFieldList(Rest))
+rule <k> @readFieldList(N:FieldListName ; Rest:FieldListEntryItems) => @makeConcat(@readFieldList(E),@readFieldList(Rest)) ... </k>
+     <fieldLists> <fieldList> <name> N </name> <fields> E:FieldListEntryItems </fields> ... </fieldList> ... </fieldLists>
+rule <k> @readFieldList(N:InstanceName ; Rest:FieldListEntryItems) => @readFieldList(@getFieldsAsFLI(N,F,Rest)) ... </k> //todo: array
+     <instances> <instance> <name> N </name> <typeName> H:HeaderTypeName </typeName> ...   </instance> ... </instances>
+     <headers> <header> <name> H </name> <fields> F:FieldDecs </fields> ... </header> ... </headers>
+//TODO rule @readFieldList(payload ; Rest:FieldListEntryItems) => @makeCons(V, @readFieldList(Rest))
+
+
+syntax FieldListEntryItems ::= "@getFieldsAsFLI" "(" HeaderRef "," FieldDecs ","  FieldListEntryItems ")" [function]
+rule @getFieldsAsFLI(H:HeaderRef , F:FieldName : _:BitWidth  ( _:FieldMods ); Rest:FieldDecs, FLI:FieldListEntryItems) => @getFieldsAsFLI(H,Rest, H.F ; FLI)
+rule @getFieldsAsFLI(_:HeaderRef , .FieldDecs , FLI:FieldListEntryItems) => FLI
+
+syntax KItem ::= "@calculateChecksum" "(" K /* Val */ "," StreamFunctionAlgorithmName "," Int ")" [strict(1)]
+//TODO: fix this, need to create a hook in k
+rule @calculateChecksum (_:Val,_:StreamFunctionAlgorithmName,W:Int) => @val(0,W,false)
+
+
+//update
+
+syntax KItem ::=   "@updateCalcField" "(" FieldRef "," List "," Val ")"
+
+rule @updateCalcField(_:FieldRef, .List, V:Val) => V
+rule @updateCalcField(F:FieldRef, ListItem(update FLC:FieldListCalculationName if (C:CalcBoolCond);) Rest:List, V:Val) =>
+        @if (C) @then
+            @calculateFLC(FLC)
+        @else
+            @updateCalcField(F, Rest, V)
+        @fi
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
@@ -484,15 +822,15 @@ rule { B:ControlStatements } => B                            [structural]
 rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 
 
-//TODO: for now assuming that a screenshot of current rules are taken before matching
-rule <k> apply (T:TableName) { C:CaseList } => @checkNextRule(FM,R) ~> C ... </k>
+//TODO: for now assuming that a snapshot of current rules are taken before matching
+rule <k> apply (T:TableName) { C:CaseList } => @setCrntTable(T) ~> @checkNextRule(FM,R) ~> @setCrntTable(.K) ~> C ... </k>
      <tables>
         <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
      ...
      </tables>
 
 //select
-rule A:ActionName ~> C:CaseList  => @checkNextAppSelCase (A,C)
+rule A:ActionName ~>  @setCrntTable(.K) ~> C:CaseList  => @setCrntTable(.K) ~> @checkNextAppSelCase (A,C)
 
 syntax KItem ::= "@checkNextAppSelCase" "(" ActionName "," CaseList ")"
 rule @checkNextAppSelCase(_,.ActionCases) => .
@@ -526,7 +864,7 @@ rule if ( B:BoolExpr ) C:ControlBlock Rest:ControlStatements => if ( B ) C else 
 rule else I:IfElseStatement => else { I } [macro]
 
 rule if ( B:BoolExpr ) T:ControlBlock else F:ControlBlock =>
-        @if B @then T @else F
+        @if B @then T @else F @fi
 
 
 //call
@@ -537,7 +875,6 @@ rule <k> F:ControlFunctionName () ; => Body  ... </k>
      </controlFlows>
 //should distinguish between action call with zero arguments and control function call
 //UPDATE: it is disinguishable because the former is Id ( .Args ) ; the later is Id () ;
-
 
 //-----------------expr and boolean expr---------------
 
@@ -588,8 +925,10 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 syntax ActionName ::= "@miss" [token]
 rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
-rule @checkNextRule(FM:FieldMatchs, ListItem($rule($ctr(R:List),@call(A:ActionName,$resolved(Ag)) )) Rest:List)
-    => @if @matchAll(FM,R) @then @call(A,$resolved(Ag)) ~> A  @else @checkNextRule(FM,Rest)
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
+    => @if @matchAll(FM,R) @then @setCrntRule(Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrntRule(.K)  @else @checkNextRule(FM,Rest) @fi
+
+rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
 
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
@@ -598,11 +937,10 @@ rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListIt
 
 syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
 rule @match(V1:Val,V2:Val,exact) => V1 == V2    //TODO ISSUE: is this it?
-//TODO: rule @match(V:?,M:?,ternary)
-//TODO: rule @match(V:?,M:?,lmp)
-//TODO: rule @match(V:?,M:?,range)
-//TODO: rule @match(V:?,M:?,valid)
-
+rule @match(V1:Val,$pair(V2:Val,M:Val),ternary) => (V1 & M) == (V2 & M)
+rule @match(V1:Val,$pair(V2:Val,M:Val),lpm) => (V1 & M) == (V2 & M)
+rule @match(V1:Val,$pair(L:Val,H:Val),range) => (V1 >= L) and (V1 <= H)
+rule @match(B1:Bool,B2:Bool,valid) => B1 ==Bool B2
 
 syntax KItem /* KResult */ ::= "@readFMRef" "(" FieldOrMaskedRef "," FieldMatchType  ")"
 
@@ -613,7 +951,66 @@ rule @readFMRef(F:FieldRef mask M:ConstValue,_)  => @applyMask(@readField(F),M)
 rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
 
 
+syntax KItem ::= "@setCrntRule" "(" K ")"
+rule <k> @setCrntRule(V:K) => . ... </k>
+     <crntRule> _ => V </crntRule>
 
+syntax KItem ::= "@setCrntTable" "(" K ")"
+rule <k> @setCrntTable(V:K) => . ... </k>
+     <crntTable> _ => V </crntTable>
+
+//--------------statefuls--------------------------------
+
+syntax KItem ::=  "@updateDirectStatefuls"
+                | "@updateDirectStatefuls" "(" K /* ::Set */ ")"
+rule <k> @updateDirectStatefuls => @updateDirectStatefuls(S) ... </k>
+     <tableDirects> T |-> S:Set _:Map </tableDirects>
+     <crntTable> T:TableName </crntTable>
+rule <k> @updateDirectStatefuls => . ... </k>
+     <tableDirects> M:Map </tableDirects>
+     <crntTable> T:TableName </crntTable>
+     when notBool #in_keys(T,M)
+rule <k> @updateDirectStatefuls(SetItem(N:Id) Rest:Set) => #if (T ==K $counter) #then @updateCounter(N, CR) #else @updateMeter(N, CR, #castToFieldRef(M["$result"])) #fi ~> @updateDirectStatefuls(Rest) ... </k>
+      <statefuls> <stateful> <name> N </name> <stype> T:StatefulType </stype> <opts> M:Map </opts> ... </stateful> ... </statefuls>
+      <crntRule> CR:Int </crntRule>
+      when (T ==K $meter) impliesBool #in_keys("$result", M) //the result attribute is required if a meter is declared with the direct attribute
+rule @updateDirectStatefuls(.Set) => .
+
+syntax KItem ::= "@updateCounter" "(" Id "," Int ")"
+rule <k> @updateCounter (C:Id , I:Int) => @writeStatefulAdjusted(C, I, @readStateful(C, I) %+ #if (T ==K #token("packets","CounterType@STATEFUL-SYNTAX")) #then @val(1,0,false) #else S #fi) ... </k>
+     <statefuls> <stateful> <name> C </name> <opts> "$counter_type" |-> T:CounterType _:Map </opts> ... </stateful> ... </statefuls>
+     <packetSize> S:Val </packetSize>
+
+syntax KItem ::=  "@updateMeter" "(" Id "," Int "," FieldRef")"
+rule @updateMeter(M:Id, I:Int , F:FieldRef) => @writeStatefulAdjusted(M, I, @doUpdateMeter(M, I)) ~> @if @isValid(F) @then @writeFieldAdjusted(F, @readStateful(M,I)) @else .K @fi
+
+
+syntax KItem ::= "@doUpdateMeter" "(" Id "," Int ")"
+rule @doUpdateMeter(_,_) => @val(0,2,false)
+//TODO (minor): doing nothing for the meter
+
+syntax KItem ::= "@writeStatefulAdjusted" "(" Id "," Int "," K /*Val*/ ")" [strict(3)]
+rule <k> @writeStatefulAdjusted(N:Id, I:Int, V:Val) => @writeStateful(N, I, @adjustVal(Opts["$width" <- W],V)) ... </k>
+      <statefuls> <stateful> <name> N </name> <opts> Opts:Map </opts> <width> W:Int </width> ... </stateful> ... </statefuls>
+
+syntax KItem ::= "@writeStateful" "(" Id "," Int "," K /*Val*/ ")" [strict(3)]
+rule <k> @writeStateful (N:Id, I:Int, V:Val) => . ... </k>
+     <statefuls> <stateful> <name> N </name> <vals> M => M [I <- V] </vals> ... </stateful> ... </statefuls>
+
+syntax KItem /* Val */ ::= "@readStateful" "(" Id "," Int ")"
+rule <k> @readStateful (N:Id, I:Int) =>  V  ... </k>
+     <statefuls> <stateful> <name> N </name> <vals> (I |-> V:Val) _:Map </vals> ... </stateful> ... </statefuls>
+rule <k> @readStateful (N:Id, I:Int) => @writeStatefulAdjusted(N, I, @val(0,0,false)) ~> @readStateful(N, I) ... </k>          //TODO ISSUE: what should be inital value of meters and registers? for now, assuming 0
+     <statefuls> <stateful> <name> N </name> <vals> M:Map </vals> <width> W:Int </width> <opts> Opts:Map </opts> ... </stateful>  ... </statefuls>
+     when notBool #in_keys(I,M)
+
+
+
+//K's in_keys is not implemented
+syntax Bool ::= "#in_keys" "(" K "," Map ")" [function]
+rule #in_keys(_:K, .Map) => false
+rule #in_keys(K1:K, (K1 |-> V:K) _:Map) => true
+rule #in_keys(K1:K, (K2:K |-> V:K) Rest:Map) => #in_keys(K1,Rest) when K1 =/=K K2
 
 //---------------actions----------------------------------
 syntax Arg ::= Val
@@ -622,17 +1019,18 @@ rule @resolveArgs(.Args,R:ResolvedArgs) => R
 rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do not evaluate fieldref
 rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R)  //a workaround 
 rule (V:Val => .) ~> @resolveArgs(Rest:Args,$resolved(_:List (.List => ListItem(V))))
+
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>
      <frameStack> ListItem((X |-> V:Arg) _:Map) _:List </frameStack>
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(X)))) ... </k>
      <instances> <instance> <name> X </name> ... </instance> ... </instances>
      <frameStack> ListItem(M:Map) _:List </frameStack> when notBool (X in keys(M))
-     //TODO: IMPORTANT: it seems like a bug in K, X:Id matches FieldValues as well! so I used <intances> ... to make sure X in this case is a headerref
+rule <k> @resolveArgs((X:Id , Rest:Args) => Rest, $resolved(_:List (.List => ListItem(X)))) ... </k>
+     <statefuls> <stateful> <name> X </name> ... </stateful> ... </statefuls>
 
 
-syntax ResolvedArgs ::= "$resolved" "(" List ")"
-syntax KResult ::= ResolvedArgs
-syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
+
+
 
 //compound actions
 rule <k> @call( A:ActionName , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
@@ -664,49 +1062,116 @@ rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 
 
 //primitive actions
+
 //replace multiple rules with check for KLabel (i.e K REFLECTION)
 syntax Id ::= "modify_field" [token]
 rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:FieldRef) Rest:List)) =>
-            @if @isValid(S) @then
+            //@if @isValid(S) @then
                 @readField(S) ~> @call(modify_field,$resolved(ListItem(D) ListItem(S) Rest))
-            @else
-                .
+            //@else
+            //  .
+
 rule (V:Val => .) ~> @call(modify_field , $resolved(ListItem(_) ListItem(_ => V) _:List))
-rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val) ListItem(M:Val))) =>
-           @if @isValid(I.F) @then
-                @writeFieldAdjusted(I,F, (@readField(I.F) %& (~ M)) %| (S %& M))
-           @else
-                .
-rule @call (modify_field , $resolved(ListItem(I:InstanceName.F:FieldName) ListItem(S:Val))) =>
-           @if @isValid(I.F) @then
-                @writeFieldAdjusted(I,F, S)
-           @else
-                .
+rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:Val) ListItem(M:Val))) =>
+           //@if @isValid(I.F) @then
+                @writeFieldAdjusted(D, (@readField(D) %& (~ M)) %| (S %& M))
+           //@else
+           //     .
 
-syntax Id ::= "subtract_from_field" [token]
+rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:Val))) =>
+           //@if @isValid(I.F) @then
+                @writeFieldAdjusted(D, S)
+           //@else
+           //    .
+
+
+syntax Id ::= "subtract_from_field" | "add_to_field" [token]
 rule @call (subtract_from_field, $resolved(ListItem(D:FieldRef) ListItem(V:K))) =>
-          @call (subtract, $resolved(ListItem(D) ListItem(D) ListItem(V))) 
+          @call (subtract, $resolved(ListItem(D) ListItem(D) ListItem(V)))
+
+rule @call (add_to_field, $resolved(ListItem(D:FieldRef) ListItem(V:K))) =>
+          @call (add, $resolved(ListItem(D) ListItem(D) ListItem(V)))
 
 
-syntax Id ::= "subtract" [token]
-rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:FieldRef) ListItem(V2))) =>
-         @if @isValid(V1) @then
-		@readField(V1) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
-	 @else
-		.
-rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_ => V) _:List))
-rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:FieldRef))) =>
-         @if @isValid(V2) @then
+syntax Id ::= "subtract" | "add" [token]
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:FieldRef) ListItem(V2))) =>
+        //@if @isValid(V1) @then
+		    @readField(V1) ~> @call(F,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
+	    //@else
+		//    .
+		when (F ==K subtract) orBool (F ==K add)
+
+rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_ => V) _:List)) when (F ==K subtract) orBool (F ==K add)
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:FieldRef))) =>
+         //@if @isValid(V2) @then
                 @readField(V2) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
-         @else
-                .
-rule (V:Val => .) ~> @call(subtract , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V)))
-rule @call (subtract, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val)))
-	=> V1 - V2 ~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
+         //@else
+         //      .
+        when (F ==K subtract) orBool (F ==K add)
+
+rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V))) when (F ==K subtract) orBool (F ==K add)
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val)))
+	=> #if (F ==K add) #then V1 + V2 #else V1 - V2 #fi ~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
+	when (F ==K subtract) orBool (F ==K add)
 //TODO: implement the rest of the primitive functions
 
 
 
+syntax Id ::= "count" [token]
+rule <k> @call (count , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @updateCounter(C, 0) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $counter </stype>  ... </stateful> ... </statefuls>
+rule I:Int ~> @updateCounter(C:Id, 0) => @updateCounter(C, I)
+
+syntax Id ::= "execute_meter" [token]
+rule <k> @call (execute_meter , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)) ListItem(F:FieldRef))) => @getStatefulIndexInActionCall(C, I) ~> @updateMeter(C, 0, F) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $meter </stype>  ... </stateful> ... </statefuls>
+rule I:Int ~> @updateMeter(C:Id, 0, F:FieldRef) => @updateMeter(C, I, F)
+
+syntax Id ::= "register_read" [token]
+rule <k> @call (register_read , $resolved(ListItem(F:FieldRef) ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @writeFieldAdjusted(F, @readStateful(C, 0)) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $register </stype>  ... </stateful> ... </statefuls>
+rule I:Int ~> @writeFieldAdjusted(F, @readStateful(C, 0)) => @writeFieldAdjusted(F, @readStateful(C, I))
+
+syntax Id ::= "register_write" [token]
+rule @call (register_write , $resolved(ListItem(C:Id) ListItem(I:Val) ListItem(F:FieldRef) )) => @readField(F) ~> @call (register_write , $resolved(ListItem(C) ListItem(I) ListItem(F) ))
+rule V:Val ~> @call (register_write , $resolved(ListItem(C) ListItem(I) ListItem(F) )) => @call (register_write , $resolved(ListItem(C) ListItem(I) ListItem(V) ))
+rule <k> @call (register_write , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)) ListItem(V:Val) )) => @getStatefulIndexInActionCall(C, I) ~> @writeStatefulAdjusted(C, 0, V) ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> $register </stype>  ... </stateful> ... </statefuls>
+rule I:Int ~> @writeStatefulAdjusted(C, 0, V) => @writeStatefulAdjusted(C, I, V)
+
+syntax KItem ::= "@getStatefulIndexInActionCall" "(" Id "," Int ")"
+rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then CR #else I #fi   ... </k>
+     <statefuls> <stateful> <name> C </name> <stype> T:StatefulType </stype> <opts> "$binding" |-> B:BindingType M:Map </opts> ... </stateful> ... </statefuls>
+     <crntTable> CT:TableName </crntTable>
+     <crntRule> CR:Int </crntRule>
+     when
+        ((B ==K $direct) impliesBool (T =/=K $counter)) andBool
+        ((B =/=K $static_global) impliesBool (#in_keys("$table", M) andBool (M["$table"] ==K CT))) andBool
+        ((B =/=K $direct) impliesBool (#in_keys("$instant_count", M) andBool (I <Int #get_instant_count(M))))
+
+syntax Int ::= "#get_instant_count" "(" Map ")" [function]
+rule #get_instant_count ("$instant_count" |-> I:Int _:Map) => I
+
+//-------------------action profile-------------------------
+syntax KItem ::= "@callOrDeref" "(" ActionCallOrActionProfileRef ")"
+rule @callOrDeref(@call(A:ActionName, X)) => @call(A,X) ~> A
+rule <k> @callOrDeref(@apref(Id:Int)) => @deref(P, Id) ... </k>
+     <tables> <table> <name> T </name> <acts> action_profile: P:ActionProfileName  ;</acts> ... </table> ... </tables>
+     <crntTable> T:TableName </crntTable>
+
+syntax KItem ::= "@deref" "(" ActionProfileName "," Int ")"
+rule <k> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(C) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> C:ActionCall _:Map </entries> ... </actionProfile> ... </actionProfiles>
+rule <k> @deref(P:ActionProfileName , Id:Int) => @calculateFLC(FLC) ~> @deref(P,Id) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> G:List _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
+     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
+rule <k> @val(I:Int,_,false) ~> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(#castToActionCall(G[I modInt size(G)])) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> (Id |-> G:List) _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
+     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
+
+syntax ActionCall ::= "#castToActionCall" "(" K ")" [function]
+//rule #castToActionCall(X:ActionCall) => X
+rule #castToActionCall(ListItem(X:ActionCall)) => X //workaround for K issue #2343
 
 
 //-------------------deparsing------------------------------
@@ -738,39 +1203,63 @@ rule <k> @deparseHeader(I:InstanceName) => #if M ==Bool false #then .K #else @de
             <header> <name> H </name> <fields> F:FieldDecs </fields>  ... </header>
             ...
         </headers>
-//TODO:array
+rule <k> @deparseHeader(I:InstanceName) => @deparseArray(I,S -Int 1) ... </k>
+     <arrays> I |-> $array(S,_,_) _:Map </arrays>
+
+syntax KItem ::= "@deparseArray" "(" InstanceName "," Int ")"
+rule @deparseArray(I,0) => @deparseHeader($element(I,0))    [structural]
+rule @deparseArray(I,Idx) => @deparseArray(I, Idx -Int 1) ~> @deparseHeader($element(I,Idx)) when Idx >Int 0 [structural]
 
 syntax KItem ::= "@deparseFields" "(" InstanceName "," FieldDecs ")"
 rule @deparseFields(I:InstanceName,F:FieldName : _:ConstValue ( _:FieldMods ) ; Rest:FieldDecs) =>
+        @deparseField(I,F) ~> @deparseFields(I,Rest)        [structural]
+rule @deparseFields(I:InstanceName,F:FieldName : * ( _:FieldMods ) ; Rest:FieldDecs) =>
         @deparseField(I,F) ~> @deparseFields(I,Rest)        [structural]
 rule @deparseFields(_:InstanceName,.FieldDecs) => .        [structural]
 
 
 syntax KItem ::= "@deparseField" "(" InstanceName "," FieldName ")"
-rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(@FieldVal2String(V,@getAttr(F,Fs))) ...</k>
+rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(V /*@FieldVal2String(V,@getAttr(F,Fs))*/) ...</k>
          <instances>
              <instance> <name> I </name> <typeName> H:HeaderTypeName </typeName> <fieldVals> F |-> V:Val ...</fieldVals> ... </instance>
              ...
          </instances>
-         <headers>
-            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
-            ...
-         </headers>
+         <calcFieldSet> CF:Set </calcFieldSet>
+         when notBool (I.F in CF)
+//         <headers>
+//            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+//            ...
+//         </headers>
+
+rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(@adjustVal(@getAttr(F,Fs),@updateCalcField(I.F,U,V))) ...</k>
+     <instances>
+          <instance> <name> I </name> <typeName> H:HeaderTypeName </typeName> <fieldVals> F |-> V:Val ...</fieldVals> ... </instance>
+          ...
+      </instances>
+      <headers>
+          <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+         ...
+      </headers>
+      <calcFields> <calcField> <fieldRef> I . F </fieldRef> <updates> U:List </updates> ... </calcField> ... </calcFields>
+
+//syntax KResult ::= String
+//syntax KItem ::= "@packetOut" "(" K /* String */ ")" [strict]
+//rule <k> @packetOut(S:String) => . ... </k>
+//     <packetout> P:String => P +String S </packetout>
+syntax KItem ::= "@packetOut" "(" K /* Val */ ")" [strict]
+rule <k> @packetOut(V:Val) => . ... </k>
+       <packetout> _:List (.List => ListItem(V)) </packetout>
 
 
-syntax KResult ::= String
-syntax KItem ::= "@packetOut" "(" K /* String */ ")" [strict]
-rule <k> @packetOut(S:String) => . ... </k>
-     <packetout> P:String => P +String S </packetout>
 
-syntax KItem ::= "@FieldVal2String" "(" K /* Val */ "," FieldDec ")" [strict(1)]
-rule @FieldVal2String(@val(I,_,_), _:FieldName : W:UnsignedValue ( .FieldMods );)  =>
-    @addPadding(Base2String(I,2),USgnVal2Int(W) -Int lengthString(Base2String(I,2)) ,"0")
+//syntax KItem ::= "@FieldVal2String" "(" K /* Val */ "," FieldDec ")" [strict(1)]
+//rule @FieldVal2String(@val(I,_,_), _:FieldName : W:UnsignedValue ( .FieldMods );)  =>
+//    @addPadding(Base2String(I,2),USgnVal2Int(W) -Int lengthString(Base2String(I,2)) ,"0")
 //TODO: complete this
 
-syntax String ::= "@addPadding" "(" String "," Int "," String ")" [function] /* String , width , char */
-rule @addPadding(S,0,_) => S
-rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
+//syntax String ::= "@addPadding" "(" String "," Int "," String ")" [function] /* String , width , char */
+//rule @addPadding(S,0,_) => S
+//rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
 
 
 
@@ -785,6 +1274,10 @@ rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
 
 
 
+//-----------------array-----------------------------
+
+syntax ArrayInfo ::= "$array" "(" Int "," Int "," Int ")" //size, next, last
+syntax InstanceName ::= "$element" "(" InstanceName "," Int ")"
 
 //------------------utils-------------------------------
 syntax Int ::= "Val2Int" "(" Val ")" [function]
@@ -799,30 +1292,67 @@ rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),
 rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0x",""),16)
 
 
-syntax K ::= "@if" K /* Bool */ "@then" K "@else" K [strict(1)]
+syntax K ::= "@if" K /* Bool */ "@then" K "@else" K "@fi"[strict(1)]
 syntax KResult ::= Bool
-rule @if true @then T:K @else F:K => T
-rule @if false @then T:K @else F:K => F
+rule @if true @then T:K @else F:K @fi => T  [transition]
+rule @if false @then T:K @else F:K @fi => F [transition]
 
 
-syntax Val ::= "@concat" "(" Vals ")" [function]
+syntax KItem /* Val */ ::= "@concat" "(" K /* Vals */ ")" [strict]
 
 rule @concat(@cons(V:Val,@nil)) => V
-//todo: complete this
+rule @concat(@cons(@val(V1:Int,W1:Int,S1:Bool),@cons(@val(V2:Int,W2:Int,S2:Bool), Rest:Vals))) => @concat(@cons(@val((@intrepretUnsigned(@val(V1,W1,S1)) <<Int W2) +Int @intrepretUnsigned(@val(V2,W2,S2))   ,W1 +Int W2,false),Rest))
 
 
+
+syntax Int ::= "@intrepretUnsigned" "(" Val ")" [function]
+rule @intrepretUnsigned(@val(V:Int,_,false)) => V
+//rule @intrepretUnsigned(@val(V:Int,W:Int,true)) => V //TODO
 
 //TODO:temporary, maybe we want to resolve the referece to header first
 //If not, complete it is for array
-syntax KItem /* Val */ ::= "@readField" "(" K /* FieldRef */ ")"
-rule <k> @readField(H:InstanceName . F:FieldName) => V ... </k>
+syntax KItem /* Val */ ::=     "@readField" "(" FieldRef  ")"
+                             | "@readField" "(" K /* ResolvedHeaderRef */ "," FieldName ")" [strict(1)]
+rule @readField(H:HeaderRef . F:FieldName) => @readField(H, F)
+rule <k> @readField($href(H:InstanceName) , F:FieldName) => V ... </k>
       <instances>
-         <instance> <name> H </name> <valid> true </valid> <fieldVals> F |-> V:Val ...</fieldVals> ...  </instance> ...
+         <instance> <name> H </name> <valid> true </valid> <fieldVals> (F |-> V:Val) _:Map </fieldVals> ...  </instance> ...
       </instances>
 
+//new in version 1.0.4
+rule <k> @readField($href(H:InstanceName) , F:FieldName) => @undef ... </k>
+      <instances>
+         <instance> <name> H </name> <valid> false </valid>  ...  </instance> ...
+      </instances>
+
+syntax ResolvedHeaderRef ::= "$href" "(" InstanceName ")"
+
+/*rule <k> ScalarRef(I:InstanceName) => $href(I) ... </k>
+     <instances> <instance> <name> I </name> ... </instance> ... </instances>
+
+rule <k> ArrayRef(I:InstanceName,Idx:UnsignedValue) => $href($element(I,USgnVal2Int(Idx))) ... </k> //TODO (minor): Idx should be ConstValue
+     <arrays> I |-> $array(S:Int,_,_) _:Map </arrays> when USgnVal2Int(Idx) <Int S //TODO: what to do for out of bound access
+
+rule <k> ArrayRef(I:InstanceName,last) => $href($element(I,L)) ... </k>
+     <arrays> I |-> $array(_:Int,_:Int,L:Int) _:Map </arrays> when L =/=Int -1*/
+// Some weired bug in K
+
+rule <k> I:InstanceName => $href(I) ... </k>
+     <instances> <instance> <name> I </name> ... </instance> ... </instances>
+rule <k> I:InstanceName [Idx:UnsignedValue] => $href($element(I,USgnVal2Int(Idx))) ... </k> //TODO (minor): Idx should be ConstValue
+     <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+     when USgnVal2Int(Idx) <Int S
+rule <k> I:InstanceName [last] => $href($element(I,L)) ... </k>
+     <arrays> I |-> $array(_:Int,_:Int,L:Int) _:Map </arrays>
+     when L =/=Int -1
+
+syntax KResult ::= ResolvedHeaderRef
+
 //TODO: same as above
-syntax KItem /* Bool */ ::= "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
-rule <k> @isValid(H:InstanceName . _:FieldName) => V ... </k>
+syntax KItem /* Bool */ ::=   "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
+                            | "@isValid" "(" K /*ResolvedHeaderRef*/ "," FieldName ")" [strict(1)]
+rule @isValid(H:HeaderRef . F:FieldName) => @isValid(H,F)
+rule <k> @isValid(H:InstanceName , _:FieldName) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
@@ -841,25 +1371,33 @@ rule @applyMask(V1:Val,V2:Val) => V1 & V2
 syntax KItem ::=   K "%==" K [seqstrict]
                  | K "%&&" K [seqstrict]
                  | K "%&"  K [seqstrict]
+                 | K "%+" K [seqstrict]
 		 | K "%|"  K [seqstrict]
 
 rule V1:Val %== V2:Val => V1 == V2
 rule V1:Val %& V2:Val => V1 & V2
-rule V1:Val %& V2:Val => V1 | V2
+rule V1:Val %| V2:Val => V1 | V2
+rule V1:Val %+ V2:Val => V1 + V2
 rule B1:Bool %&& B2:Bool => B1 andBool B2
 
 
+syntax KItem /* KResult */ ::= "@makePair" "(" K /* Val */ "," K /* Val */ ")" [seqstrict]
+rule @makePair(V1:Val,V2:Val) => $pair(V1,V2)
 
 //------------------const value--------------------------
 
 
-syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
+
 syntax Vals ::= "@nil" | "@cons" "(" Val "," Vals ")"
 syntax KResult ::= Val | Vals
 
 syntax KItem /* Vals */ ::= "@makeCons" "(" K /* Val */ "," K /* Vals */ ")" [seqstrict]
 
 rule @makeCons(V:Val,Vs:Vals) => @cons (V,Vs)
+
+syntax KItem /* Vals */ ::= "@makeConcat" "(" K /* Vals */ "," K /* Vals */ ")" [seqstrict]
+rule @makeConcat(@nil, Vs:Vals) => Vs
+rule @makeConcat(@cons(V:Val,Rest:Vals), Vs:Vals) => @makeCons(V,@makeConcat(Rest,Vs))
 
 
 rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
@@ -877,13 +1415,17 @@ rule @setWidth(@val(W:Int,0,false),@val(I:Int,0,false)) => @val(I,W,false) when 
 //TODO ISSUE: what happens if the unsigned value constant does not fit into the width specified
 
 
+//----------------------------casts-------------------------------------------
+syntax FieldRef ::= "#castToFieldRef" "(" K ")" [function]
+rule #castToFieldRef(X:FieldRef) => X
+
 
 //----------------------------temporary utils----------------------------------
 
 
 
 
-
+syntax KItem ::= "$pause"
 
 
 endmodule
