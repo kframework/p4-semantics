@@ -76,6 +76,20 @@ configuration
         </valueSet>
     </valueSets>
 
+    <exceptionHandlers>
+        <exceptionHandler multiplicity="*">
+            <name> .K </name>
+            <pebody>
+                <setsts> .K </setsts>
+                <return> .K </return>
+            </pebody>
+        </exceptionHandler>
+    </exceptionHandlers>
+
+    <handledExceptions>
+        .Set
+    </handledExceptions>
+
     <statefuls>
         <stateful multiplicity="*">
             <stype> .K </stype>

@@ -154,12 +154,13 @@ And then kompile the semantics and then run the input program with it.
 
 - ~~Variable length header fields~~ (now supported)
 - Saturating fields 
-- Signed numbers (partly supported)
+- Signed numbers (partially supported)
 - ~~Header stacks (array instances)~~
 - ~~Field lists~~
 - ~~Field lists calculations~~ 
 - ~~Calculated fields (so the checksum of packets won't be verified or updated)~~
-- Parser exceptions
+- ~~Parser exceptions~~
+- Implicit exceptions (partially supported)
 - ~~Value set declarations~~
 - ~~~Counters, meters, and registers~~
 - ~~Action profiles~~

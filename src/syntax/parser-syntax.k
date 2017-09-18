@@ -95,4 +95,5 @@ imports PARSER-SYNTAX
 
     syntax ReturnOrDrop ::= ReturnToControl | "parser_drop"
     syntax ReturnToControl ::= "return" ControlFunctionName
+
 endmodule

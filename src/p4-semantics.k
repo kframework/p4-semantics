@@ -149,6 +149,17 @@ rule <k> @processDec(parser_value_set Name:ValueSetName ;) => . ... </k>
      ...
      </valueSets>
 
+// exception
+rule <k> @processDec(parser_exception Name:ParserExceptionName { S:SetStatements R:ReturnOrDrop ;}) => . ... </k>
+     <exceptionHandlers>
+        (.Bag => <exceptionHandler> <name> Name </name> <pebody> <setsts> S </setsts> <return> R </return> ... </pebody> ... </exceptionHandler>)
+     ...
+     </exceptionHandlers>
+     <handledExceptions>
+        (.Set => SetItem(Name))_:Set
+     </handledExceptions>
+
+
 // stateful
    syntax StatefulType ::= "$counter" | "$meter" | "$register"
    syntax BindingType ::= "$direct" | "$static" | "$static_global"
@@ -474,7 +485,8 @@ rule <k> return Control:ControlFunctionName ; => @verifyCalcFields ~> Control();
 
 
 //return parser_exception
-//TODO
+rule <k> parse_error Exception:ParserExceptionName ; => @throw(Exception) ... </k>
+     <exceptionHandlers> <exceptionHandler> <name> Exception </name> ... </exceptionHandler> ... </exceptionHandlers>
 
 //return select
 
@@ -585,6 +597,7 @@ rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLeng
 
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
+
 rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
@@ -596,11 +609,25 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@
      </headers>
      <packet> Packet:List </packet>
      <index> I:Int => I +Int 1 </index>
+     when I <Int #listSize(Packet)
+     //when U <Int size(Packet)
+     //bug with K's build-in size(List)
+
+rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
+     <packet> Packet:List </packet>
+     <index> I:Int </index>
+     when I >=Int #listSize(Packet)
+
+//bug with K's build-in size(List)
+syntax Int ::= "#listSize" "(" List ")" [function]
+rule #listSize(.List) => 0
+rule #listSize(ListItem(_) L:List) => 1 +Int #listSize(L)
+
+
 
 syntax Val ::= "@packetAt" "(" List ","  Int ")" [function]
 rule @packetAt(ListItem(X) _:List, 0) => X
 rule @packetAt(ListItem(_) Rest:List, I:Int) => @packetAt(Rest, I -Int 1) when I >Int 0
-
 
 syntax KItem ::=   "@writeFieldAdjusted" "(" K /*ResolvedHeaderRef */ "," FieldName "," K /* Val */ ")" [strict(1,3)]
                  | "@writeFieldAdjusted" "(" FieldRef "," K /* Val */ ")" [strict(2)]
@@ -672,6 +699,37 @@ rule <k> @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : * 
     => @val(V,W,S) ... </k>
     <parser> <varWidth> @val(Wd:Int,_,_) </varWidth> ... </parser>
     when W ==Int Wd
+
+//----------------exception handler------------------------
+
+syntax KItem ::= "@throw" "(" ParserExceptionName ")"
+rule <k> @throw(E:ParserExceptionName) => S ~> R ... </k>
+     <exceptionHandlers>
+        <exceptionHandler> <name> E </name> <pebody> <setsts> S:SetStatements </setsts> <return> R:ReturnOrDrop </return> ... </pebody> </exceptionHandler>
+     ...
+     </exceptionHandlers>
+     //TODO: set some metadata for the packet
+
+rule <k> @throw(E:ParserExceptionName) => #if p4_pe_default in S #then @throw(p4_pe_default) #else @throw($unhandled_exception) #fi  ... </k>
+     <handledExceptions> S:Set </handledExceptions>
+     when notBool E in S
+
+rule @throw($unhandled_exception) => parser_drop //TODO: actually change it an exception handler that sets some relevant metadata
+
+rule .SetStatements => .K                           [structural]
+rule S:SetStatement Rest:SetStatements => S ~> Rest [structural]
+
+
+rule return X => return X;
+
+rule <k> parser_drop ~> _:K => @nextPacket </k>
+// what else TODO?
+
+syntax Id ::=
+          "p4_pe_out_of_packet"   [token]
+        | "p4_pe_default"         [token]
+        | "$unhandled_exception"  [token]
+        //TODO: rest of the exceptions
 
 //----------------verify/update calc fields------------------
 //verify
@@ -764,7 +822,7 @@ rule { B:ControlStatements } => B                            [structural]
 rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 
 
-//TODO: for now assuming that a screenshot of current rules are taken before matching
+//TODO: for now assuming that a snapshot of current rules are taken before matching
 rule <k> apply (T:TableName) { C:CaseList } => @setCrntTable(T) ~> @checkNextRule(FM,R) ~> @setCrntTable(.K) ~> C ... </k>
      <tables>
         <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>

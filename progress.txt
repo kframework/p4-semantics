@@ -82,8 +82,13 @@
    -in what order the calculated fields are updated? in the order of definition, order of deparsing (probably this), non-deterministically? Does it matter(for example the order affects the calculated values)
 
 
-Parser exceptions
-
+- (Done) Parser exceptions
+  - what to do if there are multiple handlers for same exception?
+    -for now, one will be selected non-deterministically
+  - "Note that setting metadata will only have an effect if return is executed."
+    -what is the difference if parser_drop drops the packet immediately
+  - "In the drop case, the packet may be immediately dropped by the parser. No match+ action processing is done on the packet. An implementation should provide one or more counters for such events."
+  -TODO (important): Complete the list of implicit exceptions
 
 - (Done) Value set declarations
   - no tests in p4c. Found one test in bm repo

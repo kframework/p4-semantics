@@ -12,11 +12,9 @@ module P4-COMMON
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
     imports STATEFUL-SYNTAX
-   // imports CHECKSUM-SYNTAX //TODO
     imports PARSER-SYNTAX
-    //imports PARSER-EXCEPTION-SYNTAX //TODO
+    imports PARSER-EXCEPTION-SYNTAX
     imports ACTION-SYNTAX
-    //imports ACTION-PROFILE-SYNTAX //TODO
     imports TABLE-SYNTAX
     imports CONTROL-SYNTAX
 
@@ -33,7 +31,7 @@ module P4-COMMON
                 | CalculatedFieldDeclaration
                 | ValueSetDeclaration
                 | ParserFunctionDeclaration
-    //            | ParserExceptionDeclaration //TODO
+                | ParserExceptionDeclaration
                 | CounterDeclaration
                 | MeterDeclaration
                 | RegisterDeclaration
