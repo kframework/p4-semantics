@@ -42,7 +42,7 @@ parser start {
 }
 
 parser parse_pv1 {
-    set_metadata(my_meta.pv_parsed, 1);
+    //set_metadata(my_meta.pv_parsed, 1);
     extract(my_header);
     return select(my_header.f1, my_header.f2) {
         pv2 : parse_pv2;
@@ -51,7 +51,7 @@ parser parse_pv1 {
 }
 
 parser parse_pv2 {
-    set_metadata(my_meta.pv_parsed, 2);
+    //set_metadata(my_meta.pv_parsed, 2);
     return ingress;
 }
 

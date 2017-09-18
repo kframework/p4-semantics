@@ -160,7 +160,7 @@ And then kompile the semantics and then run the input program with it.
 - ~~Field lists calculations~~ 
 - ~~Calculated fields (so the checksum of packets won't be verified or updated)~~
 - Parser exceptions
-- Value set declarations
+- ~~Value set declarations~~
 - ~~~Counters, meters, and registers~~
 - ~~Action profiles~~
 - ~~Any matching type other than exact and valid (ternary, lpm, range)~~

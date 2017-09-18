@@ -1,5 +1,4 @@
 - (Done) Parsing
-
   - "Select functions take a comma-separated list of fields and concatenate their values,
      with the left-most field forming the most-significant bits of the concatenated value. The
      select operation then compares the values in the order they occur in the program to the
@@ -14,6 +13,8 @@
   - There are lots of problems with inferring order of deparsing. For now, only supporting very simple cases
     - if there a dag, a random topological order is made
     - only self-loops are allowed, only for a case that we have extract(...[next]), and in that case the whole array will be ordered
+  -TODO (important): set_metadata
+
 
 
 - (Done) support for Variable length header fields
@@ -84,7 +85,7 @@
 Parser exceptions
 
 
-- Value set declarations
+- (Done) Value set declarations
   - no tests in p4c. Found one test in bm repo
   - "All values in a value set must correspond to the same transition. For example, all MPLS
      labels corresponding to an IPv4 transition would exist in one set, while all MPLS labels
@@ -93,6 +94,7 @@ Parser exceptions
   - "The width of the values is inferred from the place where the value set is referenced. If the
     set is used in multiple places and they would infer different widths, then the compiler
     must raise an error."
+    - TODO: right now width is not checked/inferred
 
 - Counters
   - "Run time APIs should be provided to indicate the actual width of a given counter."

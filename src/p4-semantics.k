@@ -142,6 +142,12 @@ rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) =>
           </state>
     ) ... </parserStates>
 
+// value set
+rule <k> @processDec(parser_value_set Name:ValueSetName ;) => . ... </k>
+     <valueSets>
+        (.Bag => <valueSet> <name> Name </name> ... </valueSet>)
+     ...
+     </valueSets>
 
 // stateful
    syntax StatefulType ::= "$counter" | "$meter" | "$register"
@@ -478,12 +484,17 @@ syntax KItem ::= "@select" "(" K /* Val */ "," CaseEntries ")" [strict(1)]
 rule @select (V:Val,  VL:ValueList : CA:CaseReturnValueType; Rest:CaseEntries )
     => @if @selected(V, VL) @then @caseReturnToReturn(CA) @else @select(V,Rest) @fi
 
-syntax KItem ::= "@selected" "(" Val "," ValueList ")"
+syntax KItem ::=    "@selected" "(" Val "," ValueList ")"
+                  | "@selected" "(" Val "," Set ")"
 rule @selected(_:Val, default ) => true
 rule @selected(_:Val, .ValueOrMaskeds) => false
 rule @selected(V:Val, F:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
 rule @selected(V:Val, F:FieldValue mask M:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,@makePair(F,M),ternary) @then true @else @selected(V,Rest) @fi
-//TODO rule @selected(V:Val, S:ValueSetName)
+rule <k> @selected(V:Val, N:ValueSetName , Rest:ValueOrMaskeds) => @if @selected(V,S) @then true @else @selected(V, Rest) @fi ... </k>
+     <valueSets> <valueSet> <name> N </name> <vals> S:Set </vals> ... </valueSet> ... </valueSets>
+rule @selected(_:Val, .Set) => false
+rule @selected(V:Val, SetItem(F:Val) Rest:Set) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
+rule @selected(V:Val, SetItem($pair(F:Val,M:Val)) Rest:Set) => @if @match(V,$pair(F,M),ternary) @then true @else @selected(V,Rest) @fi
 
 //rule @select (Vs:Vals,  VM:ValueOrMaskeds : CA:CaseReturnValueType; Rest:CaseEntries )
 //    => @selectCheckCase(Vs, @VMstoVals(VM), CA, Rest)
@@ -496,6 +507,7 @@ rule @selected(V:Val, F:FieldValue mask M:FieldValue , Rest:ValueOrMaskeds) => @
 //syntax KItem /* Vals */ ::= "@VMstoVals" "(" ValueOrMaskeds ")"
 //rule @VMstoVals (.ValueOrMaskeds) => @nil
 //rule @VMstoVals (VM:ValueOrMasked , Rest:ValueOrMaskeds) => @makeCons(VM,@VMstoVals(Rest))
+//wrong interpretion of the specification
 
 syntax ReturnValueType ::= "@caseReturnToReturn" "(" CaseReturnValueType ")" [function]
 rule @caseReturnToReturn(PS:ParserStateName) => return PS ;

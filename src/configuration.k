@@ -68,6 +68,14 @@ configuration
         </state>
     </parserStates>
 
+    <valueSets>
+        <valueSet multiplicity="*">
+            <name> .K </name>
+            //a run time API to add and remove values from the set.
+            <vals> .Set </vals>
+        </valueSet>
+    </valueSets>
+
     <statefuls>
         <stateful multiplicity="*">
             <stype> .K </stype>

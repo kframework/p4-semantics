@@ -31,7 +31,7 @@ module P4-COMMON
                 | FieldListDeclaration
                 | FieldListCalculationDeclaration
                 | CalculatedFieldDeclaration
-    //            | ValueSetDeclaration //TODO
+                | ValueSetDeclaration
                 | ParserFunctionDeclaration
     //            | ParserExceptionDeclaration //TODO
                 | CounterDeclaration
