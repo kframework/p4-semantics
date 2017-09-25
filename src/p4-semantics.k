@@ -122,9 +122,20 @@ rule @getFieldsSet(.FieldDecs, Acc:Set) => Acc
 syntax Map ::= "@initFields" "(" InstanceName "," FieldValueAssignments "," Set ")"
 rule @initFields(I, .FieldValueAssignments, .Set) => .
 rule @initFields(I, .FieldValueAssignments, SetItem(F:FieldName) Rest:Set) =>
-        @initField(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
+        @initFieldAdjusted(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
 rule @initFields(I, F:FieldName : V:FieldValue ; ARest:FieldValueAssignments, SetItem(F:FieldName) FRest:Set) =>
-        @initField(I,F,V) ~> @initFields(I, ARest, FRest)
+        @initFieldAdjusted(I,F,V) ~> @initFields(I, ARest, FRest)
+
+syntax Map ::= "@initFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+rule <k> @initFieldAdjusted(N,F,V:Val) => @initField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
+        <instances>
+            <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
+            ...
+        </instances>
+        <headers>
+            <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+            ...
+        </headers>
 
 syntax Map ::= "@initField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 rule <k> @initField(N,F,V:Val) => . ...</k>
@@ -132,6 +143,7 @@ rule <k> @initField(N,F,V:Val) => . ...</k>
             <instance> <name> N </name>  <fieldVals> (.Map => F |-> V) _:Map </fieldVals>  ... </instance>
             ...
         </instances>
+
 
 //parser
 
@@ -495,6 +507,7 @@ rule return select ( SE:SelectExp ) { CE:CaseEntries} => @select(@concat(@readFD
 syntax KItem ::= "@select" "(" K /* Val */ "," CaseEntries ")" [strict(1)]
 rule @select (V:Val,  VL:ValueList : CA:CaseReturnValueType; Rest:CaseEntries )
     => @if @selected(V, VL) @then @caseReturnToReturn(CA) @else @select(V,Rest) @fi
+rule @select (_:Val, .CaseEntries) => @throw(p4_pe_unhandled_select)
 
 syntax KItem ::=    "@selected" "(" Val "," ValueList ")"
                   | "@selected" "(" Val "," Set ")"
@@ -532,20 +545,33 @@ rule @caseReturnToReturn(parse_error PE:ParserExceptionName) => parse_error PE ;
 
 
 syntax KItem /* Vals */ ::= "@readFDRefs" "(" SelectExp ")"
+
 rule @readFDRefs(.FieldOrDataRefs) => @nil
-rule @readFDRefs(F:FieldRef , Rest:FieldOrDataRefs) => @makeCons(@readField(F),@readFDRefs(Rest))
-rule <k> @readFDRefs(latest . FN:FieldName , Rest:FieldOrDataRefs) =>  @makeCons(@readField(H.FN),@readFDRefs(Rest)) ... </k>
+rule @readFDRefs(FDR:FieldOrDataRef , Rest:FieldOrDataRefs) => @makeCons(@readFDRef(FDR),@readFDRefs(Rest)) [structural]
+
+syntax KItem /* Val */ ::= "@readFDRef" "(" FieldOrDataRef ")"
+rule @readFDRef(F:FieldRef) => @readField(F)
+rule <k> @readFDRef(latest . FN:FieldName) =>  @readField(H.FN) ... </k>
         <lastExt> H:InstanceName </lastExt>
 //TODO rule @readVals(current())
 
 
+//set metadata
+rule set_metadata(I:InstanceName . F:FieldName , V:FieldValue) ; => @if @is_metadata(I) @then @writeFieldAdjusted(I,F,V) @else $compile_error @fi
+rule set_metadata(I:InstanceName . F:FieldName , V:FieldOrDataRef) ; => @if @is_metadata(I) @then @writeFieldAdjusted(I,F,@readFDRef(V)) @else $compile_error @fi
 
+syntax KItem ::= "@is_metadata" "(" InstanceName ")"
+rule <k> @is_metadata(N:InstanceName) => B ... </k>
+     <instances> <instance> <name> N </name> <metadata> B:Bool </metadata> ... </instance> ... </instances>
 
 //extract
-rule extract(N:InstanceName [ I:UnsignedValue ] ) ; => extract($element(N,USgnVal2Int(I))); //TODO (minor): I should be ConstValue
-//TODO: check bounds and through parser exception of necessary
+rule <k> extract(N:InstanceName [ I:UnsignedValue ] ) ;  => #if USgnVal2Int(I) <Int S #then  extract($element(N,USgnVal2Int(I))); #else @throw(p4_pe_index_out_of_bounds) #fi ... </k> //TODO (minor): I should be ConstValue
+     <arrays> N |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
 rule <k> extract(N:InstanceName [ next ]) ; => extract($element(N,Nx)); ... </k>
      <arrays> N |-> $array(S:Int,Nx:Int => Nx +Int 1,L:Int => maxInt(L,Nx)) _:Map </arrays> when Nx <Int S //TODO: "The keyword last can be used as an index to refer to the largest-index valid instance of a header stack." since in extraction there may be parser exception this thing max(L,Nx) is not technically correct, same about => Nx+!
+rule <k> extract(N:InstanceName [ next ]) ; => @throw(p4_pe_index_out_of_bounds) ... </k>
+     <arrays> N |-> $array(S:Int,Nx:Int,_:Int) _:Map </arrays> when Nx >=Int S
+
 rule <k> extract (Name:InstanceName) ;  => @extract(Name,Fields) ... </k>
      <instances>
         <instance> <name> Name </name> <metadata> false </metadata> <typeName> Type:HeaderTypeName </typeName> ... </instance> ...
@@ -565,14 +591,26 @@ rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
 rule <k> @extract(N:InstanceName, F:FieldName : * (_:FieldMods); Rest:FieldDecs) =>
-    @setVarWidth(@evalLengthExp(LE,N) * @val(8,0,false) - @val(FW,0,false)) ~> @extractField(N,F,@getVarWidth) ~> @extract(N,Rest) ... </k>
+    @if (@evalLengthExp(LE,N) <= @val(ML,0,false)) @then
+        @if (@evalLengthExp(LE,N) * @val(8,0,false) > @val(FW,0,false)) @then  //TODO (minor): it is actually >= but = may be problematic as width of 0 is currently interpreted as infinity
+           @setVarWidth(@evalLengthExp(LE,N) * @val(8,0,false) - @val(FW,0,false)) ~> @extractField(N,F,@getVarWidth) ~> @extract(N,Rest)
+        @else
+           @throw(p4_pe_header_too_short)
+        @fi
+    @else
+        @throw(p4_pe_header_too_long)
+    @fi
+    ... </k>
     <instances>
         <instance> <name> N </name> <typeName> H:HeaderTypeName </typeName> ... </instance> ...
     </instances>
     <headers>
-        <header> <name> H </name> <opts> ("length" |-> LE:LengthExp) ("$fixed_width" |-> FW:Int) _:Map </opts>  ... </header> ...
+        <header> <name> H </name> <opts> ("length" |-> LE:LengthExp) ("$fixed_width" |-> FW:Int) ("max_length" |-> ML:Int) _:Map </opts>  ... </header> ...
     </headers>
 //TODO: exception if more than max_length
+
+syntax BoolExp ::= K "<=" K [strict]
+syntax BoolExp ::= K ">" K [strict]
 
 syntax KItem ::= "@setVarWidth" "(" K /* Val */ ")" [strict]
 rule <k> @setVarWidth(V:Val) => . ... </k>
@@ -712,7 +750,7 @@ rule <k> @throw(E:ParserExceptionName) => S ~> R ... </k>
 
 rule <k> @throw(E:ParserExceptionName) => #if p4_pe_default in S #then @throw(p4_pe_default) #else @throw($unhandled_exception) #fi  ... </k>
      <handledExceptions> S:Set </handledExceptions>
-     when notBool E in S
+     when notBool E in S andBool E =/=K $unhandled_exception
 
 rule @throw($unhandled_exception) => parser_drop //TODO: actually change it an exception handler that sets some relevant metadata
 
@@ -726,9 +764,14 @@ rule <k> parser_drop ~> _:K => @nextPacket </k>
 // what else TODO?
 
 syntax Id ::=
-          "p4_pe_out_of_packet"   [token]
-        | "p4_pe_default"         [token]
-        | "$unhandled_exception"  [token]
+          "p4_pe_index_out_of_bounds"   [token]
+        | "p4_pe_out_of_packet"         [token]
+        | "p4_pe_header_too_long"       [token]
+        | "p4_pe_header_too_short"      [token]
+        | "p4_pe_unhandled_select"      [token]
+        | "p4_pe_checksum"              [token]
+        | "p4_pe_default"               [token]
+        | "$unhandled_exception"        [token]
         //TODO: rest of the exceptions
 
 //----------------verify/update calc fields------------------
@@ -763,8 +806,9 @@ rule @verifyCalcField(F:FieldRef, ListItem(verify FLC:FieldListCalculationName i
             (@if (F %== @calculateFLC(FLC)) @then //probably should check width
                 .K
              @else
-                //$pause right now the checksum is a dummy number
-                .K //TODO: parser exception
+                //@throw(p4_pe_checksum)
+                // TODO: right now the checksum is a dummy number, so now throwing exceptions
+                .K
              @fi
             )
         @else
@@ -1425,7 +1469,7 @@ rule #castToFieldRef(X:FieldRef) => X
 
 
 
-syntax KItem ::= "$pause"
+syntax KItem ::= "$pause" | "$compile_error"
 
 
 endmodule

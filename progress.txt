@@ -49,6 +49,7 @@
                                                                                                    are extracting into the next available free location"
   - Important: is it possible to extract into a higher index element without extracting the lower index elements first ?
     - for now, assuming we can NOT do such a thing. Because first of all it is not useful to be able to do it, second this assumption makes implementation of some stuff easier, such as add_header(x[1]), or inferring deparsing order
+  - index out of bound in parser should cause parser exception, what should out of bound access outside of parser do? compiler error? runtime error?
   - TODO: array access in calculated field will not work
   - TODO (refactoring): maybe create a K result ResolvedFieldRef (similar to ResolvedHeaderRef) and change the KItems that take (K /* ResolvedHeaderRef */ , FieldName) and ( FieldRef ) to only take ( K /* ResolvedFieldRef */) (there are only 3 places that this happens (readfield,writefield,calcfield) so maybe not worth it)
 
@@ -88,7 +89,6 @@
   - "Note that setting metadata will only have an effect if return is executed."
     -what is the difference if parser_drop drops the packet immediately
   - "In the drop case, the packet may be immediately dropped by the parser. No match+ action processing is done on the packet. An implementation should provide one or more counters for such events."
-  -TODO (important): Complete the list of implicit exceptions
 
 - (Done) Value set declarations
   - no tests in p4c. Found one test in bm repo

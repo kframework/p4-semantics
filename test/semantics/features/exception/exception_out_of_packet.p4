@@ -5,15 +5,19 @@ header_type ht {
     }
 }
 
+header_type mdt {
+    fields {
+        f : 8;
+    }
+}
+
+
 header ht h;
+metadata mdt md;
 
 parser start{
     extract(h);
     return ingress;
-}
-
-parser_exception p4_pe_out_of_packet {
-    parser_drop;
 }
 
 action noop() {

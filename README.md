@@ -159,7 +159,7 @@ And then kompile the semantics and then run the input program with it.
 - ~~Field lists calculations~~ 
 - ~~Calculated fields (so the checksum of packets won't be verified or updated)~~
 - ~~Parser exceptions~~
-- Implicit exceptions (partially supported)
+- ~~Implicit exceptions~~
 - ~~Value set declarations~~
 - ~~~Counters, meters, and registers~~
 - ~~Action profiles~~
