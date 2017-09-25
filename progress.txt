@@ -140,4 +140,7 @@
   - range: "Signedness of the field is used in evaluating the order." what does it mean ?
 
 
-Any primitive action other than modify_field,add/subtract_from_field, and add/subtract
+- Any primitive action other than modify_field,add/subtract_from_field, and add/subtract
+  - "shift_left,shift_right: value2 must be positive"
+    - what if it is not? is the result undefined or something else should happen?
+    - how about shift more that width?

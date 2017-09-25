@@ -943,7 +943,7 @@ rule @val(V1,_,_) << @val(V2,_,_) => @val(V1 <<Int V2,0,true)
 rule @val(V1,_,_) >> @val(V2,_,_) => @val(V1 >>Int V2,0,true)
 rule @val(V1,_,_) & @val(V2,_,_) => @val(V1 &Int V2,0,true)
 rule @val(V1,_,_) | @val(V2,_,_) => @val(V1 |Int V2,0,true)
-rule @val(V1,_,_) ^ @val(V2,_,_) => @val(V1 ^Int V2,0,true)
+rule @val(V1,_,_) ^ @val(V2,_,_) => @val(V1 xorInt V2,0,true) //^Int is power but in c, ^ means xor
 rule NotExp(@val(V2,_,_)) => @val(~Int V2,0,true)
 // TODO ISSUE: the semantics of none of these operators is exactly
 // defined specially when it comes to width, so leaving it like this
@@ -1137,15 +1137,26 @@ rule @call (add_to_field, $resolved(ListItem(D:FieldRef) ListItem(V:K))) =>
           @call (add, $resolved(ListItem(D) ListItem(D) ListItem(V)))
 
 
-syntax Id ::= "subtract" | "add" [token]
-rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:FieldRef) ListItem(V2))) =>
+syntax Id ::=
+                "subtract"      [token]
+              | "add"           [token]
+              | "bit_and"       [token]
+              | "bit_or"        [token]
+              | "bit_xor"       [token]
+              | "shift_left"    [token]
+              | "shift_right"   [token]
+
+syntax Bool ::= "#is_arithmetic" "(" Id ")" [function]
+rule #is_arithmetic(A:Id) => A ==K subtract orBool A ==K add orBool A ==K bit_and orBool A ==K bit_or orBool A ==K bit_xor orBool A ==K shift_left orBool A ==K shift_right
+
+/*rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:FieldRef) ListItem(V2))) =>
         //@if @isValid(V1) @then
 		    @readField(V1) ~> @call(F,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
 	    //@else
 		//    .
-		when (F ==K subtract) orBool (F ==K add)
+		when #is_arithmetic(F)
 
-rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_ => V) _:List)) when (F ==K subtract) orBool (F ==K add)
+rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_ => V) _:List)) when #is_arithmetic(F)
 rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:FieldRef))) =>
          //@if @isValid(V2) @then
                 @readField(V2) ~> @call(subtract,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
@@ -1153,13 +1164,37 @@ rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Fi
          //      .
         when (F ==K subtract) orBool (F ==K add)
 
-rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V))) when (F ==K subtract) orBool (F ==K add)
-rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val)))
-	=> #if (F ==K add) #then V1 + V2 #else V1 - V2 #fi ~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
-	when (F ==K subtract) orBool (F ==K add)
-//TODO: implement the rest of the primitive functions
+rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V))) when (F ==K subtract) orBool (F ==K add) */
 
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1) ListItem(V2))) =>
+    @makePair(V1,V2) ~> @call(F,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
+    when #is_arithmetic(F)
+rule ($pair(V1:Val,V2:Val) => .K) ~> @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(_ => V1) ListItem(_ => V2))) when #is_arithmetic(F)
 
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Val))) =>
+	#if (F ==K add) #then
+	    V1 + V2
+	#else #if (F ==K subtract) #then
+	    V1 - V2
+	#else #if (F ==K bit_and) #then
+	    V1 & V2
+	#else #if (F ==K bit_or) #then
+	    V1 | V2
+	#else #if (F ==K bit_xor) #then
+	    V1 ^ V2
+	#else #if (F ==K shift_left) #then
+	    V1 << V2
+    #else #if (F ==K shift_right) #then
+        V1 >> V2
+    #else
+        $internal_error
+	#fi #fi #fi #fi #fi #fi #fi
+
+	~> @call (modify_field, $resolved(ListItem(D:FieldRef) ListItem(.K)))
+	when #is_arithmetic(F)
+
+// for bit_and,bit_or,bit_xor: Targets may require dest, value1 and value2 to be the same bit width.
+// for shift_left,shift_right: value2 must be positive => TODO ISSUE: what if it is not? is the result undefined or something else should happen? how about shift more that width?
 
 syntax Id ::= "count" [token]
 rule <k> @call (count , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @updateCounter(C, 0) ... </k>
@@ -1469,7 +1504,7 @@ rule #castToFieldRef(X:FieldRef) => X
 
 
 
-syntax KItem ::= "$pause" | "$compile_error"
+syntax KItem ::= "$pause" | "$compile_error" | "$internal_error"
 
 
 endmodule

@@ -164,7 +164,7 @@ And then kompile the semantics and then run the input program with it.
 - ~~~Counters, meters, and registers~~
 - ~~Action profiles~~
 - ~~Any matching type other than exact and valid (ternary, lpm, range)~~
-- Any primitive action other than modify_field,add/subtract_from_field, and add/subtract 
+- Primitive actions related to recirculation and cloning, add/remove/copy header, push/pop, drop/truncate
 
 #### Parsing P4 programs into KAST 
 
