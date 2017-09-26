@@ -1063,6 +1063,8 @@ rule @resolveArgs(.Args,R:ResolvedArgs) => R
 rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do not evaluate fieldref
 rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R)  //a workaround 
 rule (V:Val => .) ~> @resolveArgs(Rest:Args,$resolved(_:List (.List => ListItem(V))))
+rule (.K => H) ~> @resolveArgs(H:HeaderRef , _:Args, _:ResolvedArgs)
+rule (RH:ResolvedHeaderRef => .K) ~> @resolveArgs((H:HeaderRef , Rest:Args) => Rest, $resolved(_:List (.List => ListItem(RH))))
 
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>
      <frameStack> ListItem((X |-> V:Arg) _:Map) _:List </frameStack>
@@ -1106,6 +1108,51 @@ rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 
 
 //primitive actions
+
+syntax Id ::=
+              "add_header"      [token]
+            | "copy_header"     [token]
+            | "remove_header"   [token]
+
+syntax Bool ::= "#is_header_op" "(" Id ")" [function]
+rule #is_header_op(A:Id) => A ==K add_header orBool A ==K remove_header orBool A ==K copy_header
+
+rule @call(A:Id, $resolved(ListItem(H:HeaderRef) L:List)) => H ~> @call(A, $resolved(ListItem(H) L)) when #is_header_op(A)
+rule (H:ResolvedHeaderRef => .K) ~> @call(A:Id, $resolved(ListItem(_:HeaderRef => H) _:List)) when #is_header_op(A)
+
+rule <k> @call(add_header, $resolved(ListItem($href(I:InstanceName)))) => #if V #then .K #else @initFields(I,.FieldValueAssignments,@getFieldsSet(Fs,.Set)) #fi ... </k>
+     <instances> <instance> <name> I </name> <metadata> false </metadata> <typeName> T:HeaderTypeName </typeName> <valid> V:Bool => true </valid> ... </instance> ... </instances>
+     <headers> <header> <name> T </name> <fields> Fs:FieldDecs </fields> ... </header> ... </headers>
+     when notBool #is_array_element(I)
+//TODO: currently it can not handle headers with variable length field
+rule @call(add_header, $resolved(ListItem($href($element(I:InstanceName, Idx:Int))))) => @call(push, $resolved(ListItem(I) ListItem(@val(Idx,0,false))))
+// assuming the array bound is checked at insertion
+
+rule <k> @call(remove_header, $resolved(ListItem($href(I:InstanceName)))) => .K ... </k>
+          <instances> <instance> <name> I </name> <metadata> false </metadata> <valid> _ => false </valid> <fieldVals> _:Map => .Map </fieldVals> ... </instance> ... </instances>
+          when notBool #is_array_element(I)
+rule @call(remove_header, $resolved(ListItem($href($element(I:InstanceName, Idx:Int))))) => @call(pop, $resolved(ListItem(I) ListItem(@val(Idx,0,false))))
+// assuming the array bound in checked at insertion
+
+rule (.K => H) ~> @call(copy_header, $resolved(ListItem(_:ResolvedHeaderRef) ListItem(H:HeaderRef)))
+rule (H:ResolvedHeaderRef => .K) ~> @call(copy_header, $resolved(ListItem(_:ResolvedHeaderRef) ListItem(_:HeaderRef => H)))
+
+rule <k> @call(copy_header, $resolved(ListItem($href(D:InstanceName)) ListItem($href(S:InstanceName)))) => .K ... </k>
+     <instances>
+        <instance> <name> S </name> <metadata> false </metadata> <typeName> T:HeaderTypeName </typeName> <valid> V:Bool </valid> <fieldVals> FV:Map </fieldVals> ... </instance>
+        <instance> <name> D </name> <metadata> false </metadata> <typeName> T </typeName> <valid> _:Bool => V </valid> <fieldVals> _:Map => FV </fieldVals> ... </instance>
+     ...
+     </instances>
+
+syntax Id ::=
+                "push"        [token]
+              | "pop"         [token]
+
+
+//rule @call(push, $resolved(ListItem(I:InstanceName) ListItem)
+
+syntax Id ::= "no_op" [token]
+rule @call(no_op, $resolved(_)) => .K
 
 //replace multiple rules with check for KLabel (i.e K REFLECTION)
 syntax Id ::= "modify_field" [token]
@@ -1358,6 +1405,9 @@ rule <k> @packetOut(V:Val) => . ... </k>
 syntax ArrayInfo ::= "$array" "(" Int "," Int "," Int ")" //size, next, last
 syntax InstanceName ::= "$element" "(" InstanceName "," Int ")"
 
+syntax Bool ::= "#is_array_element" "(" InstanceName ")" [function]
+rule #is_array_element(X:Id) => false
+rule #is_array_element($element(_,_)) => true
 //------------------utils-------------------------------
 syntax Int ::= "Val2Int" "(" Val ")" [function]
 rule Val2Int ( @val(I:Int,_,_) ) => I

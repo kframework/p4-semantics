@@ -144,3 +144,13 @@
   - "shift_left,shift_right: value2 must be positive"
     - what if it is not? is the result undefined or something else should happen?
     - how about shift more that width?
+  - add_header: "if the header instance was invalid, all its fields are initialized to 0"
+    - for variable length headers, what should we do if calculated packet length (result of length_exp) is less than the fixed width length or more than max_length?
+      - in parser extract, an exception will be thrown. what should happen here? it is compile error, runtime error, undef?
+      - https://github.com/p4lang/p4-spec/issues/429
+  - remove_header: "If the header_instance is not an element in a header stack, then the indicated header instance is marked invalid" somewhere else: "Metadata is always considered to be valid."
+    - can we remove metadata ?
+    - https://github.com/p4lang/p4-spec/issues/430
+    - for now only limiting to metadata
+
+  - the description of input type HDR says "The literal name of a header instance." but we know that in some cases (e.g add_header) array references are also expected
