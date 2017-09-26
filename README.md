@@ -14,7 +14,7 @@ P4K is still under development but it is near completion (see the last section) 
 - GCC
   + only needed for preprocessing p4 source files
 
-### Running simple P4 programs
+### Running P4 programs
 
 As mentioned, the semantics is not fully developed yet. 
 However, you can run most of the P4 programs with the current partial semantics. 
@@ -149,9 +149,9 @@ And then kompile the semantics and then run the input program with it.
 
 ### Misc. 
 
-#### Currently unsupported features
-
-- ~~Variable length header fields~~ (now supported)
+#### Currently unsupported features 
+Note: crossed means now supported
+- ~~Variable length header fields~~
 - Saturating fields 
 - Signed numbers (partially supported)
 - ~~Header stacks (array instances)~~
@@ -164,7 +164,7 @@ And then kompile the semantics and then run the input program with it.
 - ~~~Counters, meters, and registers~~
 - ~~Action profiles~~
 - ~~Any matching type other than exact and valid (ternary, lpm, range)~~
-- Primitive actions related to recirculation and cloning, ~~add/remove/copy header~~, push/pop, drop/truncate
+- Primitive actions related to recirculation and cloning, ~~add/remove/copy header~~, ~~push/pop~~, drop/truncate
 
 #### Parsing P4 programs into KAST 
 

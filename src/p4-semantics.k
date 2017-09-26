@@ -84,7 +84,7 @@ rule @getUpdateOrVerify(_, .UpdateVerifySpecs , L:List) => L
 
 rule metadata H:HeaderTypeName  I:InstanceName ; => metadata H I { .FieldValueAssignments }  [macro]
 
-rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => @initFields(Name,Asgn,@getFieldsSet(Fields,.Set)) ... </k>
+rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:FieldValueAssignments } ) => @initInstance(Name,@getAssignmentsAsMap(Asgn, .Map)) ... </k>
     <instances>  (.Bag =>
         <instance>
              <valid> true </valid>
@@ -118,15 +118,25 @@ rule @getFieldsSet(N:FieldName : _:BitWidth ( _:FieldMods ) ; Rest:FieldDecs, Ac
 rule @getFieldsSet(.FieldDecs, Acc:Set) => Acc
 //TODO: check a field is not decrlared twice
 
+syntax Map ::= "@getAssignmentsAsMap" "(" FieldValueAssignments "," Map ")" [function]
+rule @getAssignmentsAsMap(.FieldValueAssignments, M:Map) => M
+rule @getAssignmentsAsMap(F:FieldName : V:FieldValue ; R:FieldValueAssignments, M:Map) => @getAssignmentsAsMap(R, (F |-> V) M)
 
-syntax Map ::= "@initFields" "(" InstanceName "," FieldValueAssignments "," Set ")"
-rule @initFields(I, .FieldValueAssignments, .Set) => .
-rule @initFields(I, .FieldValueAssignments, SetItem(F:FieldName) Rest:Set) =>
-        @initFieldAdjusted(I,F,@val(0,0,false)) ~> @initFields(I, .FieldValueAssignments, Rest)
-rule @initFields(I, F:FieldName : V:FieldValue ; ARest:FieldValueAssignments, SetItem(F:FieldName) FRest:Set) =>
-        @initFieldAdjusted(I,F,V) ~> @initFields(I, ARest, FRest)
+syntax KItem ::=   "@initInstance" "(" InstanceName ")"
+                 | "@initInstance" "(" InstanceName "," Map ")" //Map from field to init value
 
-syntax Map ::= "@initFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+rule @initInstance(I:InstanceName) => @initInstance(I, .Map)
+rule <k> @initInstance(I:InstanceName, M:Map) => @initFields(I, M, @getFieldsSet(Fs, .Set)) ... </k>
+     <instances> <instance> <name> I </name> <typeName> T:HeaderTypeName </typeName> <valid> _ => true </valid> ... </instance> ... </instances>
+     <headers> <header> <name> T </name> <fields> Fs:FieldDecs </fields> ... </header> ... </headers>
+
+
+syntax KItem ::= "@initFields" "(" InstanceName "," Map "," Set ")"
+rule @initFields(I, .Map, .Set) => .
+rule (.K => @initFieldAdjusted(I,F,@val(0,0,false))) ~> @initFields(I, .Map, (SetItem(F:FieldName) => .Set) _:Set)
+rule (.K => @initFieldAdjusted(I,F,V)) ~> @initFields(I, ((F:FieldName |-> V:K) => .Map) _:Map, (SetItem(F:FieldName) => .Set) _:Set)
+
+syntax KItem ::= "@initFieldAdjusted" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 rule <k> @initFieldAdjusted(N,F,V:Val) => @initField(N,F,@adjustVal(@getAttr(F,Fs),V)) ...</k>
         <instances>
             <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
@@ -137,7 +147,7 @@ rule <k> @initFieldAdjusted(N,F,V:Val) => @initField(N,F,@adjustVal(@getAttr(F,F
             ...
         </headers>
 
-syntax Map ::= "@initField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
+syntax KItem ::= "@initField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 rule <k> @initField(N,F,V:Val) => . ...</k>
         <instances>
             <instance> <name> N </name>  <fieldVals> (.Map => F |-> V) _:Map </fieldVals>  ... </instance>
@@ -772,7 +782,6 @@ syntax Id ::=
         | "p4_pe_checksum"              [token]
         | "p4_pe_default"               [token]
         | "$unhandled_exception"        [token]
-        //TODO: rest of the exceptions
 
 //----------------verify/update calc fields------------------
 //verify
@@ -1117,25 +1126,29 @@ syntax Id ::=
 syntax Bool ::= "#is_header_op" "(" Id ")" [function]
 rule #is_header_op(A:Id) => A ==K add_header orBool A ==K remove_header orBool A ==K copy_header
 
-rule @call(A:Id, $resolved(ListItem(H:HeaderRef) L:List)) => H ~> @call(A, $resolved(ListItem(H) L)) when #is_header_op(A)
-rule (H:ResolvedHeaderRef => .K) ~> @call(A:Id, $resolved(ListItem(_:HeaderRef => H) _:List)) when #is_header_op(A)
+//rule (.K => H) ~> @call(A:Id, $resolved(ListItem(H:HeaderRef) _:List)) when #is_header_op(A)
+//rule (H:ResolvedHeaderRef => .K) ~> @call(A:Id, $resolved(ListItem(_:HeaderRef => H) _:List)) when #is_header_op(A)
 
-rule <k> @call(add_header, $resolved(ListItem($href(I:InstanceName)))) => #if V #then .K #else @initFields(I,.FieldValueAssignments,@getFieldsSet(Fs,.Set)) #fi ... </k>
+rule <k> @call(add_header, $resolved(ListItem($href(I:InstanceName)))) => #if V #then .K #else @initInstance(I) #fi ... </k>
      <instances> <instance> <name> I </name> <metadata> false </metadata> <typeName> T:HeaderTypeName </typeName> <valid> V:Bool => true </valid> ... </instance> ... </instances>
      <headers> <header> <name> T </name> <fields> Fs:FieldDecs </fields> ... </header> ... </headers>
      when notBool #is_array_element(I)
 //TODO: currently it can not handle headers with variable length field
-rule @call(add_header, $resolved(ListItem($href($element(I:InstanceName, Idx:Int))))) => @call(push, $resolved(ListItem(I) ListItem(@val(Idx,0,false))))
+//rule @call(add_header, $resolved(ListItem($href($element(I:InstanceName, Idx:Int))))) => //TODO
 // assuming the array bound is checked at insertion
 
-rule <k> @call(remove_header, $resolved(ListItem($href(I:InstanceName)))) => .K ... </k>
-          <instances> <instance> <name> I </name> <metadata> false </metadata> <valid> _ => false </valid> <fieldVals> _:Map => .Map </fieldVals> ... </instance> ... </instances>
+rule <k> @call(remove_header, $resolved(ListItem($href(I:InstanceName)))) => @invalidateInstance($href(I)) ... </k>
           when notBool #is_array_element(I)
-rule @call(remove_header, $resolved(ListItem($href($element(I:InstanceName, Idx:Int))))) => @call(pop, $resolved(ListItem(I) ListItem(@val(Idx,0,false))))
+//rule @call(remove_header, $resolved(ListItem($href($element(I:InstanceName, Idx:Int))))) => //TODO
 // assuming the array bound in checked at insertion
 
-rule (.K => H) ~> @call(copy_header, $resolved(ListItem(_:ResolvedHeaderRef) ListItem(H:HeaderRef)))
-rule (H:ResolvedHeaderRef => .K) ~> @call(copy_header, $resolved(ListItem(_:ResolvedHeaderRef) ListItem(_:HeaderRef => H)))
+syntax KItem ::= "@invalidateInstance" "(" ResolvedHeaderRef ")"
+rule <k> @invalidateInstance($href(I:InstanceName)) => .K  ... </k>
+     <instances> <instance> <name> I </name> <metadata> false </metadata> <valid> _ => false </valid> <fieldVals> _:Map => .Map </fieldVals> ... </instance> ... </instances>
+
+
+//rule (.K => H) ~> @call(copy_header, $resolved(ListItem(_:ResolvedHeaderRef) ListItem(H:HeaderRef)))
+//rule (H:ResolvedHeaderRef => .K) ~> @call(copy_header, $resolved(ListItem(_:ResolvedHeaderRef) ListItem(_:HeaderRef => H)))
 
 rule <k> @call(copy_header, $resolved(ListItem($href(D:InstanceName)) ListItem($href(S:InstanceName)))) => .K ... </k>
      <instances>
@@ -1148,8 +1161,72 @@ syntax Id ::=
                 "push"        [token]
               | "pop"         [token]
 
+rule <k> @call(push, $resolved(ListItem($aref(I:InstanceName)) ListItem(@val(C:Int,_,_)))) => @shiftElements(I,S -Int C -Int 1,C,-1) ~> @resetElements(I,minInt(C,S) -Int 1,-1) ~> @updateArrayInfo(I)  ... </k>
+     <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+     when C >Int 0
+rule <k> @call(pop, $resolved(ListItem($aref(I:InstanceName)) ListItem(@val(C:Int,_,_)))) => @shiftElements(I,C,(0 -Int C),1) ~> @resetElements(I,maxInt(0,S -Int C),1) ~> @updateArrayInfo(I)  ... </k>
+     <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+     when C >Int 0
 
-//rule @call(push, $resolved(ListItem(I:InstanceName) ListItem)
+
+//syntax IterDirection ::= "$forward" | "$backward"
+syntax KItem ::= "@shiftElements" "(" InstanceName "," Int "," Int "," Int ")" //index, shift amount and direction, iteration amount and direction
+//Iter forward => shift backward
+//Iter backward => shift forward
+rule <k> @shiftElements (I:InstanceName, Idx:Int, C:Int, D:Int) =>
+        #if Idx <Int 0 orBool Idx >=Int S #then .K #else
+            #if (Idx +Int C) <Int 0 orBool (Idx +Int C) >=Int S  #then
+                $internal_error
+            #else
+                @call(copy_header, $resolved(ListItem($href($element(I,Idx +Int C))) ListItem($href($element(I,Idx)))))
+                ~> @shiftElements (I, Idx +Int D, C, D)
+            #fi
+        #fi
+     ...
+     </k>
+     <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+
+
+syntax KItem ::= "@resetElements" "(" InstanceName "," Int "," Int ")" //arrayindex, shift amount and direction
+rule <k> @resetElements(I:InstanceName,Idx:Int,D:Int) =>
+         #if Idx <Int 0 orBool Idx >=Int S #then
+            .K
+         #else
+            @invalidateInstance($href($element(I,Idx))) ~> @initInstance($element(I,Idx)) ~> @resetElements(I,Idx +Int D,D)
+         #fi
+     ...
+     </k>
+     <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+
+syntax KItem ::= "@updateArrayInfo" "(" InstanceName ")" //update last,next
+rule @updateArrayInfo(I) => @updateLast(I) ~> @updateNext(I)
+
+syntax KItem ::=   "@updateLast" "(" InstanceName ")"
+rule <k> @updateLast (I:InstanceName) => @updateLast($element(I,S -Int 1)) ... </k>
+     <arrays> I |-> $array(S:Int,_,_) _:Map </arrays>
+rule <k> @updateLast($element(I:InstanceName, Idx:Int)) => .K ... </k>
+     <instances> <instance> <name> $element(I,Idx) </name> <valid> true </valid> ... </instance> ... </instances>
+     <arrays> I |-> $array(S:Int,_,_:Int => Idx) _:Map </arrays>
+rule <k> @updateLast($element(I:InstanceName, Idx:Int => (Idx -Int 1))) ... </k>
+     <instances> <instance> <name> $element(I,Idx) </name> <valid> false </valid> ... </instance> ... </instances>
+     when Idx >=Int 0
+rule <k> @updateLast($element(I:InstanceName, Idx:Int)) => .K ... </k>
+     <arrays> I |-> $array(S:Int,_,_:Int => -1) _:Map </arrays>
+     when Idx <Int 0
+
+syntax KItem ::=   "@updateNext" "(" InstanceName ")"
+rule <k> @updateNext (I:InstanceName) => @updateNext($element(I,0)) ... </k> when notBool #is_array_element(I)
+rule <k> @updateNext($element(I:InstanceName, Idx:Int)) => .K ... </k>
+     <instances> <instance> <name> $element(I,Idx) </name> <valid> false </valid> ... </instance> ... </instances>
+     <arrays> I |-> $array(S:Int,_:Int => Idx,_:Int) _:Map </arrays>
+rule <k> @updateNext($element(I:InstanceName, Idx:Int => (Idx +Int 1))) ... </k>
+     <instances> <instance> <name> $element(I,Idx) </name> <valid> true </valid> ... </instance> ... </instances>
+     <arrays> I |-> $array(S:Int,_,_) _:Map </arrays>
+     when Idx <Int S
+rule <k> @updateNext($element(I:InstanceName, Idx:Int)) => .K ... </k>
+     <arrays> I |-> $array(S:Int,_:Int => S,_:Int) _:Map </arrays>
+     when Idx >=Int S
+
 
 syntax Id ::= "no_op" [token]
 rule @call(no_op, $resolved(_)) => .K
@@ -1454,7 +1531,7 @@ rule <k> @readField($href(H:InstanceName) , F:FieldName) => @undef ... </k>
          <instance> <name> H </name> <valid> false </valid>  ...  </instance> ...
       </instances>
 
-syntax ResolvedHeaderRef ::= "$href" "(" InstanceName ")"
+syntax ResolvedHeaderRef ::= "$href" "(" InstanceName ")" | "$aref" "(" InstanceName ")"
 
 /*rule <k> ScalarRef(I:InstanceName) => $href(I) ... </k>
      <instances> <instance> <name> I </name> ... </instance> ... </instances>
@@ -1468,6 +1545,8 @@ rule <k> ArrayRef(I:InstanceName,last) => $href($element(I,L)) ... </k>
 
 rule <k> I:InstanceName => $href(I) ... </k>
      <instances> <instance> <name> I </name> ... </instance> ... </instances>
+rule <k> (I:InstanceName => $aref(I)) ~> @resolveArgs(_,_) ... </k> // if ~> @resolveArgs is not present, it will clash with Id ~> setCrntRule (...)
+     <arrays> I |-> _:ArrayInfo _:Map </arrays>
 rule <k> I:InstanceName [Idx:UnsignedValue] => $href($element(I,USgnVal2Int(Idx))) ... </k> //TODO (minor): Idx should be ConstValue
      <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
      when USgnVal2Int(Idx) <Int S

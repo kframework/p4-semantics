@@ -140,17 +140,26 @@
   - range: "Signedness of the field is used in evaluating the order." what does it mean ?
 
 
-- Any primitive action other than modify_field,add/subtract_from_field, and add/subtract
-  - "shift_left,shift_right: value2 must be positive"
-    - what if it is not? is the result undefined or something else should happen?
-    - how about shift more that width?
-  - add_header: "if the header instance was invalid, all its fields are initialized to 0"
-    - for variable length headers, what should we do if calculated packet length (result of length_exp) is less than the fixed width length or more than max_length?
-      - in parser extract, an exception will be thrown. what should happen here? it is compile error, runtime error, undef?
-      - https://github.com/p4lang/p4-spec/issues/429
-  - remove_header: "If the header_instance is not an element in a header stack, then the indicated header instance is marked invalid" somewhere else: "Metadata is always considered to be valid."
-    - can we remove metadata ?
-    - https://github.com/p4lang/p4-spec/issues/430
-    - for now only limiting to metadata
-
-  - the description of input type HDR says "The literal name of a header instance." but we know that in some cases (e.g add_header) array references are also expected
+- Primitive actions:
+  - (Done) Arithmetic
+    - "shift_left,shift_right: value2 must be positive"
+      - what if it is not? is the result undefined or something else should happen?
+      - how about shift more that width?
+  - (Done) Header modification
+    - TODO: right now not doing anything for add_header remove_header on array
+    - add_header: "if the header instance was invalid, all its fields are initialized to 0"
+      - for variable length headers, what should we do if calculated packet length (result of length_exp) is less than the fixed width length or more than max_length?
+        - in parser extract, an exception will be thrown. what should happen here? it is compile error, runtime error, undef?
+        - https://github.com/p4lang/p4-spec/issues/429
+      - "If header_instance is an element in a header stack, the effect is to push a new header into the stack at the indicated location. Any existing valid instances from the given index or higher are copied to the next higher index. The given instance is set to valid. If the array is fully populated when this operation is executed, then no change is made to the Parsed Representation."
+        - if we have a[3] = valid,invalid,valid, what is the result of add_header(a[0]) ? is it valid,valid,valid or valid,valid,invalid ?
+        - https://github.com/p4lang/p4-spec/issues/431
+    - remove_header: "If the header_instance is not an element in a header stack, then the indicated header instance is marked invalid" somewhere else: "Metadata is always considered to be valid."
+      - can we remove metadata ?
+      - https://github.com/p4lang/p4-spec/issues/430
+      - for now only limiting to metadata
+    - the description of input type HDR says "The literal name of a header instance." but we know that in some cases (e.g add_header) array references are also expected
+  - (Done) Push/pop
+    - https://github.com/p4lang/p4-spec/issues/431
+  - clone, resubmit, recirculate
+  - drop/truncate
