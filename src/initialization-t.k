@@ -53,11 +53,16 @@ rule <k> @init => . ... </k>
                              <fields>
                                 String2Id("ingress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
                                 String2Id("egress_spec") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
+                                //TODO
+/*                                String2Id("egress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
+                                String2Id("packet_length") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
+                                String2Id("instance_type") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);*/
                                  .FieldDecs
                              </fields>
                              ...
                          </header>
                  )
+
                  ...
      </headers>
      <instances>

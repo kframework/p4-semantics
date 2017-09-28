@@ -45,6 +45,8 @@ imports PARSER-SYNTAX //for ControlFunctionName
 
     syntax BoolExpr ::=
                       "not" BoolExpr        [strict,left]
+                    | "(" BoolExpr ")"      [braket,prefer,klabel(BExpPar)] //clash with ( K ) (both prefer and klabel is required)
+                    |  "valid" "(" HeaderRef ")"         [klabel(BExpValid)]
                     >
                       Exp "<" Exp           [strict,left]
                     | Exp "<=" Exp          [strict,left]
@@ -57,10 +59,8 @@ imports PARSER-SYNTAX //for ControlFunctionName
                       BoolExpr "and" BoolExpr   [strict,left]
                     >
                       BoolExpr "or" BoolExpr    [strict,left]
-                    |  "valid" "(" HeaderRef ")"         [klabel(BExpValid)]
                     //| BoolExpr BoolOp BoolExpr          [strict(1,3)]//,klabel('BExpBinBoolOp)]
                     //| "not" BoolExpr                    [strict]//,klabel('BExpBinNot)]
-                    | "(" BoolExpr ")"                  [braket]//, klabel('BExpBinNot)]
                     //| Exp RelOp Exp                     [strict(1,3)]//,klabel('BExpBinRelOp)]
                     | BoolValue                         //[klabel('BExpVal)]
     //syntax  Exp ::= Exp BinOp Exp | UnOp Exp | FieldRef | Value | "(" Exp ")"

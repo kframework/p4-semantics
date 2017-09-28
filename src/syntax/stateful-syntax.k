@@ -105,6 +105,9 @@ imports TABLE-SYNTAX //forst ConstValue TableName FieldRef
     syntax AttributeList ::= "attributes" ":" AttrEntries
 
     syntax AttrEntries ::= List{AttrEntry,","} [klabel('AttrEntries)]
-    syntax AttrEntry ::= "signed" | "saturating" //| AttrEntry "," AttrEntry
+    syntax AttrEntry ::=
+                      "signed"      [klabel(StatefulSigned)]
+                    | "saturating"  [klabel(StatefulSaturating)]
+                    //| AttrEntry "," AttrEntry
 
 endmodule

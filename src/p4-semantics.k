@@ -782,7 +782,7 @@ rule <k> @verifyCalcField($href(H:InstanceName) , F:FieldName) => .  ... </k>
      <instances> <instance> <name> H </name> <valid> false </valid> ... </instance> ... </instances>
 rule <k> @verifyCalcField($href(H:InstanceName) , F:FieldName) => @verifyCalcField(H.F, V)  ... </k>
          <instances> <instance> <name> H </name> <valid> true </valid> ... </instance> ... </instances>
-         <calcFields> <calcField> <fieldRef> H.F </fieldRef> <verifies> V:List </verifies> ... </calcField> </calcFields>
+         <calcFields> <calcField> <fieldRef> H.F </fieldRef> <verifies> V:List </verifies> ... </calcField> ... </calcFields>
 
 rule @verifyCalcField(_:FieldRef, .List) => .
 rule @verifyCalcField(F:FieldRef, ListItem(verify FLC:FieldListCalculationName if (C:CalcBoolCond);) Rest:List) =>
@@ -937,11 +937,13 @@ rule NotExp(@val(V2,_,_)) => @val(~Int V2,0,true)
 //rule MinusExp(@val(V:Int,W,_)) =>  @val(0 -Int V,W +Int 1,true) when W >Int 0
 //TODO: unify it with @negative
 
-rule BExpValid( H:InstanceName )   => @isValid(H)
+rule BExpValid( H:HeaderRef )   => @isValid(H)
+rule BExpPar(BE:K) => BE
+rule not B:Bool => notBool B
 
 rule B1:Bool or B2:Bool => B1 orBool B2
 rule B1:Bool and B2:Bool => B1 andBool B2
-//TODO ISSUE: short circuit ?
+//TODO ISSUE: short circuit ? doesn't matter because no side effect
 
 //---------------table match-----------------------------
 syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
@@ -1533,17 +1535,14 @@ syntax KResult ::= ResolvedHeaderRef
 
 //TODO: same as above
 syntax KItem /* Bool */ ::=   "@isValid" "(" K /* FieldRef or HeaderRef */ ")"
-                            | "@isValid" "(" K /*ResolvedHeaderRef*/ "," FieldName ")" [strict(1)]
-rule @isValid(H:HeaderRef . F:FieldName) => @isValid(H,F)
-rule <k> @isValid(H:InstanceName , _:FieldName) => V ... </k>
+                            | "@isValidHeader" "(" K /*ResolvedHeaderRef*/ ")" [strict,strict]
+rule @isValid(H:HeaderRef . F:FieldName) => @isValidHeader(H)
+rule @isValid(H:HeaderRef) => @isValidHeader(H)
+rule <k> @isValidHeader($href(H:InstanceName)) => V ... </k>
       <instances>
          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
       </instances>
 
-rule <k> @isValid(H:InstanceName) => V ... </k>
-      <instances>
-         <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance> ...
-      </instances>
 
 
 

@@ -112,7 +112,7 @@ imports HEADER-SYNTAX
     syntax FieldListEntry ::=     FieldRef
                                 | HeaderRef
                                 | FieldValue
-                                | FieldListName     [klabel('FieldListEntryListName)]
+                                | FieldListName     //[klabel('FieldListEntryListName)]
                                 | "payload"
     //The identifier payload indicates that the contents of the packet following the header of the previously mentioned field is included in the field list
     //TODO ISSUE: what if no field was previously mentioned? what does previously exactly mean?
