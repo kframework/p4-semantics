@@ -171,7 +171,10 @@ configuration
     <parser>
         <graph>
             <onpath> .Set </onpath>
-            <marked> .Set </marked>
+            <marked>
+                <mstates> .Set </mstates>
+                <mheaders> .Set </mheaders>
+            </marked>
             <dporder> .List </dporder>
         </graph>
         <index> 0 </index>

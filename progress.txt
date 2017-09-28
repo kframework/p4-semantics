@@ -13,7 +13,6 @@
   - There are lots of problems with inferring order of deparsing. For now, only supporting very simple cases
     - if there a dag, a random topological order is made
     - only self-loops are allowed, only for a case that we have extract(...[next]), and in that case the whole array will be ordered
-  -TODO (important): set_metadata
 
 
 
@@ -57,7 +56,8 @@
 - (Done) Field lists
   -field_list declaration: how to handle payload? Can we reference metadata (yes)? what is payload in that case?
   -"The identifier payload indicates that the contents of the packet following the header of the previously mentioned field is included in the field list."
-    -what is "previously mentioned field"? what if that is metadata? what if it is of kind field_list fl1 { h1.f1; fl2; payload } what is payload in that case ?
+    - what is "previously mentioned field"? what if that is metadata? what if it is of kind field_list fl1 { h1.f1; fl2; payload } what is payload in that case ?
+    - https://github.com/p4lang/p4-spec/issues/433
   -is it possible to have more than one payload in a field_list?
   -TODO: payload
 
@@ -137,6 +137,7 @@
 
 - (Done) Any matching type other than exact and valid (ternary, lpm, range)
   - tables with more than one lmp match, how the priority is decided?
+    -https://github.com/p4lang/p4-spec/issues/411
   - range: "Signedness of the field is used in evaluating the order." what does it mean ?
 
 

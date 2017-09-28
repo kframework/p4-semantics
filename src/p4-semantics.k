@@ -324,83 +324,34 @@ rule <k> @processDec(control Name:ControlFunctionName { Body:ControlStatements }
 
 //--------------------deparse order--------------------------
 
-//find parse order
-//syntax KItem ::=  "@parseOrder" "(" K "," K ")" // current, previous
-//
-//rule <k> @parseOrder(P:K,C:ParserStateName) => @parseOrder(P:K,B) ... </k>
-//     <parserStates>
-//        <state> <name> C </name> <body> B:ParserFunctionBody   </body> </state>
-//        ...
-//     </parserStates>
-//
-//rule @parseOrder(P:K, S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(P,Rest Ret)
-//rule <k> @parseOrder(.K, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
-//     <start> .K => H </start>
-//rule <k> @parseOrder(P:HeaderExtractRef, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
-//     <order> (. => P |-> SetItem(H)) M:Map </order> when notBool P in keys(M)
-//rule <k> @parseOrder(P:HeaderExtractRef, extract(H:HeaderExtractRef); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(H,Rest Ret) ...</k>
-//     <order> (P |-> ((. => SetItem(H)) S:Set)) M:Map </order>
-////TODO: more compact if possible
-//rule @parseOrder(P:K, .ExtractOrSetStatements Ret:ReturnStatement) =>  @parseOrder(P,Ret)
-//rule <k> @parseOrder(P:K, return S:ParserStateName;) =>  @parseOrder(P,S) ... </k>
-//      <parserStates>
-//         <state> <name> S  </name> ... </state>
-//         ...
-//      </parserStates>
-//rule <k> @parseOrder(P:K, return C:ControlFunctionName;) => . ... </k>
-//      <controlFlows>
-//            <control> <name> C </name> ... </control>
-//            ...
-//      </controlFlows>
-//rule @parseOrder(P:K, return select ( _ ) { C:CaseEntries } ) =>  @parseOrder(P,C)
-//rule @parseOrder(P:K, .CaseEntries) =>  .K
-//rule @parseOrder(P:K, _:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
-//        @parseOrder(P,Rest) ~> @parseOrder(P,@caseReturnToReturn(C))
-
 
 // assuming only dag or self loops with extract(hs[next]), refer to progress.txt
+// really adhoc algorithm, but the semantics of deparsing is not clear
 
-rule <k> @parseOrder(C:ParserStateName) => @parseOrder(B) ... </k>
+rule <k> @parseOrder(extract(H:InstanceName); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>
+            @if @is_marked(H) @then //#if H in P #then was not working correctly, probabely a bug in K
+                @if @on_path(H) @then
+                    .K
+                @else
+                    @addOnPath(H) ~> @parseOrder(Rest Ret)  ~> @removeOnPath(H)
+                @fi
+            @else
+                @if @on_path(H) @then
+                    $internal_error
+                @else
+                    @mark(H) ~> @addOnPath(H) ~> @parseOrder(Rest Ret) ~> @addOrder(H)  ~> @removeOnPath(H)
+                @fi
+            @fi
+     ...
+     </k>
+
+rule <k> @parseOrder(C:ParserStateName) => @if @is_state_marked(C) @then .K @else @mark_state(C) ~> @parseOrder(B) @fi ... </k>
      <parserStates>
         <state> <name> C </name> <body> B:ParserFunctionBody   </body> </state>
         ...
      </parserStates>
+
 rule @parseOrder(S:SetStatement Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(Rest Ret)
-
-rule <k> @parseOrder(extract(H:InstanceName); Rest:ExtractOrSetStatements Ret:ReturnStatement) =>
-            @if @on_path(H) @then //#if H in OP #then was not working correctly, probabely a bug in K
-                .K
-            @else
-                //A directed loop, discontinue
-            //    .K
-           // #else
-                @addOnPath(H) ~>
-                @if @is_marked(H) @then @parseOrder(Rest Ret) @else @mark(H) ~> @parseOrder(Rest Ret) ~> @addOrder(H) @fi
-                ~> @removeOnPath(H)
-            @fi
-           // #fi
-     ...
-     </k>
-//     <graph>
-//        <marked> S:Set </marked>
-//        <onpath> P:Set </onpath>
-//        ...
-//     </graph>
-
-
-syntax KItem ::= "@on_path" "(" HeaderExtractRef ")"
-rule <k> @on_path(H:HeaderExtractRef) => H in S ... </k>
-     <onpath> S:Set </onpath>
-
-syntax KItem ::= "@is_marked" "(" HeaderExtractRef ")"
-rule <k> @is_marked(H:HeaderExtractRef) => H in S ... </k>
-     <marked> S:Set </marked>
-
-// due to bug in K
-//syntax Bool ::= "#in_set" "(" K "," Set ")" [function]
-//rule #in_set(_:K, .Set) => false
-//rule #in_set(X, SetItem(X) _:Set) => true
-//rule #in_set(X, SetItem(Y) Rest:Set) => #in_set(X, Rest) when X =/=K Y
 
 rule @parseOrder(extract(H:InstanceName [ Idx:UnsignedValue ]); Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(extract($element(H,USgnVal2Int(Idx))); Rest Ret) //TODO(minor) Idx must be ConstValue
 rule @parseOrder(extract(H:InstanceName [ next ]); Rest:ExtractOrSetStatements Ret:ReturnStatement) => @parseOrder(extract(H); Rest Ret)
@@ -422,6 +373,15 @@ rule @parseOrder(.CaseEntries) =>  .K
 rule @parseOrder(_:ValueList : C:CaseReturnValueType ; Rest:CaseEntries) =>
          @parseOrder(@caseReturnToReturn(C)) ~> @parseOrder(Rest) //dfs
 
+
+syntax KItem ::= "@addOrder" "(" HeaderExtractRef ")"
+rule <k> @addOrder(H:HeaderExtractRef) => . ... </k>
+     <dporder> (.List => ListItem (H)) _:List  </dporder>
+
+syntax KItem ::= "@on_path" "(" HeaderExtractRef ")"
+rule <k> @on_path(H:HeaderExtractRef) => H in S ... </k>
+     <onpath> S:Set </onpath>
+
 syntax KItem ::= "@addOnPath" "(" HeaderExtractRef ")"
                 | "@removeOnPath" "(" HeaderExtractRef ")"
 rule <k> @addOnPath (H:HeaderExtractRef) => . ... </k>
@@ -432,12 +392,27 @@ rule <k> @removeOnPath (H:HeaderExtractRef) => . ... </k>
 
 syntax KItem ::= "@mark" "(" HeaderExtractRef ")"
 rule <k> @mark (H:HeaderExtractRef) => . ... </k>
-     <marked> (.Set => SetItem(H)) _:Set </marked>
+     <marked> <mheaders> (.Set => SetItem(H)) _:Set </mheaders> ... </marked>
 
-syntax KItem ::= "@addOrder" "(" HeaderExtractRef ")"
-rule <k> @addOrder(H:HeaderExtractRef) => . ... </k>
-     <dporder> (.List => ListItem (H)) _:List  </dporder>
+syntax KItem ::= "@is_marked" "(" HeaderExtractRef ")"
+rule <k> @is_marked(H:HeaderExtractRef) => H in S ... </k>
+     <marked> <mheaders> S:Set </mheaders> ... </marked>
 
+
+syntax KItem ::= "@mark_state" "(" ParserStateName ")"
+rule <k> @mark_state (P:ParserStateName) => . ... </k>
+     <marked> <mstates> (.Set => SetItem(P)) _:Set </mstates> ... </marked>
+
+syntax KItem ::= "@is_state_marked" "(" ParserStateName ")"
+rule <k> @is_state_marked(P:ParserStateName) => P in S ... </k>
+     <marked> <mstates> S:Set </mstates> ... </marked>
+
+
+// due to bug in K
+//syntax Bool ::= "#in_set" "(" K "," Set ")" [function]
+//rule #in_set(_:K, .Set) => false
+//rule #in_set(X, SetItem(X) _:Set) => true
+//rule #in_set(X, SetItem(Y) Rest:Set) => #in_set(X, Rest) when X =/=K Y
 
 // --------------------init------------------------------------
 
@@ -803,9 +778,9 @@ syntax KItem ::=   "@verifyCalcField" "(" FieldRef ")"
 
 
 rule @verifyCalcField(H:HeaderRef . F:FieldName) => @verifyCalcField(H, F)
-rule <k> @verifyCalcField(H:InstanceName , F:FieldName) => .  ... </k>
+rule <k> @verifyCalcField($href(H:InstanceName) , F:FieldName) => .  ... </k>
      <instances> <instance> <name> H </name> <valid> false </valid> ... </instance> ... </instances>
-rule <k> @verifyCalcField(H:InstanceName , F:FieldName) => @verifyCalcField(H.F, V)  ... </k>
+rule <k> @verifyCalcField($href(H:InstanceName) , F:FieldName) => @verifyCalcField(H.F, V)  ... </k>
          <instances> <instance> <name> H </name> <valid> true </valid> ... </instance> ... </instances>
          <calcFields> <calcField> <fieldRef> H.F </fieldRef> <verifies> V:List </verifies> ... </calcField> </calcFields>
 
