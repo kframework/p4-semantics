@@ -64,6 +64,8 @@
 - (Done) Field lists calculations
  -A field instance is excluded from the calculation (i.e., it is treated as if the instance is not
      listed in the input list) if the field’s header is not valid.
+
+ -what happens if all field in a field list are invalid? what value is passed to checksum calculator?
  -TODO: K hooks for checksum functions
 
 - (Done) Calculated fields
