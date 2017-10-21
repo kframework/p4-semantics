@@ -26,8 +26,8 @@
                               , 1 //port
                           ))
                    ListItem($packet(
-                                  ListItem(@val(11,48,false)) //dst mac
-                                  ListItem(@val(10,48,false)) //src mac
+                                  ListItem(@val(2,48,false)) //dst mac
+                                  ListItem(@val(0,48,false)) //src mac
                                   ListItem(@val(2048,16,false)) //ethertype
                                   , 1 //port
                               ))

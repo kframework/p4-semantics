@@ -72,6 +72,7 @@ counter my_direct_counter {
 action m_action(idx) {
     count(my_indirect_counter, idx);
     //drop(); //Ali
+    modify_field(standard_metadata.egress_spec, 1); //Ali
 }
 
 table m_table {
