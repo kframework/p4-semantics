@@ -194,6 +194,7 @@ rule <k> @processDec(counter Name:Id { type : T:CounterType ; SOpt:StatefulOptio
                 <name> Name </name>
                 <opts> ("$counter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processCounterOpts(COpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
                 <width> 0 </width> // = inf
+                <vals> .Map </vals> // https://github.com/kframework/k/issues/2351
                 ...
             </stateful>
         ) ...
@@ -207,6 +208,7 @@ rule <k> @processDec(meter Name:Id { type : T:MeterType ; MOpt:MeterOptionals SO
                 <name> Name </name>
                 <opts> ("$meter_type" |-> T) @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processMeterOpts(MOpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
                 <width> 2 </width>
+                <vals> .Map </vals>
                 ...
             </stateful>
         ) ...
@@ -220,6 +222,7 @@ rule <k> @processDec(register Name:Id { width : W:UnsignedValue ; SOpt:StatefulO
                 <name> Name </name>
                 <opts> @processStatefulOpts(SOpt, ("$binding" |-> $static_global)) @processRegisterOpts(ROpt, ("$signed" |-> false) ("$saturating" |-> false)) </opts>
                 <width> USgnVal2Int(W) </width>
+                <vals> .Map </vals>
                 ...
             </stateful>
         ) ...
@@ -414,6 +417,12 @@ rule <k> @is_state_marked(P:ParserStateName) => P in S ... </k>
 //rule #in_set(X, SetItem(X) _:Set) => true
 //rule #in_set(X, SetItem(Y) Rest:Set) => #in_set(X, Rest) when X =/=K Y
 
+// -----------------------
+rule <k> @fillInitInstances => .K ... </k>
+     <instances> Init:Bag </instances>
+     <initInstances> .K => Init </initInstances>
+
+
 // --------------------init------------------------------------
 
 // moved to initialization.k
@@ -422,29 +431,20 @@ rule  @exec => @nextPacket
 // ------------------------packet to/from buffer-----------------------------
 
 syntax KItem ::= "@nextPacket"
-syntax Id ::= "standard_metadata" [token]
-rule <k> @nextPacket => @parse&ingress ~> @egress ~> @txenPacket ~> @nextPacket ... </k>
+rule <k> @nextPacket =>
+           @resetParsedRep
+        ~> @resetParser
+        ~> @writeField(standard_metadata, ingress_port, @val(Port,32,false))
+        ~> @parse&ingress
+        ~> @egress
+        ~> @txenPacket
+        ~> @nextPacket
+     ... </k>
      <buffer> <in> (ListItem($packet(P:List, Port:Int)) => .List) _:List </in> ... </buffer>
      <packet> _ => P </packet>
-     <instances>
-        <instance>
-            <name> standard_metadata </name>
-            <fieldVals> _:Map => (String2Id("ingress_port") |-> @val(Port,32,false) String2Id("egress_spec") |-> @undef) </fieldVals>
-            ...
-        </instance>
-        ...
-    </instances>
-    <parser> <packetSize> .K => @calculatePacketSize(P , 0) </packetSize> ... </parser>
-
-
-syntax Val ::= "@calculatePacketSize" "(" List "," Int ")" [function]
-rule @calculatePacketSize(.List, I:Int) => @val(I /Int 8, 0, false)
-rule @calculatePacketSize(ListItem(@val(_,W:Int,_)) Rest:List, I:Int) => @calculatePacketSize(Rest, I +Int W)
-
-//TODO: IMPORTANT: instances must be reset
 
 syntax KItem ::= "@txenPacket"
-syntax Id ::= "egress_spec" [token]
+//syntax Id ::= "egress_spec" [token]
 rule <k> @txenPacket => . ... </k>
      <packetout> P:List => .List </packetout>
      <buffer> <out>   _:List (.List => ListItem($packet(P,Port))) </out> ... </buffer>
@@ -459,11 +459,30 @@ rule <k> @txenPacket => . ... </k>
 //TODO: check if needs to be dropped
 
 
+syntax KItem ::= "@resetParsedRep"
+rule <k> @resetParsedRep => .K ... </k>
+     <instances> _:Bag => Init </instances>
+     <initInstances> Init:Bag </initInstances>
+
+
+syntax KItem ::= "@resetParser"
+rule <k> @resetParser => .K ... </k>
+     <pctx>
+           <index> _ => 0 </index>
+           <lastExt> _ => .K </lastExt>
+           <varWidth> _ => .K </varWidth>
+           <packetSize> _ => .K </packetSize>
+     </pctx>
+
 //--------------------parsing------------------------------
 syntax KItem ::= "@parse&ingress" | "@egress"
-rule <k> @parse&ingress => Body  ... </k>
-     <parserStates> <state>  <name> start </name> <body> Body </body> ... </state> ...</parserStates>
-     <lastExt> _ => .K </lastExt>
+rule <k> @parse&ingress => return start;  ... </k>
+     <packet> P:List </packet>
+     <packetSize> _ => @calculatePacketSize(P , 0) </packetSize>
+
+syntax Val ::= "@calculatePacketSize" "(" List "," Int ")" [function]
+rule @calculatePacketSize(.List, I:Int) => @val(I /Int 8, 0, false)
+rule @calculatePacketSize(ListItem(@val(_,W:Int,_)) Rest:List, I:Int) => @calculatePacketSize(Rest, I +Int W)
 
 rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
 rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structural]
@@ -1000,10 +1019,19 @@ rule <k> @updateDirectStatefuls => . ... </k>
      <tableDirects> M:Map </tableDirects>
      <crntTable> T:TableName </crntTable>
      when notBool #in_keys(T,M)
-rule <k> @updateDirectStatefuls(SetItem(N:Id) Rest:Set) => #if (T ==K $counter) #then @updateCounter(N, CR) #else @updateMeter(N, CR, #castToFieldRef(M["$result"])) #fi ~> @updateDirectStatefuls(Rest) ... </k>
+rule <k> (.K => @updateCounter(N, CR)) ~> @updateDirectStatefuls((SetItem(N:Id) => .Set) Rest:Set) ... </k>
+      <statefuls> <stateful> <name> N </name> <stype> $counter </stype> ... </stateful> ... </statefuls>
+      <crntRule> CR:Int </crntRule>
+rule <k> (.K => @updateMeter(N, CR, FR)) ~> @updateDirectStatefuls((SetItem(N:Id) => .Set) Rest:Set) ... </k>
+     <statefuls> <stateful> <name> N </name> <stype> $meter </stype> <opts> ("$result" |-> FR:FieldRef) _:Map </opts> ... </stateful> ... </statefuls>
+     <crntRule> CR:Int </crntRule>
+/*rule <k> @updateDirectStatefuls(SetItem(N:Id) Rest:Set) => #if (T ==K $counter) #then @updateCounter(N, CR) #else @updateMeter(N, CR, #castToFieldRef(M["$result"])) #fi ~> @updateDirectStatefuls(Rest) ... </k>
       <statefuls> <stateful> <name> N </name> <stype> T:StatefulType </stype> <opts> M:Map </opts> ... </stateful> ... </statefuls>
       <crntRule> CR:Int </crntRule>
-      when (T ==K $meter) impliesBool #in_keys("$result", M) //the result attribute is required if a meter is declared with the direct attribute
+      when (T ==K $meter) impliesBool #in_keys("$result", M) //the result attribute is required if a meter is declared with the direct attribute*/
+      //does not work for unknown reason
+
+
 rule @updateDirectStatefuls(.Set) => .
 
 syntax KItem ::= "@updateCounter" "(" Id "," Int ")"
@@ -1049,7 +1077,9 @@ rule @resolveArgs(.Args,R:ResolvedArgs) => R
 rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do not evaluate fieldref
 rule @resolveArgs(F:FieldValue , Rest:Args,R:ResolvedArgs) => F ~> @resolveArgs(Rest,R)  //a workaround 
 rule (V:Val => .) ~> @resolveArgs(Rest:Args,$resolved(_:List (.List => ListItem(V))))
-rule (.K => H) ~> @resolveArgs(H:HeaderRef , _:Args, _:ResolvedArgs)
+
+//rule <k> (.K => H) ~> @resolveArgs(H:HeaderRef , _:Args, _:ResolvedArgs) ... </k> //clash with Id
+rule <k> (.K => H[I]) ~> @resolveArgs(H:InstanceName [ I:Index ] , _:Args, _:ResolvedArgs) ... </k>
 rule (RH:ResolvedHeaderRef => .K) ~> @resolveArgs((H:HeaderRef , Rest:Args) => Rest, $resolved(_:List (.List => ListItem(RH))))
 
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>

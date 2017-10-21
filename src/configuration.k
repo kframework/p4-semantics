@@ -3,15 +3,14 @@ require "syntax/p4-syntax.k"
 module CONFIGURATION
 imports P4-COMMON
 
-syntax KItem ::= "@init" | "@exec"
+syntax KItem ::= "@init" | "@exec" | "@fillInitInstances"
 syntax KItem ::=  "@parseOrder" "(" K ")"
 syntax Id ::= "start" [token]
 
 
 configuration
 <T>
-    <k>  $PGM:P4Program ~> @parseOrder (start) ~> @init ~> @exec  </k>
-
+    <k>  $PGM:P4Program ~> @parseOrder (start) ~>  @init ~> @fillInitInstances ~> @exec  </k>
 
     <headers>
         <header multiplicity="*">
@@ -60,6 +59,8 @@ configuration
             <fieldVals> .Map </fieldVals>
         </instance>
     </instances>
+
+    <initInstances> .K </initInstances>
 
     <parserStates>
         <state multiplicity="*">
@@ -177,10 +178,12 @@ configuration
             </marked>
             <dporder> .List </dporder>
         </graph>
-        <index> 0 </index>
-        <lastExt> .K </lastExt>
-        <varWidth> .K </varWidth>
-        <packetSize> .K </packetSize>
+        <pctx>
+            <index> 0 </index>
+            <lastExt> .K </lastExt>
+            <varWidth> .K </varWidth>
+            <packetSize> .K </packetSize>
+        </pctx>
     </parser>
 
     //<input stream="stdin">
