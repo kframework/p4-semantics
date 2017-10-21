@@ -870,31 +870,37 @@ rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 
 
 //TODO: for now assuming that a snapshot of current rules are taken before matching
-rule <k> apply (T:TableName) { C:CaseList } => @setCrntTable(T) ~> @checkNextRule(FM,R) ~> @setCrntTable(.K) ~> C ... </k>
+rule <k> apply (T:TableName) { C:CaseList } => @setCrnt("$table", T) ~> @checkNextRule(FM,R) ~> @setCrnt("$table", .K) ~> @checkNextAppSelCase (C) ... </k>
      <tables>
         <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
      ...
      </tables>
 
 //select
-rule A:ActionName ~>  @setCrntTable(.K) ~> C:CaseList  => @setCrntTable(.K) ~> @checkNextAppSelCase (A,C)
 
-syntax KItem ::= "@checkNextAppSelCase" "(" ActionName "," CaseList ")"
-rule @checkNextAppSelCase(_,.ActionCases) => .
-rule @checkNextAppSelCase(_,.HitMissCases) => .
-rule @checkNextAppSelCase(A:ActionName, HM:HitOrMiss B:ControlBlock Rest:HitMissCases) =>
-    #if ((HM ==K miss andBool A ==K @miss ) orBool (HM ==K hit andBool A =/=K @miss)) #then
-        B
-    #else
-        @checkNextAppSelCase(A,Rest)
-    #fi
+syntax KItem ::= "@checkNextAppSelCase" "(" CaseList ")"
+rule @checkNextAppSelCase(.ActionCases) => .
+rule @checkNextAppSelCase(.HitMissCases) => .
+rule <k> @checkNextAppSelCase(HM:HitOrMiss B:ControlBlock Rest:HitMissCases) =>
+        #if ((HM ==K miss andBool MS ==K true ) orBool (HM ==K hit andBool MS =/=K true)) #then
+            B
+        #else
+            @checkNextAppSelCase(Rest)
+        #fi
+     ...
+     </k>
+     <crnt> ("$miss" |-> MS:Bool)  _:Map </crnt>
 
-rule @checkNextAppSelCase(A:ActionName, AD:ActionOrDefault B:ControlBlock Rest:ActionCases) =>
-   #if (@isDefault(AD) orBool A ==K AD) #then
-       B
-   #else
-       @checkNextAppSelCase(A,Rest)
-   #fi
+rule <k> @checkNextAppSelCase(AD:ActionOrDefault B:ControlBlock Rest:ActionCases) =>
+       //#if (@isDefault(AD) orBool A ==K AD) #then  https://github.com/p4lang/p4-spec/issues/447
+       #if ((@isDefault(AD) andBool A =/=K .K)  orBool A ==K AD) #then
+           B
+       #else
+           @checkNextAppSelCase(Rest)
+       #fi
+     ...
+     </k>
+     <crnt> ("$action" |-> A:K)  _:Map </crnt>
 
 syntax Bool ::= "@isDefault" "(" ActionOrDefault ")" [function]
 rule @isDefault(default) => true
@@ -967,17 +973,23 @@ rule B1:Bool and B2:Bool => B1 andBool B2
 //---------------table match-----------------------------
 syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
-//TODO: check defualt action
-//TODO: what else todo
 //TODO: assumming rules are checked for consistency at the time of insertion and are  are sorted by their priority
 
 
-syntax ActionName ::= "@miss" [token]
-rule @checkNextRule(_:FieldMatchs,.List  ) => @miss
-rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
-    => @if @matchAll(FM,R) @then @setCrntRule(Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrntRule(.K)  @else @checkNextRule(FM,Rest) @fi
 
-rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
+// miss
+rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ~> @callOrDeref(A) ... </k>
+     <crnt> ("$table" |-> T:TableName) _:Map </crnt>
+     <tables> <table> <name> T </name> <default> A:ActionCallOrActionProfileRef </default> ... </table> ... </tables>
+rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ... </k>
+     <crnt> ("$table" |-> T:TableName) _:Map </crnt>
+     <tables> <table> <name> T </name> <default> .K </default> ... </table> ... </tables>
+
+
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
+    => @if @matchAll(FM,R) @then @setCrnt("$miss", false) ~> @setCrnt("$rule", Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrnt("$rule", .K) ~> @setCrnt("$miss", .K)  @else @checkNextRule(FM,Rest) @fi
+
+//rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
 
 syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
 rule @matchAll(.FieldMatchs,.List) => true
@@ -999,14 +1011,9 @@ rule @readFMRef(F:FieldRef mask M:ConstValue,_)  => @applyMask(@readField(F),M)
 // "Header references for matching may only be used with the valid match type."
 rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
 
-
-syntax KItem ::= "@setCrntRule" "(" K ")"
-rule <k> @setCrntRule(V:K) => . ... </k>
-     <crntRule> _ => V </crntRule>
-
-syntax KItem ::= "@setCrntTable" "(" K ")"
-rule <k> @setCrntTable(V:K) => . ... </k>
-     <crntTable> _ => V </crntTable>
+syntax KItem ::= "@setCrnt" "(" K "," K ")"
+rule <k> @setCrnt(K:K,V:K) => .K ... </k>
+     <crnt> M:Map => M[K <- V] </crnt>
 
 //--------------statefuls--------------------------------
 
@@ -1014,17 +1021,17 @@ syntax KItem ::=  "@updateDirectStatefuls"
                 | "@updateDirectStatefuls" "(" K /* ::Set */ ")"
 rule <k> @updateDirectStatefuls => @updateDirectStatefuls(S) ... </k>
      <tableDirects> T |-> S:Set _:Map </tableDirects>
-     <crntTable> T:TableName </crntTable>
-rule <k> @updateDirectStatefuls => . ... </k>
+     <crnt> ("$table" |-> T:TableName) _:Map </crnt>
+rule <k> @updateDirectStatefuls => .K ... </k>
      <tableDirects> M:Map </tableDirects>
-     <crntTable> T:TableName </crntTable>
+     <crnt> ("$table" |-> T:TableName) _:Map </crnt>
      when notBool #in_keys(T,M)
 rule <k> (.K => @updateCounter(N, CR)) ~> @updateDirectStatefuls((SetItem(N:Id) => .Set) Rest:Set) ... </k>
       <statefuls> <stateful> <name> N </name> <stype> $counter </stype> ... </stateful> ... </statefuls>
-      <crntRule> CR:Int </crntRule>
+      <crnt> ("$rule" |-> CR:Int) _:Map </crnt>
 rule <k> (.K => @updateMeter(N, CR, FR)) ~> @updateDirectStatefuls((SetItem(N:Id) => .Set) Rest:Set) ... </k>
      <statefuls> <stateful> <name> N </name> <stype> $meter </stype> <opts> ("$result" |-> FR:FieldRef) _:Map </opts> ... </stateful> ... </statefuls>
-     <crntRule> CR:Int </crntRule>
+     <crnt> ("$rule" |-> CR:Int) _:Map </crnt>
 /*rule <k> @updateDirectStatefuls(SetItem(N:Id) Rest:Set) => #if (T ==K $counter) #then @updateCounter(N, CR) #else @updateMeter(N, CR, #castToFieldRef(M["$result"])) #fi ~> @updateDirectStatefuls(Rest) ... </k>
       <statefuls> <stateful> <name> N </name> <stype> T:StatefulType </stype> <opts> M:Map </opts> ... </stateful> ... </statefuls>
       <crntRule> CR:Int </crntRule>
@@ -1352,8 +1359,7 @@ rule I:Int ~> @writeStatefulAdjusted(C, 0, V) => @writeStatefulAdjusted(C, I, V)
 syntax KItem ::= "@getStatefulIndexInActionCall" "(" Id "," Int ")"
 rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then CR #else I #fi   ... </k>
      <statefuls> <stateful> <name> C </name> <stype> T:StatefulType </stype> <opts> "$binding" |-> B:BindingType M:Map </opts> ... </stateful> ... </statefuls>
-     <crntTable> CT:TableName </crntTable>
-     <crntRule> CR:Int </crntRule>
+     <crnt> ("$table" |-> CT:TableName) ("$rule" |-> CR:Int) _:Map </crnt>
      when
         ((B ==K $direct) impliesBool (T =/=K $counter)) andBool
         ((B =/=K $static_global) impliesBool (#in_keys("$table", M) andBool (M["$table"] ==K CT))) andBool
@@ -1364,10 +1370,10 @@ rule #get_instant_count ("$instant_count" |-> I:Int _:Map) => I
 
 //-------------------action profile-------------------------
 syntax KItem ::= "@callOrDeref" "(" ActionCallOrActionProfileRef ")"
-rule @callOrDeref(@call(A:ActionName, X)) => @call(A,X) ~> A
+rule @callOrDeref(@call(A:ActionName, X)) => @call(A,X) ~> @setCrnt("$action", A)
 rule <k> @callOrDeref(@apref(Id:Int)) => @deref(P, Id) ... </k>
      <tables> <table> <name> T </name> <acts> action_profile: P:ActionProfileName  ;</acts> ... </table> ... </tables>
-     <crntTable> T:TableName </crntTable>
+     <crnt> ("$table" |-> T:TableName) _:Map </crnt>
 
 syntax KItem ::= "@deref" "(" ActionProfileName "," Int ")"
 rule <k> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(C) ... </k>

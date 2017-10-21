@@ -133,6 +133,8 @@ What is const_expr? Is it const_value?
   in a apply and select block gets gets elected?
   If nothing matches in the table and there is no default action, does the default case
   in a apply and select block gets gets elected?
+  https://github.com/p4lang/p4-spec/issues/447
+  (reg. miss: the spec says when no match is found it is a miss, so should not make a difference with default action)
 
 - How exactly deparsing works?
 - deparsing:

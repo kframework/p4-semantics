@@ -137,6 +137,7 @@ configuration
             <acts> .K </acts>
             <opts> .K </opts>
             <rules> .List </rules>
+            <default> .K </default>
         </table>
     </tables>
 
@@ -154,8 +155,11 @@ configuration
         <frameStack>
             .List
         </frameStack>
+        <crnt> .Map </crnt>
         <crntTable> .K </crntTable>
         <crntRule> .K </crntRule>
+        <crntAction> .K </crntAction>
+        <crntHit> .K </crntHit>
     </ctx>
 
 
