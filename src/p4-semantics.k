@@ -889,9 +889,10 @@ rule @updateCalcField(F:FieldRef, ListItem(update FLC:FieldListCalculationName i
             @updateCalcField(F, Rest, V)
         @fi
 //----------------control flow-------------------------
-rule .ControlStatements => .                                [structural] //TODO: maybe add a default action
+rule .ControlStatements => .                                [structural]
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
-rule { B:ControlStatements } => B                            [structural]
+rule { B:ControlStatements } => @setCrnt("$action", .K) ~> @setCrnt("$miss", .K) ~> B
+
 
 //apply
 rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
