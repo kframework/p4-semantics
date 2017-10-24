@@ -320,7 +320,8 @@ class BMV2ActionArguments(object):
         #     if result != "":
         #         result += " "
         #     result += self.values[f.name]
-        # return result
+        #return result
+        #print(result)
         if self.size() == 0:
             return ".List"
         return " ".join(["ListItem(@val(%d,0,false))" % int(self.values[f.name], 0) for f in self.action.args])
@@ -506,8 +507,11 @@ class RunBMV2(object):
         #     prio = str(10000 - int(prio))
         if tableName not in table_info:
             table_info[tableName] = {"entry": []}
-
-        table_info[tableName]["entry"].append("""
+        if prio != "":
+            prio = 10000 - int(prio)
+        else:
+            prio = 0
+        entry = """
         ListItem($rule(%d,
                     $ctr(
                         %s
@@ -519,11 +523,12 @@ class RunBMV2(object):
                       )
                     )
                  ))
-        """ % (self.uniqid,str(key),actionName,str(actionArgs)))
+        """ % (self.uniqid,str(key),actionName,str(actionArgs))
+        table_info[tableName]["entry"].append((prio,self.uniqid,entry,entry))
         self.uniqid += 1
         command = "table_add " + tableName + " " + actionName + " " + str(key) + " => " + str(actionArgs)
         if table.match_type == "ternary":
-            command += " " + prio
+            command += " " + str(prio)
         return command
     def actionByName(self, table, actionName):
         id = table.actions[actionName]
@@ -807,6 +812,7 @@ def main(argv):
     ...
 """)
     for t in table_info:
+        table_info[t]["entry"] = sorted(table_info[t]["entry"])
         s = """
     <table>
         ...
@@ -815,7 +821,7 @@ def main(argv):
         <default> .K => %s </default>
     </table>
         """ % (t,
-               "\n".join(table_info[t]["entry"]) if len(table_info[t]["entry"]) else ".List",
+               "\n".join([x[2] for x in table_info[t]["entry"]]) if len(table_info[t]["entry"]) > 0 else ".List",
                table_info[t]["default"] if "default" in table_info[t] else ".K"
                )
         k.write(s)
