@@ -1030,15 +1030,24 @@ rule @match(V1:Val,V2:Val,exact) => V1 == V2    //TODO ISSUE: is this it?
 rule @match(V1:Val,$pair(V2:Val,M:Val),ternary) => (V1 & M) == (V2 & M)
 rule @match(V1:Val,$pair(V2:Val,M:Val),lpm) => (V1 & M) == (V2 & M)
 rule @match(V1:Val,$pair(L:Val,H:Val),range) => (V1 >= L) and (V1 <= H)
-rule @match(B1:Bool,B2:Bool,valid) => B1 ==Bool B2
+//rule @match(B1:Bool,B2:Bool,valid) => B1 ==Bool B2
+rule @match(B:Bool => @BoolToVal(B),_,valid)
+rule @match(_,B:Bool => @BoolToVal(B),valid)
+rule @match(V1:Val,V2:Val,valid) => V1 == V2
 
 syntax KItem /* KResult */ ::= "@readFMRef" "(" FieldOrMaskedRef "," FieldMatchType  ")"
 
 
-rule @readFMRef(F:FieldRef,FM:FieldMatchType) => #if FM =/=K valid #then @readField(F) #else @isValid(F) #fi
+rule @readFMRef(F:FieldRef,FM:FieldMatchType) => #if FM =/=K valid #then @readField(F) #else @BoolToVal(@isValid(F)) #fi
 rule @readFMRef(F:FieldRef mask M:ConstValue,_)  => @applyMask(@readField(F),M)
 // "Header references for matching may only be used with the valid match type."
-rule @readFMRef(H:HeaderRef,valid) => @isValid(H)
+rule @readFMRef(H:HeaderRef,valid) => @BoolToVal(@isValid(H))
+rule @readFMRef(H:HeaderRef . valid,_) => @BoolToVal(@isValid(H)) //since v1.0.4
+
+
+syntax KItem ::= "@BoolToVal" "(" K /* Bool */ ")" [strict]
+rule @BoolToVal(true) => @val(1,0,false)
+rule @BoolToVal(false) => @val(0,0,false)
 
 syntax KItem ::= "@setCrnt" "(" K "," K ")"
 rule <k> @setCrnt(K:K,V:K) => .K ... </k>

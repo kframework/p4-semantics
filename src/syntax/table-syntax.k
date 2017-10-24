@@ -48,6 +48,7 @@ imports ACTION-PROFILE-SYNTAX //for ActionSpecification, ConstValue, BoolValue, 
 
     syntax FieldMatch ::= FieldOrMaskedRef ":" FieldMatchType ";"
     syntax FieldOrMaskedRef ::= HeaderRef | FieldRef | FieldRef "mask" ConstValue
+                               | HeaderRef "." "valid" [prefer] /* since v1.0.4 */
 
     syntax FieldMatchType ::=
                   "exact"
