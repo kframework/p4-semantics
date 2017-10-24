@@ -38,8 +38,8 @@ syntax KResult ::= "$pair" "(" Val "," Val ")"
 syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCallOrActionProfileRef ")"
 syntax Criteria ::= "$ctr" "(" List ")"
 
-
-syntax Packet ::= "$packet" "(" List "," Int ")"
+syntax PacketData ::= List | String
+syntax Packet ::= "$packet" "(" PacketData "," Int ")"
 
 
 syntax Id ::=     "%standard_metadata_t" [token]

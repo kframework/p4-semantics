@@ -62,6 +62,8 @@ configuration
 
     <initInstances> .K </initInstances>
 
+    <initArrays> .Map </initArrays> //https://github.com/kframework/k/issues/2352
+
     <parserStates>
         <state multiplicity="*">
             <name> .K </name>
@@ -156,10 +158,10 @@ configuration
             .List
         </frameStack>
         <crnt> .Map </crnt>
-        <crntTable> .K </crntTable>
-        <crntRule> .K </crntRule>
-        <crntAction> .K </crntAction>
-        <crntHit> .K </crntHit>
+        //<crntTable> .K </crntTable>
+        //<crntRule> .K </crntRule>
+        //<crntAction> .K </crntAction>
+        //<crntHit> .K </crntHit>
     </ctx>
 
 
@@ -198,8 +200,6 @@ configuration
         <in> .List </in>
         <out> .List </out>
     </buffer>
-
-
 
 </T>
 

@@ -421,7 +421,8 @@ rule <k> @is_state_marked(P:ParserStateName) => P in S ... </k>
 rule <k> @fillInitInstances => .K ... </k>
      <instances> Init:Bag </instances>
      <initInstances> .K => Init </initInstances>
-
+     <arrays> M:Map </arrays>
+     <initArrays> _ => M </initArrays> //https://github.com/kframework/k/issues/2352
 
 // --------------------init------------------------------------
 
@@ -432,15 +433,14 @@ rule  @exec => @nextPacket
 
 syntax KItem ::= "@nextPacket"
 rule <k> @nextPacket =>
-           @resetParsedRep
-        ~> @resetParser
+           @resetPerPacketState
         ~> @writeField(standard_metadata, ingress_port, @val(Port,32,false))
         ~> @parse&ingress
         ~> @egress
         ~> @txenPacket
         ~> @nextPacket
      ... </k>
-     <buffer> <in> (ListItem($packet(P:List, Port:Int)) => .List) _:List </in> ... </buffer>
+     <buffer> <in> (ListItem($packet(P:PacketData, Port:Int)) => .List) _:List </in> ... </buffer>
      <packet> _ => P </packet>
 
 syntax KItem ::= "@txenPacket"
@@ -459,30 +459,42 @@ rule <k> @txenPacket => . ... </k>
 //TODO: check if needs to be dropped
 
 
-syntax KItem ::= "@resetParsedRep"
-rule <k> @resetParsedRep => .K ... </k>
+syntax KItem ::= "@resetPerPacketState"
+rule <k> @resetPerPacketState => .K ... </k>
      <instances> _:Bag => Init </instances>
      <initInstances> Init:Bag </initInstances>
-
-
-syntax KItem ::= "@resetParser"
-rule <k> @resetParser => .K ... </k>
+     //<arrays> A:Map => #resetArrays(A,.Map) </arrays>
+     <arrays> _ => M  </arrays>
+     <initArrays> M:Map </initArrays>
      <pctx>
-           <index> _ => 0 </index>
-           <lastExt> _ => .K </lastExt>
-           <varWidth> _ => .K </varWidth>
-           <packetSize> _ => .K </packetSize>
+        <index> _ => 0 </index>
+        <lastExt> _ => .K </lastExt>
+        <varWidth> _ => .K </varWidth>
+        <packetSize> _ => .K </packetSize>
      </pctx>
+
+//https://github.com/kframework/k/issues/2352
+//syntax KItem ::= "@resetArrays" "(" Set ")"
+//rule <k> @resetArrays((SetItem(N:InstanceName) => .Set) _:Set) ... </k>
+//     <arrays> (N |-> $array(_:Int , (_:Int => 0), (_:Int => -1))) _:Map </arrays>
+//rule <k> @resetArrays(.Set) => .K ... </k>
+
+// does not work for unknown reason
+//syntax Map ::= "#resetArrays" "(" Map "," Map ")" [function]
+//rule #restArrays(.Map,M:Map) => M
+//rule #resetArrays((N:InstanceName |-> $array(S:Int,_,_)) R:Map, M:Map ) => #resetArrays(R, (N |-> $array(S,0,-1)) M)
+
 
 //--------------------parsing------------------------------
 syntax KItem ::= "@parse&ingress" | "@egress"
 rule <k> @parse&ingress => return start;  ... </k>
-     <packet> P:List </packet>
+     <packet> P:PacketData </packet>
      <packetSize> _ => @calculatePacketSize(P , 0) </packetSize>
 
-syntax Val ::= "@calculatePacketSize" "(" List "," Int ")" [function]
+syntax Val ::= "@calculatePacketSize" "(" PacketData "," Int ")" [function]
 rule @calculatePacketSize(.List, I:Int) => @val(I /Int 8, 0, false)
 rule @calculatePacketSize(ListItem(@val(_,W:Int,_)) Rest:List, I:Int) => @calculatePacketSize(Rest, I +Int W)
+rule @calculatePacketSize(S:String, 0) => @calculatePacketSize(.List, lengthString(S))
 
 rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
 rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structural]
@@ -595,8 +607,8 @@ rule <k> @extract(N:InstanceName, .FieldDecs) => . ... </k>
 rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest:FieldDecs ) =>
         @extractField(N,F,CW) ~> @extract(N,Rest)
 rule <k> @extract(N:InstanceName, F:FieldName : * (_:FieldMods); Rest:FieldDecs) =>
-    @if (@evalLengthExp(LE,N) <= @val(ML,0,false)) @then
-        @if (@evalLengthExp(LE,N) * @val(8,0,false) > @val(FW,0,false)) @then  //TODO (minor): it is actually >= but = may be problematic as width of 0 is currently interpreted as infinity
+    @if (@evalLengthExp(LE,N) %<= @val(ML,0,false)) @then
+        @if (@evalLengthExp(LE,N) * @val(8,0,false) %> @val(FW,0,false)) @then  //TODO (minor): it is actually >= but = may be problematic as width of 0 is currently interpreted as infinity
            @setVarWidth(@evalLengthExp(LE,N) * @val(8,0,false) - @val(FW,0,false)) ~> @extractField(N,F,@getVarWidth) ~> @extract(N,Rest)
         @else
            @throw(p4_pe_header_too_short)
@@ -611,10 +623,7 @@ rule <k> @extract(N:InstanceName, F:FieldName : * (_:FieldMods); Rest:FieldDecs)
     <headers>
         <header> <name> H </name> <opts> ("length" |-> LE:LengthExp) ("$fixed_width" |-> FW:Int) ("max_length" |-> ML:Int) _:Map </opts>  ... </header> ...
     </headers>
-//TODO: exception if more than max_length
 
-syntax BoolExp ::= K "<=" K [strict]
-syntax BoolExp ::= K ">" K [strict]
 
 syntax KItem ::= "@setVarWidth" "(" K /* Val */ ")" [strict]
 rule <k> @setVarWidth(V:Val) => . ... </k>
@@ -655,10 +664,29 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@
      //when U <Int size(Packet)
      //bug with K's build-in size(List)
 
+
+rule <k> @extractField(N:InstanceName, F:FieldName , @val(W:Int,_,_) ) => @initField(N,F,@extractFieldValFromPacket(@val(String2Base(substrString(Packet, I, I +Int W),2),W,false) , @getAttr(F,Fs))) ... </k>
+     <instances>
+        <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
+        ...
+     </instances>
+     <headers>
+              <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+              ...
+     </headers>
+     <packet> Packet:String </packet>
+     <index> I:Int => I +Int W </index>
+     when I +Int W <=Int lengthString(Packet)
+
 rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
      <packet> Packet:List </packet>
      <index> I:Int </index>
      when I >=Int #listSize(Packet)
+
+rule <k> @extractField(_:InstanceName, _:FieldName , @val(W:Int,_,_) ) => @throw(p4_pe_out_of_packet) ... </k>
+     <packet> Packet:String </packet>
+     <index> I:Int </index>
+     when I +Int W >Int lengthString(Packet)
 
 //bug with K's build-in size(List)
 syntax Int ::= "#listSize" "(" List ")" [function]
@@ -987,7 +1015,7 @@ rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ... </
 
 
 rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
-    => @if @matchAll(FM,R) @then @setCrnt("$miss", false) ~> @setCrnt("$rule", Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrnt("$rule", .K) ~> @setCrnt("$miss", .K)  @else @checkNextRule(FM,Rest) @fi
+    => @if @matchAll(FM,R) @then @setCrnt("$miss", false) ~> @setCrnt("$rule", Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrnt("$rule", .K)  @else @checkNextRule(FM,Rest) @fi
 
 //rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
 
@@ -1392,10 +1420,32 @@ rule #castToActionCall(ListItem(X:ActionCall)) => X //workaround for K issue #23
 
 //-------------------deparsing------------------------------
 syntax Id ::= "egress" [token]
-rule <k> @egress => (#if @egressDefined(/*<controlFlows>*/ S /*</controlFlows>*/) #then egress (); #else . #fi) ~> @deparseNext(L) ... </k>
+rule <k> @egress => (#if @egressDefined(/*<controlFlows>*/ S /*</controlFlows>*/) #then egress (); #else . #fi) ~> @deparseNext(L) ~> @addPayload ... </k>
      <dporder> L:List </dporder>
 //     <controlFlows> S </controlFlows>
-     <cfset> S </cfset> //TODO: temporary fix for K issue #2279
+     <cfset> S </cfset> //ref: K issue #2279
+
+
+syntax KItem ::= "@addPayload"
+rule <k> @addPayload => .K ... </k>
+     <packet> Packet:List  </packet>
+     <packetout> _:List (.List => range(Packet, I ,#listSize(Packet))) </packetout>
+     <index> I:Int </index>
+     when I <Int #listSize(Packet)
+rule <k> @addPayload => .K ... </k>
+     <packet> Packet:List  </packet>
+     <index> I:Int </index>
+     when I >=Int #listSize(Packet)
+
+rule <k> @addPayload => .K ... </k>
+     <packet> Packet:String  </packet>
+     <packetout> _:List (.List => ListItem(@val(String2Base(substrString(Packet,I,lengthString(Packet)),2), lengthString(Packet) -Int I  ,false))) </packetout>
+     <index> I:Int </index>
+     when I <Int lengthString(Packet)
+rule <k> @addPayload => .K ... </k>
+     <packet> Packet:String  </packet>
+     <index> I:Int </index>
+     when I >=Int lengthString(Packet)
 
 syntax Bool ::= "@egressDefined" "(" Set ")" [function]
 rule @egressDefined(S) => notBool notBool (egress in S) //workaround to get rid of ambiguities
@@ -1590,12 +1640,16 @@ syntax KItem ::=   K "%==" K [seqstrict]
                  | K "%&&" K [seqstrict]
                  | K "%&"  K [seqstrict]
                  | K "%+" K [seqstrict]
-		 | K "%|"  K [seqstrict]
+                 | K "%>" K [seqstrict]
+                 | K "%<=" K [seqstrict]
+		         | K "%|"  K [seqstrict]
 
 rule V1:Val %== V2:Val => V1 == V2
 rule V1:Val %& V2:Val => V1 & V2
 rule V1:Val %| V2:Val => V1 | V2
 rule V1:Val %+ V2:Val => V1 + V2
+rule V1:Val %> V2:Val => V1 > V2
+rule V1:Val %<= V2:Val => V1 <= V2
 rule B1:Bool %&& B2:Bool => B1 andBool B2
 
 
