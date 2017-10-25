@@ -13,7 +13,8 @@
   - There are lots of problems with inferring order of deparsing. For now, only supporting very simple cases
     - if there a dag, a random topological order is made
     - only self-loops are allowed, only for a case that we have extract(...[next]), and in that case the whole array will be ordered
-
+  - current keyword
+    - what happens if it is out of bound? exception?
 
 
 - (Done) support for Variable length header fields
@@ -165,4 +166,17 @@
   - (Done) Push/pop
     - https://github.com/p4lang/p4-spec/issues/431
   - clone, resubmit, recirculate
-  - drop/truncate
+  - drop
+    - "This primitive is intended
+       for the egress pipeline where it is the only way to indicate that the
+       packet should not be transmitted. On the ingress pipeline, this primitive
+       is equivalent to setting the egress_spec metadata to a drop value (specific
+       to the target).
+       If executed on the ingress pipeline, the packet will continue through
+       the end of the pipeline. A subsequent table may change the value of
+       egress_spec which will override the drop action. The action cannot be
+       overridden in the egress pipeline."
+    - currently drop can be rewritten in egress as well
+    - if drop at ingress, does packet go through egress (currently assuming no)? if executed on egress, does it continue until the end (currently assuming yes)?
+
+  - truncate

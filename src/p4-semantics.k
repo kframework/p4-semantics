@@ -9,8 +9,13 @@ imports INITIALIZATION
 
 //macros
 
+syntax Val ::= "%DROP_PORT" // [function]
+//rule %DROP_PORT => @val(0,32,false) [macro]
 
 
+//IMPORTANT: added only for stf tests
+rule <k> @txenPacket => @drop ... </k>
+     <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> @undef _:Map </fieldVals> ... </instance> ... </instances>
 
 //---------------- putting decralarions into configuration cells--------------------------------
 
@@ -456,8 +461,12 @@ rule <k> @txenPacket => . ... </k>
           </instance>
           ...
       </instances>
-//TODO: check if needs to be dropped
 
+
+syntax KItem ::= "@drop"
+rule <k> @drop ~> _:K => @nextPacket </k>
+     <packetout> P:List => .List </packetout>
+//todo: unify @drop and parser_drop
 
 syntax KItem ::= "@resetPerPacketState"
 rule <k> @resetPerPacketState => .K ... </k>
@@ -569,7 +578,13 @@ syntax KItem /* Val */ ::= "@readFDRef" "(" FieldOrDataRef ")"
 rule @readFDRef(F:FieldRef) => @readField(F)
 rule <k> @readFDRef(latest . FN:FieldName) =>  @readField(H.FN) ... </k>
         <lastExt> H:InstanceName </lastExt>
-//TODO rule @readVals(current())
+
+rule <k> @readFDRef(current(O:UnsignedValue,W:UnsignedValue)) =>  @val ( String2Base(substrString(Packet, I +Int USgnVal2Int(O), I +Int USgnVal2Int(O) +Int USgnVal2Int(W) ),2) ,USgnVal2Int(W), false) ... </k>
+     <packet> Packet:String </packet>
+     <index> I:Int </index>
+     when I +Int USgnVal2Int(O) +Int USgnVal2Int(W) <=Int lengthString(Packet)
+//TODO(minor): I,W must be ConstValue
+//TODO (minor) : current() for PacketData ::= List
 
 
 //set metadata
@@ -847,6 +862,7 @@ rule @verifyCalcField(F:FieldRef, ListItem(verify FLC:FieldListCalculationName i
         @fi
 
 rule CalcBCEq(F:FieldRef, V:FieldValue) => V %== F
+rule CalcBCValid(H:HeaderOrFieldRef) => @isValid(H)
 
 syntax KItem ::= "@calculateFLC" "(" FieldListCalculationName ")"
 rule <k> @calculateFLC(N:FieldListCalculationName) => @calculateChecksum(@concat(@readFieldList(E)), A, W) ... </k>
@@ -1126,6 +1142,8 @@ rule (V:Val => .) ~> @resolveArgs(Rest:Args,$resolved(_:List (.List => ListItem(
 //rule <k> (.K => H) ~> @resolveArgs(H:HeaderRef , _:Args, _:ResolvedArgs) ... </k> //clash with Id
 rule <k> (.K => H[I]) ~> @resolveArgs(H:InstanceName [ I:Index ] , _:Args, _:ResolvedArgs) ... </k>
 rule (RH:ResolvedHeaderRef => .K) ~> @resolveArgs((H:HeaderRef , Rest:Args) => Rest, $resolved(_:List (.List => ListItem(RH))))
+rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem($aref(X))))) ... </k>
+     <arrays>  (X |-> _:K)  _:Map </arrays>
 
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>
      <frameStack> ListItem((X |-> V:Arg) _:Map) _:List </frameStack>
@@ -1216,9 +1234,12 @@ syntax Id ::=
 rule <k> @call(push, $resolved(ListItem($aref(I:InstanceName)) ListItem(@val(C:Int,_,_)))) => @shiftElements(I,S -Int C -Int 1,C,-1) ~> @resetElements(I,minInt(C,S) -Int 1,-1) ~> @updateArrayInfo(I)  ... </k>
      <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
      when C >Int 0
-rule <k> @call(pop, $resolved(ListItem($aref(I:InstanceName)) ListItem(@val(C:Int,_,_)))) => @shiftElements(I,C,(0 -Int C),1) ~> @resetElements(I,maxInt(0,S -Int C),1) ~> @updateArrayInfo(I)  ... </k>
+//rule <k> @call(pop, $resolved(ListItem($aref(I:InstanceName)) ListItem(@val(C:Int,_,_)))) => @shiftElements(I,C,(0 -Int C),1) ~> @resetElements(I,maxInt(0,S -Int C),1) ~> @updateArrayInfo(I)  ... </k>
+//actually the specification does not mention that the element at the end of the list are reset, they are only invalidated
+rule <k> @call(pop, $resolved(ListItem($aref(I:InstanceName)) ListItem(@val(C:Int,_,_)))) => @shiftElements(I,C,(0 -Int C),1) ~> @invalidateElements(I,maxInt(0,S -Int C),1) ~> @updateArrayInfo(I)  ... </k>
      <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
      when C >Int 0
+
 
 
 //syntax IterDirection ::= "$forward" | "$backward"
@@ -1249,6 +1270,18 @@ rule <k> @resetElements(I:InstanceName,Idx:Int,D:Int) =>
      ...
      </k>
      <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+
+syntax KItem ::= "@invalidateElements" "(" InstanceName "," Int "," Int ")" //arrayindex, shift amount and direction
+rule <k> @invalidateElements(I:InstanceName,Idx:Int,D:Int) =>
+         #if Idx <Int 0 orBool Idx >=Int S #then
+            .K
+         #else
+            @invalidateInstance($href($element(I,Idx))) ~> @invalidateElements(I,Idx +Int D,D)
+         #fi
+     ...
+     </k>
+     <arrays> I |-> $array(S:Int,_:Int,_:Int) _:Map </arrays>
+
 
 syntax KItem ::= "@updateArrayInfo" "(" InstanceName ")" //update last,next
 rule @updateArrayInfo(I) => @updateLast(I) ~> @updateNext(I)
@@ -1321,6 +1354,7 @@ syntax Id ::=
               | "bit_xor"       [token]
               | "shift_left"    [token]
               | "shift_right"   [token]
+
 
 syntax Bool ::= "#is_arithmetic" "(" Id ")" [function]
 rule #is_arithmetic(A:Id) => A ==K subtract orBool A ==K add orBool A ==K bit_and orBool A ==K bit_or orBool A ==K bit_xor orBool A ==K shift_left orBool A ==K shift_right
@@ -1406,6 +1440,12 @@ rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then
 syntax Int ::= "#get_instant_count" "(" Map ")" [function]
 rule #get_instant_count ("$instant_count" |-> I:Int _:Map) => I
 
+
+syntax Id ::= "drop" [token]
+
+rule @call (drop , $resolved( .List )) => @writeField(standard_metadata, egress_spec, %DROP_PORT)
+//TODO: there should be some limitation in using the action which is not currently enforced, check progress.txt
+
 //-------------------action profile-------------------------
 syntax KItem ::= "@callOrDeref" "(" ActionCallOrActionProfileRef ")"
 rule @callOrDeref(@call(A:ActionName, X)) => @call(A,X) ~> @setCrnt("$action", A)
@@ -1430,11 +1470,26 @@ rule #castToActionCall(ListItem(X:ActionCall)) => X //workaround for K issue #23
 
 //-------------------deparsing------------------------------
 syntax Id ::= "egress" [token]
-rule <k> @egress => (#if @egressDefined(/*<controlFlows>*/ S /*</controlFlows>*/) #then egress (); #else . #fi) ~> @deparseNext(L) ~> @addPayload ... </k>
+rule <k> @egress =>
+        //@if @readField(standard_metadata.egress_spec) ==K %DROP_PORT @then  //==K is a function as gets evaluated before @readField
+        @if @isDrop @then
+            @drop
+        @else
+            @if @egressDefined(/*<controlFlows>*/ S /*</controlFlows>*/)  @then
+                egress(); ~> @if @isDrop @then @drop @else @deparseNext(L) @fi
+            @else
+                @deparseNext(L)
+            @fi
+        @fi
+     ...
+     </k>
      <dporder> L:List </dporder>
 //     <controlFlows> S </controlFlows>
      <cfset> S </cfset> //ref: K issue #2279
 
+syntax KItem /*Val*/ ::= "@isDrop"
+rule <k> @isDrop => V ==K %DROP_PORT ...  </k>
+     <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> V:Val _:Map </fieldVals> ... </instance> ... </instances>
 
 syntax KItem ::= "@addPayload"
 rule <k> @addPayload => .K ... </k>
@@ -1467,7 +1522,7 @@ rule @egressDefined(S) => notBool notBool (egress in S) //workaround to get rid 
 
 syntax KItem ::= "@deparseNext" "(" List ")"
 rule @deparseNext(ListItem(H:HeaderExtractRef) Rest:List) => @deparseHeader(H) ~> @deparseNext(Rest) [structural]
-rule @deparseNext(.List) => .                                                             [structural]
+rule @deparseNext(.List) => @addPayload
 
 syntax KItem ::= "@deparseHeader" "(" HeaderExtractRef ")"
 rule <k> @deparseHeader(I:InstanceName) => #if M ==Bool false #then .K #else @deparseFields(I,F) #fi ...</k>

@@ -192,13 +192,17 @@ class TableKeyInstance(object):
         self.key = tableKey
         for f,t in tableKey.fields.iteritems():
             if t == "ternary":
-                self.values[f] = "0&&&0"
+                #self.values[f] = "0&&&0"
+                self.values[f] = "$pair(@val(0,0,false),@val(0,0,false))"
             elif t == "lpm":
-                self.values[f] = "0/0"
+                #self.values[f] = "0/0"
+                self.values[f] = "$pair(@val(0,0,false),@val(0,0,false))"
             elif t == "exact":
-                self.values[f] = "0"
+                #self.values[f] = "0"
+                self.values[f] = "@val(0,0,false)"
             elif t == "valid":
-                self.values[f] = "0"
+                #self.values[f] = "0"
+                self.values[f] = "@val(0,0,false)"
             else:
                 raise Exception("Unexpected key type " + t)
     def set(self, key, value):
@@ -807,7 +811,8 @@ def main(argv):
 
 #=============================================================
     k = open(argv[2],'w')
-    k.write("""
+    if len(table_info) > 0:
+        k.write("""
 <tables>
     ...
 """)
@@ -825,7 +830,8 @@ def main(argv):
                table_info[t]["default"] if "default" in table_info[t] else ".K"
                )
         k.write(s)
-    k.write("""
+    if len(table_info) > 0:
+        k.write("""
 </tables>
 """)
     if len(in_packets) > 0:
