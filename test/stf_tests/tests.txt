@@ -1,0 +1,39 @@
+#07-MultiProtocol                # action selection was not compliant to syntax in spec (ipv6_packet, mpls_packet { ... }), also assumes undefined egress_spec is drop, also has compund action "drop"
+action_chain1               ok  # found a bug using this test (not resetting arrays)
+action_inline1              ok
+action_inline2              ok
+basic_routing                   # had preproc directives (ref. basic_routing_original)
+bigfield1                   ok
+bridge1                         # had default_action in table declaration
+#counter1                   ok  # stf test itself has problems, check manually
+#counter2                   ok  # stf test itself has problems, check manually
+#counter3                   ok  # stf test itself has problems, check manually
+#counter4                   ok  # no expected packet
+exact_match1                ok
+exact_match2                ok
+exact_match3                ok
+exact_match4                ok
+exact_match5                ok
+exact_match_mask1           ok
+exact_match_valid1          ok  # true is 1
+gateway1                    ok  # assumes undefined egress_spec is drop
+gateway2                    ok  # assumes undefined egress_spec is drop
+gateway3                    ok  # assumes undefined egress_spec is drop
+gateway4                    ok  # assumes undefined egress_spec is drop
+gateway5                    ok
+gateway6                    ok
+gateway7                    ok
+gateway8                    ok
+hash_action_basic           ok  # had default_action in table declaration
+hash_action_gateway         ok  # had default_action in table declaration
+hash_action_two_separate    ok  # had default_action in table declaration
+hitmiss                     ok  # found a bug using this test (wrong crnt action/miss)
+instruct5                   ok  # had default_action in table declaration, default action was needed, also had extra[0].x1 = x1;, found bug (actually misunderstanding of semantics) in pop
+#instruct6                      # has modify_field_with_shift
+parser_dc_full              -   # had preproc directives, also had data.data = 255;, also had default action, also had change stf file (default action was needed), also has csum16, also deparse order is not unique
+repeater                    ok  # had bit<32> in header dec, also called drop
+ternary_match1              ok
+ternary_match2              ok  # k out of memory, raised 2G -> 4G
+ternary_match3              ok
+ternary_match4              ok  # k out of memory, raised 2G -> 8G
+tmvalid                     ok  # has .valid
