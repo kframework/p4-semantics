@@ -293,7 +293,8 @@ class TableKeyInstance(object):
         digits = len(value) - 2 - value.count('*')
         w = alldigits*bits_per_digit
         d = int(value.replace('*', '0'), 0)
-        m = int("0b" + "1" * digits + "0" * (alldigits - digits), 0)
+        mw = digits * bits_per_digit
+        m = int("0b" + "1" * mw + "0" * (w-mw), 0)
         #return value.replace('*', '0') + "/" + str(digits*bits_per_digit)
         return "$pair(%s,%s)" % (makeVal(d,w), makeVal(m,w))
     def __str__(self):
