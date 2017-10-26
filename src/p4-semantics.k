@@ -1338,7 +1338,7 @@ rule @call (modify_field , $resolved(ListItem(D:FieldRef) ListItem(S:Val))) =>
            //    .
 
 
-syntax Id ::= "subtract_from_field" | "add_to_field" [token]
+syntax Id ::= "subtract_from_field" [token] | "add_to_field" [token]
 rule @call (subtract_from_field, $resolved(ListItem(D:FieldRef) ListItem(V:K))) =>
           @call (subtract, $resolved(ListItem(D) ListItem(D) ListItem(V)))
 
@@ -1376,8 +1376,14 @@ rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Fi
 
 rule (V:Val => .) ~> @call(F:Id , $resolved(ListItem(_) ListItem(_:Val) ListItem(_ => V))) when (F ==K subtract) orBool (F ==K add) */
 
+//rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1) ListItem(V2))) =>
+//    @makePair(V1,V2) ~> @call(F,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
+//    when #is_arithmetic(F) wrong: causes loop
 rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1) ListItem(V2))) =>
-    @makePair(V1,V2) ~> @call(F,$resolved(ListItem(D) ListItem(V1) ListItem(V2)))
+    @makePair(V1,V2) ~> @call(F,$resolved(ListItem(D) ListItem(V1:FieldRef) ListItem(V2:K)))
+    when #is_arithmetic(F)
+rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1) ListItem(V2))) =>
+    @makePair(V1,V2) ~> @call(F,$resolved(ListItem(D) ListItem(V1:K) ListItem(V2:FieldRef)))
     when #is_arithmetic(F)
 rule ($pair(V1:Val,V2:Val) => .K) ~> @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(_ => V1) ListItem(_ => V2))) when #is_arithmetic(F)
 
