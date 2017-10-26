@@ -1,0 +1,790 @@
+{
+  "program" : "action_chain1.p4",
+  "__meta__" : {
+    "version" : [2, 7],
+    "compiler" : "https://github.com/p4lang/p4c"
+  },
+  "header_types" : [
+    {
+      "name" : "scalars_0",
+      "id" : 0,
+      "fields" : []
+    },
+    {
+      "name" : "data_t",
+      "id" : 1,
+      "fields" : [
+        ["f1", 32, false],
+        ["f2", 32, false],
+        ["h1", 16, false],
+        ["b1", 8, false],
+        ["b2", 8, false]
+      ]
+    },
+    {
+      "name" : "extra_t",
+      "id" : 2,
+      "fields" : [
+        ["h", 16, false],
+        ["b1", 8, false],
+        ["b2", 8, false]
+      ]
+    },
+    {
+      "name" : "standard_metadata",
+      "id" : 3,
+      "fields" : [
+        ["ingress_port", 9, false],
+        ["egress_spec", 9, false],
+        ["egress_port", 9, false],
+        ["clone_spec", 32, false],
+        ["instance_type", 32, false],
+        ["drop", 1, false],
+        ["recirculate_port", 16, false],
+        ["packet_length", 32, false],
+        ["enq_timestamp", 32, false],
+        ["enq_qdepth", 19, false],
+        ["deq_timedelta", 32, false],
+        ["deq_qdepth", 19, false],
+        ["ingress_global_timestamp", 48, false],
+        ["lf_field_list", 32, false],
+        ["mcast_grp", 16, false],
+        ["resubmit_flag", 1, false],
+        ["egress_rid", 16, false],
+        ["checksum_error", 1, false],
+        ["_padding", 4, false]
+      ]
+    }
+  ],
+  "headers" : [
+    {
+      "name" : "scalars",
+      "id" : 0,
+      "header_type" : "scalars_0",
+      "metadata" : true,
+      "pi_omit" : true
+    },
+    {
+      "name" : "standard_metadata",
+      "id" : 1,
+      "header_type" : "standard_metadata",
+      "metadata" : true,
+      "pi_omit" : true
+    },
+    {
+      "name" : "data",
+      "id" : 2,
+      "header_type" : "data_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "extra[0]",
+      "id" : 3,
+      "header_type" : "extra_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "extra[1]",
+      "id" : 4,
+      "header_type" : "extra_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "extra[2]",
+      "id" : 5,
+      "header_type" : "extra_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "extra[3]",
+      "id" : 6,
+      "header_type" : "extra_t",
+      "metadata" : false,
+      "pi_omit" : true
+    }
+  ],
+  "header_stacks" : [
+    {
+      "name" : "extra",
+      "id" : 0,
+      "header_type" : "extra_t",
+      "size" : 4,
+      "header_ids" : [3, 4, 5, 6]
+    }
+  ],
+  "header_union_types" : [],
+  "header_unions" : [],
+  "header_union_stacks" : [],
+  "field_lists" : [],
+  "errors" : [
+    ["NoError", 1],
+    ["PacketTooShort", 2],
+    ["NoMatch", 3],
+    ["StackOutOfBounds", 4],
+    ["HeaderTooShort", 5],
+    ["ParserTimeout", 6]
+  ],
+  "enums" : [],
+  "parsers" : [
+    {
+      "name" : "parser",
+      "id" : 0,
+      "init_state" : "start",
+      "parse_states" : [
+        {
+          "name" : "extra",
+          "id" : 0,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "stack",
+                  "value" : "extra"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x80",
+              "mask" : "0x80",
+              "next_state" : "extra"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : null
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "stack_field",
+              "value" : ["extra", "b2"]
+            }
+          ]
+        },
+        {
+          "name" : "start",
+          "id" : 1,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "data"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "extra"
+            }
+          ],
+          "transition_key" : []
+        }
+      ]
+    }
+  ],
+  "deparsers" : [
+    {
+      "name" : "deparser",
+      "id" : 0,
+      "order" : ["data", "extra[0]", "extra[1]", "extra[2]", "extra[3]"]
+    }
+  ],
+  "meter_arrays" : [],
+  "counter_arrays" : [],
+  "register_arrays" : [],
+  "calculations" : [],
+  "learn_lists" : [],
+  "actions" : [
+    {
+      "name" : "NoAction",
+      "id" : 0,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "NoAction",
+      "id" : 1,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "NoAction",
+      "id" : 2,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "NoAction",
+      "id" : 3,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "NoAction",
+      "id" : 4,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "set0b1",
+      "id" : 5,
+      "runtime_data" : [
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["extra[0]", "b1"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 56,
+            "column" : 14,
+            "source_fragment" : "val) { modify_field(extra[0].b1, val)"
+          }
+        }
+      ]
+    },
+    {
+      "name" : "act1",
+      "id" : 6,
+      "runtime_data" : [
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["extra[0]", "b1"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 59,
+            "column" : 12,
+            "source_fragment" : "val) { modify_field(extra[0].b1, val)"
+          }
+        }
+      ]
+    },
+    {
+      "name" : "act2",
+      "id" : 7,
+      "runtime_data" : [
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["extra[0]", "b1"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 60,
+            "column" : 12,
+            "source_fragment" : "val) { modify_field(extra[0].b1, val)"
+          }
+        }
+      ]
+    },
+    {
+      "name" : "act3",
+      "id" : 8,
+      "runtime_data" : [
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["extra[0]", "b1"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 61,
+            "column" : 12,
+            "source_fragment" : "val) { modify_field(extra[0].b1, val)"
+          }
+        }
+      ]
+    },
+    {
+      "name" : "noop",
+      "id" : 9,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "noop",
+      "id" : 10,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "noop",
+      "id" : 11,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "noop",
+      "id" : 12,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "noop",
+      "id" : 13,
+      "runtime_data" : [],
+      "primitives" : []
+    },
+    {
+      "name" : "setb2",
+      "id" : 14,
+      "runtime_data" : [
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["data", "b2"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 55,
+            "column" : 13,
+            "source_fragment" : "val) { modify_field(data.b2, val)"
+          }
+        }
+      ]
+    },
+    {
+      "name" : "set1b1",
+      "id" : 15,
+      "runtime_data" : [
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["extra[1]", "b1"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 57,
+            "column" : 14,
+            "source_fragment" : "val) { modify_field(extra[1].b1, val)"
+          }
+        }
+      ]
+    },
+    {
+      "name" : "set2b2",
+      "id" : 16,
+      "runtime_data" : [
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["extra[2]", "b2"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 58,
+            "column" : 14,
+            "source_fragment" : "val) { modify_field(extra[2].b2, val)"
+          }
+        }
+      ]
+    },
+    {
+      "name" : "setb1",
+      "id" : 17,
+      "runtime_data" : [
+        {
+          "name" : "port",
+          "bitwidth" : 9
+        },
+        {
+          "name" : "val",
+          "bitwidth" : 8
+        }
+      ],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["data", "b1"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 1
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 50,
+            "column" : 19,
+            "source_fragment" : "val) { ..."
+          }
+        },
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["standard_metadata", "egress_spec"]
+            },
+            {
+              "type" : "runtime_data",
+              "value" : 0
+            }
+          ],
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 50,
+            "column" : 13,
+            "source_fragment" : "port, val) { ..."
+          }
+        }
+      ]
+    }
+  ],
+  "pipelines" : [
+    {
+      "name" : "ingress",
+      "id" : 0,
+      "init_table" : "test1",
+      "tables" : [
+        {
+          "name" : "test1",
+          "id" : 0,
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 63,
+            "column" : 0,
+            "source_fragment" : "table test1 { ..."
+          },
+          "key" : [
+            {
+              "match_type" : "ternary",
+              "target" : ["data", "f1"],
+              "mask" : null
+            }
+          ],
+          "match_type" : "ternary",
+          "type" : "simple",
+          "max_size" : 1024,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [17, 13, 4],
+          "actions" : ["setb1", "noop", "NoAction"],
+          "base_default_next" : "ex1",
+          "next_tables" : {
+            "setb1" : "ex1",
+            "noop" : "ex1",
+            "NoAction" : "ex1"
+          },
+          "default_entry" : {
+            "action_id" : 4,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        },
+        {
+          "name" : "ex1",
+          "id" : 1,
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 70,
+            "column" : 0,
+            "source_fragment" : "table ex1 { ..."
+          },
+          "key" : [
+            {
+              "match_type" : "ternary",
+              "target" : ["extra[0]", "h"],
+              "mask" : null
+            }
+          ],
+          "match_type" : "ternary",
+          "type" : "simple",
+          "max_size" : 1024,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [5, 6, 7, 8, 9, 0],
+          "actions" : ["set0b1", "act1", "act2", "act3", "noop", "NoAction"],
+          "base_default_next" : null,
+          "next_tables" : {
+            "act1" : "tbl1",
+            "act2" : "tbl2",
+            "act3" : "tbl3",
+            "set0b1" : null,
+            "noop" : null,
+            "NoAction" : null
+          },
+          "default_entry" : {
+            "action_id" : 0,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        },
+        {
+          "name" : "tbl1",
+          "id" : 2,
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 80,
+            "column" : 0,
+            "source_fragment" : "table tbl1 { ..."
+          },
+          "key" : [
+            {
+              "match_type" : "ternary",
+              "target" : ["data", "f2"],
+              "mask" : null
+            }
+          ],
+          "match_type" : "ternary",
+          "type" : "simple",
+          "max_size" : 1024,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [14, 10, 1],
+          "actions" : ["setb2", "noop", "NoAction"],
+          "base_default_next" : null,
+          "next_tables" : {
+            "setb2" : null,
+            "noop" : null,
+            "NoAction" : null
+          },
+          "default_entry" : {
+            "action_id" : 1,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        },
+        {
+          "name" : "tbl2",
+          "id" : 3,
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 83,
+            "column" : 0,
+            "source_fragment" : "table tbl2 { ..."
+          },
+          "key" : [
+            {
+              "match_type" : "ternary",
+              "target" : ["data", "f2"],
+              "mask" : null
+            }
+          ],
+          "match_type" : "ternary",
+          "type" : "simple",
+          "max_size" : 1024,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [15, 11, 2],
+          "actions" : ["set1b1", "noop", "NoAction"],
+          "base_default_next" : null,
+          "next_tables" : {
+            "set1b1" : null,
+            "noop" : null,
+            "NoAction" : null
+          },
+          "default_entry" : {
+            "action_id" : 2,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        },
+        {
+          "name" : "tbl3",
+          "id" : 4,
+          "source_info" : {
+            "filename" : "action_chain1.p4",
+            "line" : 86,
+            "column" : 0,
+            "source_fragment" : "table tbl3 { ..."
+          },
+          "key" : [
+            {
+              "match_type" : "ternary",
+              "target" : ["data", "f2"],
+              "mask" : null
+            }
+          ],
+          "match_type" : "ternary",
+          "type" : "simple",
+          "max_size" : 1024,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [16, 12, 3],
+          "actions" : ["set2b2", "noop", "NoAction"],
+          "base_default_next" : null,
+          "next_tables" : {
+            "set2b2" : null,
+            "noop" : null,
+            "NoAction" : null
+          },
+          "default_entry" : {
+            "action_id" : 3,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        }
+      ],
+      "action_profiles" : [],
+      "conditionals" : []
+    },
+    {
+      "name" : "egress",
+      "id" : 1,
+      "init_table" : null,
+      "tables" : [],
+      "action_profiles" : [],
+      "conditionals" : []
+    }
+  ],
+  "checksums" : [],
+  "force_arith" : [],
+  "extern_instances" : [],
+  "field_aliases" : [
+    [
+      "queueing_metadata.enq_timestamp",
+      ["standard_metadata", "enq_timestamp"]
+    ],
+    [
+      "queueing_metadata.enq_qdepth",
+      ["standard_metadata", "enq_qdepth"]
+    ],
+    [
+      "queueing_metadata.deq_timedelta",
+      ["standard_metadata", "deq_timedelta"]
+    ],
+    [
+      "queueing_metadata.deq_qdepth",
+      ["standard_metadata", "deq_qdepth"]
+    ],
+    [
+      "intrinsic_metadata.ingress_global_timestamp",
+      ["standard_metadata", "ingress_global_timestamp"]
+    ],
+    [
+      "intrinsic_metadata.lf_field_list",
+      ["standard_metadata", "lf_field_list"]
+    ],
+    [
+      "intrinsic_metadata.mcast_grp",
+      ["standard_metadata", "mcast_grp"]
+    ],
+    [
+      "intrinsic_metadata.resubmit_flag",
+      ["standard_metadata", "resubmit_flag"]
+    ],
+    [
+      "intrinsic_metadata.egress_rid",
+      ["standard_metadata", "egress_rid"]
+    ]
+  ]
+}

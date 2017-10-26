@@ -1,0 +1,2574 @@
+{
+  "program" : "parser_dc_full.p4",
+  "__meta__" : {
+    "version" : [2, 7],
+    "compiler" : "https://github.com/p4lang/p4c"
+  },
+  "header_types" : [
+    {
+      "name" : "scalars_0",
+      "id" : 0,
+      "fields" : [
+        ["tmp_1", 24, false],
+        ["tmp_2", 4, false],
+        ["tmp", 1, false],
+        ["tmp_0", 4, false],
+        ["_padding_0", 7, false]
+      ]
+    },
+    {
+      "name" : "arp_rarp_t",
+      "id" : 1,
+      "fields" : [
+        ["hwType", 16, false],
+        ["protoType", 16, false],
+        ["hwAddrLen", 8, false],
+        ["protoAddrLen", 8, false],
+        ["opcode", 16, false]
+      ]
+    },
+    {
+      "name" : "arp_rarp_ipv4_t",
+      "id" : 2,
+      "fields" : [
+        ["srcHwAddr", 48, false],
+        ["srcProtoAddr", 32, false],
+        ["dstHwAddr", 48, false],
+        ["dstProtoAddr", 32, false]
+      ]
+    },
+    {
+      "name" : "cpu_header_t",
+      "id" : 3,
+      "fields" : [
+        ["qid", 3, false],
+        ["pad", 1, false],
+        ["reason_code", 12, false],
+        ["rxhash", 16, false],
+        ["bridge_domain", 16, false],
+        ["ingress_lif", 16, false],
+        ["egress_lif", 16, false],
+        ["lu_bypass_ingress", 1, false],
+        ["lu_bypass_egress", 1, false],
+        ["pad1", 14, false],
+        ["etherType", 16, false]
+      ]
+    },
+    {
+      "name" : "payload_t",
+      "id" : 4,
+      "fields" : [
+        ["data", 8, false]
+      ]
+    },
+    {
+      "name" : "eompls_t",
+      "id" : 5,
+      "fields" : [
+        ["zero", 4, false],
+        ["reserved", 12, false],
+        ["seqNo", 16, false]
+      ]
+    },
+    {
+      "name" : "erspan_header_v1_t",
+      "id" : 6,
+      "fields" : [
+        ["version", 4, false],
+        ["vlan", 12, false],
+        ["priority", 6, false],
+        ["span_id", 10, false],
+        ["direction", 8, false],
+        ["truncated", 8, false]
+      ]
+    },
+    {
+      "name" : "erspan_header_v2_t",
+      "id" : 7,
+      "fields" : [
+        ["version", 4, false],
+        ["vlan", 12, false],
+        ["priority", 6, false],
+        ["span_id", 10, false],
+        ["unknown7", 32, false]
+      ]
+    },
+    {
+      "name" : "ethernet_t",
+      "id" : 8,
+      "fields" : [
+        ["dstAddr", 48, false],
+        ["srcAddr", 48, false],
+        ["etherType", 16, false]
+      ]
+    },
+    {
+      "name" : "fcoe_header_t",
+      "id" : 9,
+      "fields" : [
+        ["version", 4, false],
+        ["type_", 4, false],
+        ["sof", 8, false],
+        ["rsvd1", 32, false],
+        ["ts_upper", 32, false],
+        ["ts_lower", 32, false],
+        ["size_", 32, false],
+        ["eof", 8, false],
+        ["rsvd2", 24, false]
+      ]
+    },
+    {
+      "name" : "genv_t",
+      "id" : 10,
+      "fields" : [
+        ["ver", 2, false],
+        ["optLen", 6, false],
+        ["oam", 1, false],
+        ["critical", 1, false],
+        ["reserved", 6, false],
+        ["protoType", 16, false],
+        ["vni", 24, false],
+        ["reserved2", 8, false]
+      ]
+    },
+    {
+      "name" : "genv_opt_A_t",
+      "id" : 11,
+      "fields" : [
+        ["optClass", 16, false],
+        ["optType", 8, false],
+        ["reserved", 3, false],
+        ["optLen", 5, false],
+        ["data", 32, false]
+      ]
+    },
+    {
+      "name" : "genv_opt_B_t",
+      "id" : 12,
+      "fields" : [
+        ["optClass", 16, false],
+        ["optType", 8, false],
+        ["reserved", 3, false],
+        ["optLen", 5, false],
+        ["data", 64, false]
+      ]
+    },
+    {
+      "name" : "genv_opt_C_t",
+      "id" : 13,
+      "fields" : [
+        ["optClass", 16, false],
+        ["optType", 8, false],
+        ["reserved", 3, false],
+        ["optLen", 5, false],
+        ["data", 32, false]
+      ]
+    },
+    {
+      "name" : "gre_t",
+      "id" : 14,
+      "fields" : [
+        ["C", 1, false],
+        ["R", 1, false],
+        ["K", 1, false],
+        ["S", 1, false],
+        ["s", 1, false],
+        ["recurse", 3, false],
+        ["flags", 5, false],
+        ["ver", 3, false],
+        ["proto", 16, false]
+      ]
+    },
+    {
+      "name" : "icmp_t",
+      "id" : 15,
+      "fields" : [
+        ["type_", 8, false],
+        ["code", 8, false],
+        ["hdrChecksum", 16, false]
+      ]
+    },
+    {
+      "name" : "icmpv6_t",
+      "id" : 16,
+      "fields" : [
+        ["type_", 8, false],
+        ["code", 8, false],
+        ["hdrChecksum", 16, false]
+      ]
+    },
+    {
+      "name" : "ipv4_t",
+      "id" : 17,
+      "fields" : [
+        ["version", 4, false],
+        ["ihl", 4, false],
+        ["diffserv", 8, false],
+        ["totalLen", 16, false],
+        ["identification", 16, false],
+        ["flags", 3, false],
+        ["fragOffset", 13, false],
+        ["ttl", 8, false],
+        ["protocol", 8, false],
+        ["hdrChecksum", 16, false],
+        ["srcAddr", 32, false],
+        ["dstAddr", 32, false]
+      ]
+    },
+    {
+      "name" : "ipv6_t",
+      "id" : 18,
+      "fields" : [
+        ["version", 4, false],
+        ["trafficClass", 8, false],
+        ["flowLabel", 20, false],
+        ["payloadLen", 16, false],
+        ["nextHdr", 8, false],
+        ["hopLimit", 8, false],
+        ["srcAddr", 128, false],
+        ["dstAddr", 128, false]
+      ]
+    },
+    {
+      "name" : "sctp_t",
+      "id" : 19,
+      "fields" : [
+        ["srcPort", 16, false],
+        ["dstPort", 16, false],
+        ["verifTag", 32, false],
+        ["checksum", 32, false]
+      ]
+    },
+    {
+      "name" : "tcp_t",
+      "id" : 20,
+      "fields" : [
+        ["srcPort", 16, false],
+        ["dstPort", 16, false],
+        ["seqNo", 32, false],
+        ["ackNo", 32, false],
+        ["dataOffset", 4, false],
+        ["res", 4, false],
+        ["flags", 8, false],
+        ["window", 16, false],
+        ["checksum", 16, false],
+        ["urgentPtr", 16, false]
+      ]
+    },
+    {
+      "name" : "udp_t",
+      "id" : 21,
+      "fields" : [
+        ["srcPort", 16, false],
+        ["dstPort", 16, false],
+        ["length_", 16, false],
+        ["checksum", 16, false]
+      ]
+    },
+    {
+      "name" : "input_port_hdr_t",
+      "id" : 22,
+      "fields" : [
+        ["port", 16, false]
+      ]
+    },
+    {
+      "name" : "mpls_t",
+      "id" : 23,
+      "fields" : [
+        ["label", 20, false],
+        ["tc", 3, false],
+        ["bos", 1, false],
+        ["ttl", 8, false]
+      ]
+    },
+    {
+      "name" : "nsh_t",
+      "id" : 24,
+      "fields" : [
+        ["oam", 1, false],
+        ["context", 1, false],
+        ["flags", 6, false],
+        ["reserved", 8, false],
+        ["protoType", 16, false],
+        ["spath", 24, false],
+        ["sindex", 8, false]
+      ]
+    },
+    {
+      "name" : "nsh_context_t",
+      "id" : 25,
+      "fields" : [
+        ["network_platform", 32, false],
+        ["network_shared", 32, false],
+        ["service_platform", 32, false],
+        ["service_shared", 32, false]
+      ]
+    },
+    {
+      "name" : "nvgre_t",
+      "id" : 26,
+      "fields" : [
+        ["tni", 24, false],
+        ["reserved", 8, false]
+      ]
+    },
+    {
+      "name" : "roce_header_t",
+      "id" : 27,
+      "fields" : [
+        ["ib_grh", 320, false],
+        ["ib_bth", 96, false]
+      ]
+    },
+    {
+      "name" : "roce_v2_header_t",
+      "id" : 28,
+      "fields" : [
+        ["ib_bth", 96, false]
+      ]
+    },
+    {
+      "name" : "snap_header_t",
+      "id" : 29,
+      "fields" : [
+        ["dsap", 8, false],
+        ["ssap", 8, false],
+        ["control_", 8, false],
+        ["oui", 24, false],
+        ["type_", 16, false]
+      ]
+    },
+    {
+      "name" : "vxlan_t",
+      "id" : 30,
+      "fields" : [
+        ["flags", 8, false],
+        ["reserved", 24, false],
+        ["vni", 24, false],
+        ["reserved2", 8, false]
+      ]
+    },
+    {
+      "name" : "vlan_tag_t",
+      "id" : 31,
+      "fields" : [
+        ["pcp", 3, false],
+        ["cfi", 1, false],
+        ["vid", 12, false],
+        ["etherType", 16, false]
+      ]
+    },
+    {
+      "name" : "vlan_tag_3b_t",
+      "id" : 32,
+      "fields" : [
+        ["pcp", 3, false],
+        ["cfi", 1, false],
+        ["vid", 4, false],
+        ["etherType", 16, false]
+      ]
+    },
+    {
+      "name" : "vlan_tag_5b_t",
+      "id" : 33,
+      "fields" : [
+        ["pcp", 3, false],
+        ["cfi", 1, false],
+        ["vid", 20, false],
+        ["etherType", 16, false]
+      ]
+    },
+    {
+      "name" : "standard_metadata",
+      "id" : 34,
+      "fields" : [
+        ["ingress_port", 9, false],
+        ["egress_spec", 9, false],
+        ["egress_port", 9, false],
+        ["clone_spec", 32, false],
+        ["instance_type", 32, false],
+        ["drop", 1, false],
+        ["recirculate_port", 16, false],
+        ["packet_length", 32, false],
+        ["enq_timestamp", 32, false],
+        ["enq_qdepth", 19, false],
+        ["deq_timedelta", 32, false],
+        ["deq_qdepth", 19, false],
+        ["ingress_global_timestamp", 48, false],
+        ["lf_field_list", 32, false],
+        ["mcast_grp", 16, false],
+        ["resubmit_flag", 1, false],
+        ["egress_rid", 16, false],
+        ["checksum_error", 1, false],
+        ["_padding", 4, false]
+      ]
+    }
+  ],
+  "headers" : [
+    {
+      "name" : "scalars",
+      "id" : 0,
+      "header_type" : "scalars_0",
+      "metadata" : true,
+      "pi_omit" : true
+    },
+    {
+      "name" : "standard_metadata",
+      "id" : 1,
+      "header_type" : "standard_metadata",
+      "metadata" : true,
+      "pi_omit" : true
+    },
+    {
+      "name" : "arp_rarp",
+      "id" : 2,
+      "header_type" : "arp_rarp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "arp_rarp_ipv4",
+      "id" : 3,
+      "header_type" : "arp_rarp_ipv4_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "cpu_header",
+      "id" : 4,
+      "header_type" : "cpu_header_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "data",
+      "id" : 5,
+      "header_type" : "payload_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "eompls",
+      "id" : 6,
+      "header_type" : "eompls_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "erspan_v1_header",
+      "id" : 7,
+      "header_type" : "erspan_header_v1_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "erspan_v2_header",
+      "id" : 8,
+      "header_type" : "erspan_header_v2_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "ethernet",
+      "id" : 9,
+      "header_type" : "ethernet_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "fcoe",
+      "id" : 10,
+      "header_type" : "fcoe_header_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "genv",
+      "id" : 11,
+      "header_type" : "genv_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "genv_opt_A",
+      "id" : 12,
+      "header_type" : "genv_opt_A_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "genv_opt_B",
+      "id" : 13,
+      "header_type" : "genv_opt_B_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "genv_opt_C",
+      "id" : 14,
+      "header_type" : "genv_opt_C_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "gre",
+      "id" : 15,
+      "header_type" : "gre_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "icmp",
+      "id" : 16,
+      "header_type" : "icmp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "icmpv6",
+      "id" : 17,
+      "header_type" : "icmpv6_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_ethernet",
+      "id" : 18,
+      "header_type" : "ethernet_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_icmp",
+      "id" : 19,
+      "header_type" : "icmp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_icmpv6",
+      "id" : 20,
+      "header_type" : "icmpv6_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_ipv4",
+      "id" : 21,
+      "header_type" : "ipv4_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_ipv6",
+      "id" : 22,
+      "header_type" : "ipv6_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_sctp",
+      "id" : 23,
+      "header_type" : "sctp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_tcp",
+      "id" : 24,
+      "header_type" : "tcp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "inner_udp",
+      "id" : 25,
+      "header_type" : "udp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "input_port_hdr",
+      "id" : 26,
+      "header_type" : "input_port_hdr_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "ipv4",
+      "id" : 27,
+      "header_type" : "ipv4_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "ipv6",
+      "id" : 28,
+      "header_type" : "ipv6_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "mpls_bos",
+      "id" : 29,
+      "header_type" : "mpls_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "nsh",
+      "id" : 30,
+      "header_type" : "nsh_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "nsh_context",
+      "id" : 31,
+      "header_type" : "nsh_context_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "nvgre",
+      "id" : 32,
+      "header_type" : "nvgre_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "outer_ipv4",
+      "id" : 33,
+      "header_type" : "ipv4_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "outer_ipv6",
+      "id" : 34,
+      "header_type" : "ipv6_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "outer_udp",
+      "id" : 35,
+      "header_type" : "udp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "roce",
+      "id" : 36,
+      "header_type" : "roce_header_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "roce_v2",
+      "id" : 37,
+      "header_type" : "roce_v2_header_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "sctp",
+      "id" : 38,
+      "header_type" : "sctp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "snap_header",
+      "id" : 39,
+      "header_type" : "snap_header_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "tcp",
+      "id" : 40,
+      "header_type" : "tcp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "udp",
+      "id" : 41,
+      "header_type" : "udp_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "vxlan",
+      "id" : 42,
+      "header_type" : "vxlan_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "mpls[0]",
+      "id" : 43,
+      "header_type" : "mpls_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "mpls[1]",
+      "id" : 44,
+      "header_type" : "mpls_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "mpls[2]",
+      "id" : 45,
+      "header_type" : "mpls_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "vlan_tag_[0]",
+      "id" : 46,
+      "header_type" : "vlan_tag_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "vlan_tag_[1]",
+      "id" : 47,
+      "header_type" : "vlan_tag_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "vlan_tag_3b[0]",
+      "id" : 48,
+      "header_type" : "vlan_tag_3b_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "vlan_tag_3b[1]",
+      "id" : 49,
+      "header_type" : "vlan_tag_3b_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "vlan_tag_5b[0]",
+      "id" : 50,
+      "header_type" : "vlan_tag_5b_t",
+      "metadata" : false,
+      "pi_omit" : true
+    },
+    {
+      "name" : "vlan_tag_5b[1]",
+      "id" : 51,
+      "header_type" : "vlan_tag_5b_t",
+      "metadata" : false,
+      "pi_omit" : true
+    }
+  ],
+  "header_stacks" : [
+    {
+      "name" : "mpls",
+      "id" : 0,
+      "header_type" : "mpls_t",
+      "size" : 3,
+      "header_ids" : [43, 44, 45]
+    },
+    {
+      "name" : "vlan_tag_",
+      "id" : 1,
+      "header_type" : "vlan_tag_t",
+      "size" : 2,
+      "header_ids" : [46, 47]
+    },
+    {
+      "name" : "vlan_tag_3b",
+      "id" : 2,
+      "header_type" : "vlan_tag_3b_t",
+      "size" : 2,
+      "header_ids" : [48, 49]
+    },
+    {
+      "name" : "vlan_tag_5b",
+      "id" : 3,
+      "header_type" : "vlan_tag_5b_t",
+      "size" : 2,
+      "header_ids" : [50, 51]
+    }
+  ],
+  "header_union_types" : [],
+  "header_unions" : [],
+  "header_union_stacks" : [],
+  "field_lists" : [],
+  "errors" : [
+    ["NoError", 1],
+    ["PacketTooShort", 2],
+    ["NoMatch", 3],
+    ["StackOutOfBounds", 4],
+    ["HeaderTooShort", 5],
+    ["ParserTimeout", 6]
+  ],
+  "enums" : [],
+  "parsers" : [
+    {
+      "name" : "parser",
+      "id" : 0,
+      "init_state" : "start",
+      "parse_states" : [
+        {
+          "name" : "parse_arp_rarp",
+          "id" : 0,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "arp_rarp"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x0800",
+              "mask" : null,
+              "next_state" : "parse_arp_rarp_ipv4"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["arp_rarp", "protoType"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_arp_rarp_ipv4",
+          "id" : 1,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "arp_rarp_ipv4"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_cpu_header",
+          "id" : 2,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "cpu_header"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x0000",
+              "mask" : "0xf800",
+              "next_state" : "parse_snap_header"
+            },
+            {
+              "value" : "0x8100",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9100",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9200",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9300",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x8847",
+              "mask" : null,
+              "next_state" : "parse_mpls"
+            },
+            {
+              "value" : "0x0800",
+              "mask" : null,
+              "next_state" : "parse_ipv4"
+            },
+            {
+              "value" : "0x86dd",
+              "mask" : null,
+              "next_state" : "parse_ipv6"
+            },
+            {
+              "value" : "0x0806",
+              "mask" : null,
+              "next_state" : "parse_arp_rarp"
+            },
+            {
+              "value" : "0x8035",
+              "mask" : null,
+              "next_state" : "parse_arp_rarp"
+            },
+            {
+              "value" : "0x894f",
+              "mask" : null,
+              "next_state" : "parse_nsh"
+            },
+            {
+              "value" : "0x8915",
+              "mask" : null,
+              "next_state" : "parse_roce"
+            },
+            {
+              "value" : "0x8906",
+              "mask" : null,
+              "next_state" : "parse_fcoe"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["cpu_header", "etherType"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_eompls",
+          "id" : 3,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "eompls"
+                }
+              ],
+              "op" : "extract"
+            },
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_ethernet"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_erspan_v1",
+          "id" : 4,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "erspan_v1_header"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_erspan_v2",
+          "id" : 5,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "erspan_v2_header"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_ethernet",
+          "id" : 6,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "ethernet"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x0000",
+              "mask" : "0xf800",
+              "next_state" : "parse_snap_header"
+            },
+            {
+              "value" : "0x9000",
+              "mask" : null,
+              "next_state" : "parse_cpu_header"
+            },
+            {
+              "value" : "0x010c",
+              "mask" : null,
+              "next_state" : "parse_cpu_header"
+            },
+            {
+              "value" : "0x8100",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9100",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9200",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9300",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x8847",
+              "mask" : null,
+              "next_state" : "parse_mpls"
+            },
+            {
+              "value" : "0x0800",
+              "mask" : null,
+              "next_state" : "parse_ipv4"
+            },
+            {
+              "value" : "0x86dd",
+              "mask" : null,
+              "next_state" : "parse_ipv6"
+            },
+            {
+              "value" : "0x0806",
+              "mask" : null,
+              "next_state" : "parse_arp_rarp"
+            },
+            {
+              "value" : "0x8035",
+              "mask" : null,
+              "next_state" : "parse_arp_rarp"
+            },
+            {
+              "value" : "0x894f",
+              "mask" : null,
+              "next_state" : "parse_nsh"
+            },
+            {
+              "value" : "0x8915",
+              "mask" : null,
+              "next_state" : "parse_roce"
+            },
+            {
+              "value" : "0x8906",
+              "mask" : null,
+              "next_state" : "parse_fcoe"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["ethernet", "etherType"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_fcoe",
+          "id" : 7,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "fcoe"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_geneve",
+          "id" : 8,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "genv"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_genv_inner"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_genv_inner",
+          "id" : 9,
+          "parser_ops" : [],
+          "transitions" : [
+            {
+              "value" : "0x6558",
+              "mask" : null,
+              "next_state" : "parse_inner_ethernet"
+            },
+            {
+              "value" : "0x0800",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv4"
+            },
+            {
+              "value" : "0x86dd",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv6"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["genv", "protoType"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_gre",
+          "id" : 10,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "gre"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x006558",
+              "mask" : null,
+              "next_state" : "parse_nvgre"
+            },
+            {
+              "value" : "0x0088be",
+              "mask" : null,
+              "next_state" : "parse_erspan_v1"
+            },
+            {
+              "value" : "0x0022eb",
+              "mask" : null,
+              "next_state" : "parse_erspan_v2"
+            },
+            {
+              "value" : "0x00894f",
+              "mask" : null,
+              "next_state" : "parse_nsh"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["gre", "K"]
+            },
+            {
+              "type" : "field",
+              "value" : ["gre", "proto"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_icmp",
+          "id" : 11,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "icmp"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_icmpv6",
+          "id" : 12,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "icmpv6"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_inner_ethernet",
+          "id" : 13,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_ethernet"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x0800",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv4"
+            },
+            {
+              "value" : "0x86dd",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv6"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["inner_ethernet", "etherType"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_inner_icmp",
+          "id" : 14,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_icmp"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_inner_icmpv6",
+          "id" : 15,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_icmpv6"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_inner_ipv4",
+          "id" : 16,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_ipv4"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x000001",
+              "mask" : null,
+              "next_state" : "parse_inner_icmp"
+            },
+            {
+              "value" : "0x000006",
+              "mask" : null,
+              "next_state" : "parse_inner_tcp"
+            },
+            {
+              "value" : "0x000011",
+              "mask" : null,
+              "next_state" : "parse_inner_udp"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["inner_ipv4", "fragOffset"]
+            },
+            {
+              "type" : "field",
+              "value" : ["inner_ipv4", "protocol"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_inner_ipv6",
+          "id" : 17,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_ipv6"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x3a",
+              "mask" : null,
+              "next_state" : "parse_inner_icmpv6"
+            },
+            {
+              "value" : "0x06",
+              "mask" : null,
+              "next_state" : "parse_inner_tcp"
+            },
+            {
+              "value" : "0x11",
+              "mask" : null,
+              "next_state" : "parse_inner_udp"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["inner_ipv6", "nextHdr"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_inner_tcp",
+          "id" : 18,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_tcp"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_inner_udp",
+          "id" : 19,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "inner_udp"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_input_port",
+          "id" : 20,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "input_port_hdr"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_ethernet"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_ipv4",
+          "id" : 21,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "ipv4"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x000001",
+              "mask" : null,
+              "next_state" : "parse_icmp"
+            },
+            {
+              "value" : "0x000006",
+              "mask" : null,
+              "next_state" : "parse_tcp"
+            },
+            {
+              "value" : "0x000011",
+              "mask" : null,
+              "next_state" : "parse_udp"
+            },
+            {
+              "value" : "0x00002f",
+              "mask" : null,
+              "next_state" : "parse_gre"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["ipv4", "fragOffset"]
+            },
+            {
+              "type" : "field",
+              "value" : ["ipv4", "protocol"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_ipv6",
+          "id" : 22,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "ipv6"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x3a",
+              "mask" : null,
+              "next_state" : "parse_icmpv6"
+            },
+            {
+              "value" : "0x06",
+              "mask" : null,
+              "next_state" : "parse_tcp"
+            },
+            {
+              "value" : "0x11",
+              "mask" : null,
+              "next_state" : "parse_udp"
+            },
+            {
+              "value" : "0x2f",
+              "mask" : null,
+              "next_state" : "parse_gre"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["ipv6", "nextHdr"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_mpls",
+          "id" : 23,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "field",
+                  "value" : ["scalars", "tmp_1"]
+                },
+                {
+                  "type" : "lookahead",
+                  "value" : [0, 24]
+                }
+              ],
+              "op" : "set"
+            },
+            {
+              "parameters" : [
+                {
+                  "type" : "field",
+                  "value" : ["scalars", "tmp"]
+                },
+                {
+                  "type" : "expression",
+                  "value" : {
+                    "type" : "expression",
+                    "value" : {
+                      "op" : "&",
+                      "left" : {
+                        "type" : "field",
+                        "value" : ["scalars", "tmp_1"]
+                      },
+                      "right" : {
+                        "type" : "hexstr",
+                        "value" : "0x01"
+                      }
+                    }
+                  }
+                }
+              ],
+              "op" : "set"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x00",
+              "mask" : null,
+              "next_state" : "parse_mpls_not_bos"
+            },
+            {
+              "value" : "0x01",
+              "mask" : null,
+              "next_state" : "parse_mpls_bos"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["scalars", "tmp"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_mpls_bos",
+          "id" : 24,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "mpls_bos"
+                }
+              ],
+              "op" : "extract"
+            },
+            {
+              "parameters" : [
+                {
+                  "type" : "field",
+                  "value" : ["scalars", "tmp_2"]
+                },
+                {
+                  "type" : "lookahead",
+                  "value" : [0, 4]
+                }
+              ],
+              "op" : "set"
+            },
+            {
+              "parameters" : [
+                {
+                  "type" : "field",
+                  "value" : ["scalars", "tmp_0"]
+                },
+                {
+                  "type" : "expression",
+                  "value" : {
+                    "type" : "expression",
+                    "value" : {
+                      "op" : "&",
+                      "left" : {
+                        "type" : "field",
+                        "value" : ["scalars", "tmp_2"]
+                      },
+                      "right" : {
+                        "type" : "hexstr",
+                        "value" : "0x0f"
+                      }
+                    }
+                  }
+                }
+              ],
+              "op" : "set"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x04",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv4"
+            },
+            {
+              "value" : "0x06",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv6"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_eompls"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["scalars", "tmp_0"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_mpls_not_bos",
+          "id" : 25,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "stack",
+                  "value" : "mpls"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_mpls"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_nsh",
+          "id" : 26,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "nsh"
+                }
+              ],
+              "op" : "extract"
+            },
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "nsh_context"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x0800",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv4"
+            },
+            {
+              "value" : "0x86dd",
+              "mask" : null,
+              "next_state" : "parse_inner_ipv6"
+            },
+            {
+              "value" : "0x6558",
+              "mask" : null,
+              "next_state" : "parse_inner_ethernet"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["nsh", "protoType"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_nvgre",
+          "id" : 27,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "nvgre"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_inner_ethernet"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_payload",
+          "id" : 28,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "data"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : null
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_roce",
+          "id" : 29,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "roce"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_roce_v2",
+          "id" : 30,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "roce_v2"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_snap_header",
+          "id" : 31,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "snap_header"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_tcp",
+          "id" : 32,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "tcp"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "parse_udp",
+          "id" : 33,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "udp"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x12b5",
+              "mask" : null,
+              "next_state" : "parse_vxlan"
+            },
+            {
+              "value" : "0x17c1",
+              "mask" : null,
+              "next_state" : "parse_geneve"
+            },
+            {
+              "value" : "0x03fd",
+              "mask" : null,
+              "next_state" : "parse_roce_v2"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "field",
+              "value" : ["udp", "dstPort"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_vlan",
+          "id" : 34,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "stack",
+                  "value" : "vlan_tag_"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "0x8100",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9100",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9200",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x9300",
+              "mask" : null,
+              "next_state" : "parse_vlan"
+            },
+            {
+              "value" : "0x8847",
+              "mask" : null,
+              "next_state" : "parse_mpls"
+            },
+            {
+              "value" : "0x0800",
+              "mask" : null,
+              "next_state" : "parse_ipv4"
+            },
+            {
+              "value" : "0x86dd",
+              "mask" : null,
+              "next_state" : "parse_ipv6"
+            },
+            {
+              "value" : "0x0806",
+              "mask" : null,
+              "next_state" : "parse_arp_rarp"
+            },
+            {
+              "value" : "0x8035",
+              "mask" : null,
+              "next_state" : "parse_arp_rarp"
+            },
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_payload"
+            }
+          ],
+          "transition_key" : [
+            {
+              "type" : "stack_field",
+              "value" : ["vlan_tag_", "etherType"]
+            }
+          ]
+        },
+        {
+          "name" : "parse_vxlan",
+          "id" : 35,
+          "parser_ops" : [
+            {
+              "parameters" : [
+                {
+                  "type" : "regular",
+                  "value" : "vxlan"
+                }
+              ],
+              "op" : "extract"
+            }
+          ],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_inner_ethernet"
+            }
+          ],
+          "transition_key" : []
+        },
+        {
+          "name" : "start",
+          "id" : 36,
+          "parser_ops" : [],
+          "transitions" : [
+            {
+              "value" : "default",
+              "mask" : null,
+              "next_state" : "parse_input_port"
+            }
+          ],
+          "transition_key" : []
+        }
+      ]
+    }
+  ],
+  "deparsers" : [
+    {
+      "name" : "deparser",
+      "id" : 0,
+      "order" : ["input_port_hdr", "ethernet", "cpu_header", "fcoe", "roce", "vlan_tag_[0]", "vlan_tag_[1]", "arp_rarp", "arp_rarp_ipv4", "ipv6", "icmpv6", "ipv4", "gre", "nsh", "nsh_context", "erspan_v2_header", "erspan_v1_header", "nvgre", "udp", "roce_v2", "genv", "vxlan", "tcp", "icmp", "mpls[0]", "mpls[1]", "mpls[2]", "mpls_bos", "eompls", "inner_ethernet", "inner_ipv6", "inner_icmpv6", "inner_ipv4", "inner_udp", "inner_tcp", "inner_icmp", "snap_header", "data"]
+    }
+  ],
+  "meter_arrays" : [],
+  "counter_arrays" : [],
+  "register_arrays" : [],
+  "calculations" : [
+    {
+      "name" : "calc",
+      "id" : 0,
+      "algo" : "csum16",
+      "input" : [
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "version"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "ihl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "diffserv"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "totalLen"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "identification"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "flags"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "fragOffset"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "ttl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "protocol"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "srcAddr"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "dstAddr"]
+        }
+      ]
+    },
+    {
+      "name" : "calc_0",
+      "id" : 1,
+      "algo" : "csum16",
+      "input" : [
+        {
+          "type" : "field",
+          "value" : ["ipv4", "version"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "ihl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "diffserv"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "totalLen"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "identification"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "flags"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "fragOffset"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "ttl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "protocol"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "srcAddr"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "dstAddr"]
+        }
+      ]
+    },
+    {
+      "name" : "calc_1",
+      "id" : 2,
+      "algo" : "csum16",
+      "input" : [
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "version"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "ihl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "diffserv"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "totalLen"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "identification"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "flags"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "fragOffset"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "ttl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "protocol"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "srcAddr"]
+        },
+        {
+          "type" : "field",
+          "value" : ["inner_ipv4", "dstAddr"]
+        }
+      ]
+    },
+    {
+      "name" : "calc_2",
+      "id" : 3,
+      "algo" : "csum16",
+      "input" : [
+        {
+          "type" : "field",
+          "value" : ["ipv4", "version"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "ihl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "diffserv"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "totalLen"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "identification"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "flags"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "fragOffset"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "ttl"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "protocol"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "srcAddr"]
+        },
+        {
+          "type" : "field",
+          "value" : ["ipv4", "dstAddr"]
+        }
+      ]
+    }
+  ],
+  "learn_lists" : [],
+  "actions" : [
+    {
+      "name" : "mark_forward",
+      "id" : 0,
+      "runtime_data" : [],
+      "primitives" : [
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["data", "data"]
+            },
+            {
+              "type" : "hexstr",
+              "value" : "0xff"
+            }
+          ],
+          "source_info" : {
+            "filename" : "parser_dc_full.p4",
+            "line" : 968,
+            "column" : 4,
+            "source_fragment" : "data.data = 255"
+          }
+        },
+        {
+          "op" : "assign",
+          "parameters" : [
+            {
+              "type" : "field",
+              "value" : ["standard_metadata", "egress_spec"]
+            },
+            {
+              "type" : "hexstr",
+              "value" : "0x000a"
+            }
+          ],
+          "source_info" : {
+            "filename" : "parser_dc_full.p4",
+            "line" : 969,
+            "column" : 4,
+            "source_fragment" : "standard_metadata.egress_spec = 10"
+          }
+        }
+      ]
+    }
+  ],
+  "pipelines" : [
+    {
+      "name" : "ingress",
+      "id" : 0,
+      "init_table" : "mark_check",
+      "tables" : [
+        {
+          "name" : "mark_check",
+          "id" : 0,
+          "source_info" : {
+            "filename" : "parser_dc_full.p4",
+            "line" : 972,
+            "column" : 0,
+            "source_fragment" : "table mark_check { ..."
+          },
+          "key" : [
+            {
+              "match_type" : "exact",
+              "target" : ["data", "data"],
+              "mask" : null
+            }
+          ],
+          "match_type" : "exact",
+          "type" : "simple",
+          "max_size" : 1024,
+          "with_counters" : false,
+          "support_timeout" : false,
+          "direct_meters" : null,
+          "action_ids" : [0],
+          "actions" : ["mark_forward"],
+          "base_default_next" : null,
+          "next_tables" : {
+            "mark_forward" : null
+          },
+          "default_entry" : {
+            "action_id" : 0,
+            "action_const" : false,
+            "action_data" : [],
+            "action_entry_const" : false
+          }
+        }
+      ],
+      "action_profiles" : [],
+      "conditionals" : []
+    },
+    {
+      "name" : "egress",
+      "id" : 1,
+      "init_table" : null,
+      "tables" : [],
+      "action_profiles" : [],
+      "conditionals" : []
+    }
+  ],
+  "checksums" : [
+    {
+      "name" : "cksum",
+      "id" : 0,
+      "target" : ["inner_ipv4", "hdrChecksum"],
+      "type" : "generic",
+      "calculation" : "calc"
+    },
+    {
+      "name" : "cksum_0",
+      "id" : 1,
+      "target" : ["ipv4", "hdrChecksum"],
+      "type" : "generic",
+      "calculation" : "calc_0"
+    },
+    {
+      "name" : "cksum_1",
+      "id" : 2,
+      "target" : ["inner_ipv4", "hdrChecksum"],
+      "type" : "generic",
+      "calculation" : "calc_1"
+    },
+    {
+      "name" : "cksum_2",
+      "id" : 3,
+      "target" : ["ipv4", "hdrChecksum"],
+      "type" : "generic",
+      "calculation" : "calc_2"
+    }
+  ],
+  "force_arith" : [],
+  "extern_instances" : [],
+  "field_aliases" : [
+    [
+      "queueing_metadata.enq_timestamp",
+      ["standard_metadata", "enq_timestamp"]
+    ],
+    [
+      "queueing_metadata.enq_qdepth",
+      ["standard_metadata", "enq_qdepth"]
+    ],
+    [
+      "queueing_metadata.deq_timedelta",
+      ["standard_metadata", "deq_timedelta"]
+    ],
+    [
+      "queueing_metadata.deq_qdepth",
+      ["standard_metadata", "deq_qdepth"]
+    ],
+    [
+      "intrinsic_metadata.ingress_global_timestamp",
+      ["standard_metadata", "ingress_global_timestamp"]
+    ],
+    [
+      "intrinsic_metadata.lf_field_list",
+      ["standard_metadata", "lf_field_list"]
+    ],
+    [
+      "intrinsic_metadata.mcast_grp",
+      ["standard_metadata", "mcast_grp"]
+    ],
+    [
+      "intrinsic_metadata.resubmit_flag",
+      ["standard_metadata", "resubmit_flag"]
+    ],
+    [
+      "intrinsic_metadata.egress_rid",
+      ["standard_metadata", "egress_rid"]
+    ]
+  ]
+}
