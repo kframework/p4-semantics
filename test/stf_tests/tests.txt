@@ -1,8 +1,8 @@
-#07-MultiProtocol           ok  # action selection was not compliant to syntax in spec (ipv6_packet, mpls_packet { ... }), also assumes undefined egress_spec is drop, also has compund action "drop" (changed to "_drop")
+07-MultiProtocol            ok  # action selection was not compliant to syntax in spec (ipv6_packet, mpls_packet { ... }), also assumes undefined egress_spec is drop, also has compund action "drop" (changed to "_drop")
 action_chain1               ok  # found a bug using this test (not resetting arrays)
 action_inline1              ok
 action_inline2              ok
-basic_routing                   # had preproc directives (ref. basic_routing_original)
+basic_routing               ok  # had preproc directives (ref. basic_routing_original), has checksum (added support for csum16)
 bigfield1                   ok
 bridge1                     ok  # had (and needed) default_action in table declaration,
 #counter1                   ok  # stf test itself has problems, check manually

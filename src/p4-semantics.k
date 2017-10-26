@@ -13,6 +13,8 @@ syntax Val ::= "%DROP_PORT" // [function]
 //rule %DROP_PORT => @val(0,32,false) [macro]
 
 
+syntax Int ::= "#csum16" "(" Int "," Int "," Int ")"       [hook(CSUM.csum16),   function]
+
 //IMPORTANT: added only for stf tests
 rule <k> @txenPacket => @drop ... </k>
      <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> @undef _:Map </fieldVals> ... </instance> ... </instances>
@@ -890,8 +892,9 @@ rule @getFieldsAsFLI(_:HeaderRef , .FieldDecs , FLI:FieldListEntryItems) => FLI
 
 syntax KItem ::= "@calculateChecksum" "(" K /* Val */ "," StreamFunctionAlgorithmName "," Int ")" [strict(1)]
 //TODO: fix this, need to create a hook in k
-rule @calculateChecksum (_:Val,_:StreamFunctionAlgorithmName,W:Int) => @val(0,W,false)
-
+//rule @calculateChecksum (_:Val,_:StreamFunctionAlgorithmName,W:Int) => @val(0,W,false)
+syntax Id ::= "csum16" [token]
+rule @calculateChecksum (@val(V:Int,Wi:Int,false),csum16,Wo:Int) => @val(#csum16(V,Wi,Wo),Wo,false)
 
 //update
 
