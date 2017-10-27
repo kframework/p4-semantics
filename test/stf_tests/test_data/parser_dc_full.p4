@@ -461,8 +461,10 @@ header mpls_t mpls_bos;
 
 parser parse_mpls {
     return select(current(23, 1)) {
-        0 : parse_mpls_not_bos;
+        //0 : parse_mpls_not_bos;
+        //1 : parse_mpls_bos; Ali, temporary workaround for deparse order inference problem
         1 : parse_mpls_bos;
+        0 : parse_mpls_not_bos;
         default: parse_payload;
     }
 }
