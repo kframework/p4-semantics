@@ -2,10 +2,10 @@ import argparse
 import re
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--rules', type=str, nargs=1, default='rules')
-parser.add_argument('--covered', type=str, nargs=1, default='covered')
+parser.add_argument('--rules', type=str,  default='rules')
+parser.add_argument('--covered', type=str, default='covered')
 args = parser.parse_args()
-
+print args.covered
 
 rules_file = args.rules
 covered_file = args.covered
@@ -30,6 +30,12 @@ with open(covered_file) as f:
         if m is None:
             continue
         line =  int(m.group('start'))
+        m = re.search(r"Source\((?P<source>.+)\)", l)
+        assert m is not None
+        #ignoring the init rule
+        source = m.group('source')
+        if 'initialization.k' in source:
+            continue
         covered.add(line)
 
 uncovered = set(rules.keys()) - covered
