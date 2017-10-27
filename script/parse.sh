@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-kast -d src/syntax/ $@
+dir=$(dirname $0)
+kast -d $dir/../src/syntax/ $@

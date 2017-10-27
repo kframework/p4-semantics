@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+dir=$(dirname $0);
+
 if [ $# -lt 1 ]; then
     echo "usage: kompile-semantics.sh [<input-file> | --no-input] [kompile arguments]"
     exit 1
@@ -14,5 +16,5 @@ else
         exit 1
     fi
 fi
-python script/add-data.py $DATA
-kompile src/p4-semantics.k --syntax-module P4-SYNTAX --main-module P4-SEMANTICS $@
+python $dir/add-data.py $DATA
+kompile $dir/../src/p4-semantics.k --syntax-module P4-SYNTAX --main-module P4-SEMANTICS $@

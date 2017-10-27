@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-krun -d src/ $@
+dir=$(dirname $0)
+krun -d $dir/../src/ $@

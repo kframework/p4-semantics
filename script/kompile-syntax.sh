@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-rm -rf src/syntax/p4-kompiled/
-kompile src/syntax/p4.k
+dir=$(dirname $0)
+rm -rf $dir/../src/syntax/p4-kompiled/
+kompile $dir/../src/syntax/p4.k
