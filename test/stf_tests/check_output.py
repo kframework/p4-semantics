@@ -9,9 +9,12 @@ expected_packets = []
 
 def process_top(l):
     while len(l) > 0:
-        assert l[0] == 'ListItem'
-        packet, l = process_packet(l[2:])
-        out_packets.append(packet)
+        if l[0] == '.List':
+            l=l[1:]
+        else:
+            assert l[0] == 'ListItem'
+            packet, l = process_packet(l[2:])
+            out_packets.append(packet)
 
 def process_packet(l):
     assert l[0] == '$packet'

@@ -5,10 +5,11 @@ action_inline2              ok
 basic_routing               ok  # had preproc directives (ref. basic_routing_original), has checksum (added support for csum16)
 bigfield1                   ok
 bridge1                     ok  # had (and needed) default_action in table declaration,
-#counter1                   ok  # stf test itself has problems, check manually
-#counter2                   ok  # stf test itself has problems, check manually
-#counter3                   ok  # stf test itself has problems, check manually
-#counter4                   ok  # no expected packet, check manually
+counter1                    ok  # stf test itself has problems, check manually
+counter2                    ok  # stf test itself has problems, check manually
+counter3                    ok  # stf test itself has problems, check manually
+counter4                    ok  # no expected packet, check manually
+counter5                    ok  # empty stf file
 exact_match1                ok
 exact_match2                ok
 exact_match3                ok
