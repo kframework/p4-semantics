@@ -51,29 +51,24 @@ print "expected"
 print "\n".join(map(str,expected_packets))
 
 err = False
-if len(out_packets) != len(expected_packets):
-    print "Error: unexpected number of packets"
+if len(out_packets) < len(expected_packets):
+    print "Error: fewer packets than expected (expected at least %d, got %d)" % (len(expected_packets), len(out_packets))
     err = True
 
-for i,o in enumerate(out_packets):
-    if i < len(expected_packets):
-        print "checking packet",i
-        e = expected_packets[i]
-        if o[1] != e[1]:
-            print "Error: unexpected port number (expected %s, got %s)" % (e[1], o[1])
+for i,e in enumerate(expected_packets):
+    print "checking packet",i
+    o = out_packets[i]
+    if o[1] != e[1]:
+        print "Error: unexpected port number (expected %s, got %s)" % (e[1], o[1])
+        err = True
+    po,pe = o[0],e[0]
+    if len(po) < len(pe):
+        print "Error: packet shorter than expected:  (expected at least %d, got %d)" % (len(pe), len(po))
+        err = True
+    for j,b in enumerate(pe):
+        if b != po[j] and b != '*':
+            print "Error: unexpected bit in packet at index %d, (expected %s, got %s)" % (j,b,po[j])
             err = True
-        po,pe = o[0],e[0]
-        if len(po) < len(pe):
-            print "Error: packet shorter than expected:  (expected at least %d, got %d)" % (len(pe), len(po))
-            err = True
-        for j,b in enumerate(pe):
-            if b != po[j] and b != '*':
-                print "Error: unexpected bit in packet at index %d, (expected %s, got %s)" % (j,b,po[j])
-                err = True
-                break
-
-    else:
-        break
-
+            break
 
 sys.exit(1 if err else 0)

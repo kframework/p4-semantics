@@ -16,4 +16,4 @@ for i in test_data/*.out; do
 done
 
 echo "PASSED: $p / $c";
-echo "FAILD: $f";
+echo "FAILD: ${f[@]}";

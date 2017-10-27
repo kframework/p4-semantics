@@ -405,9 +405,9 @@ class RunBMV2(object):
     def interface_of_filename(self, f):
         return int(os.path.basename(f).rstrip('.pcap').lstrip(self.pcapPrefix).rsplit('_', 1)[0])
     def do_cli_command(self, cmd):
-        print(cmd)
-        # if self.options.verbose:
-        #     print(cmd)
+        #print(cmd)
+        if self.options.verbose:
+            print(cmd)
         # self.cli_stdin.write(cmd + "\n")
         # self.cli_stdin.flush()
         # self.packetDelay = 1
@@ -427,7 +427,9 @@ class RunBMV2(object):
             data = ''.join(data.split())
             bindata = ''.join(["{:04b}".format(int(i,16)) for i in data])
             in_packets.append("ListItem($packet(\"%s\",%d))" % (bindata, interface))
-            print(data)
+
+            if self.options.verbose:
+                print(data)
             #time.sleep(self.packetDelay)
             # try:
             #     self.interfaces[interface]._write_packet(HexToByte(data))
@@ -443,7 +445,8 @@ class RunBMV2(object):
             if data != '':
                 bindata = ''.join(["{:04b}".format(int(i,16)) if i != '*' else '****' for i in data])
                 out_packets.append("%s %d" % (bindata, interface))
-                print("e%s" % data)
+                if self.options.verbose:
+                    print("e%s" % data)
             #     self.expected.setdefault(interface, []).append(data)
         else:
             if self.options.verbose:
