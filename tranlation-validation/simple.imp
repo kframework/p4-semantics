@@ -1,0 +1,97 @@
+
+int h1_f1,h1_f2;
+int h2_f1,h2_f1;
+bool h1_valid, h2_valid;
+int index;
+int standard_metadata_egress_spec;
+
+bool parse(){
+    return start();
+}
+
+bool start(){
+    if (index + 16 > #packetSize)
+        return false;
+    h1_f1 = #extract(index, index + 8);
+    index += 8;
+    h1_f2 = #extract(index , index + 8);
+    index += 8;
+    h1_valid = true;
+    if (h1_f1 == 1){
+        return parse_h2();
+    } else {
+        return true;
+    }
+}
+
+
+bool parse_h2(){
+    if (index + 16 > #packetSize)
+            return false;
+    h2_f1 = #extract(index, index + 8);
+    index += 8;
+    h2_f2 = #extract(index , index + 8);
+    index += 8;
+    h2_valid = true;
+    return true;
+}
+
+
+void a(int n){
+    h2_f2 = n;
+    standard_metadata_egress_spec = 10;
+}
+
+void b(){
+    standard_metadata_egress_spec = 20;
+}
+
+void apply_t(){
+    for (e in #t_entries) {
+        if (h2_f1 == #e.h2_f1_match_value && h2_f2 == #e.h2_f2_match_value){
+            #e.action(#e.n_arg_value);
+            break;
+        }
+    }
+}
+
+
+bool process_packet(){
+    index = 0;
+    standard_metadata_egress_spec = -1;
+    h1_valid = false;
+    h2_valid = false;
+
+    if (! parse()){
+        return false;
+    }
+    if (h2_valid){
+        apply_t();
+    }
+    if (standard_metadata_egress_spec == -1)
+        return false;
+    return true;
+}
+
+void deparse(){
+    if (h1_valid){
+        #emit(h1_f1);
+        #emit(h1_f2);
+    }
+    if (h2_valid){
+        #emit(h2_f1);
+        #emit(h2_f2);
+    }
+}
+
+void main(){
+    while (true){
+        #get_next_packet();
+        if (!process_packet()){
+            #drop();
+        }else{
+            deparse();
+            #output_packet();
+        }
+    }
+}
