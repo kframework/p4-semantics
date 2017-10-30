@@ -54,7 +54,7 @@ rule <k> @init => . ... </k>
                              <name> %standard_metadata_t </name>
                              <opts> .Map </opts>
                              <fields>
-                                egress_spec   :    #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
+                                ingress_port   :    #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
                                 egress_spec   :    #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
                                 //TODO
 /*                                String2Id("egress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
