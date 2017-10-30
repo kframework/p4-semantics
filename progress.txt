@@ -134,6 +134,7 @@
 
 - (Done) Statefuls
   - in what order the direct counters and meter are updated? does it matter?
+  - does the default entry also have a counter/meter/register?
 
 - (Done) Action profiles
   - https://github.com/p4lang/p4-spec/issues/418

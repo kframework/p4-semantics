@@ -16,8 +16,8 @@ syntax Val ::= "%DROP_PORT" // [function]
 syntax Int ::= "#csum16" "(" Int "," Int "," Int ")"       [hook(CSUM.csum16),   function]
 
 //IMPORTANT: added only for stf tests
-rule <k> @txenPacket => @drop ... </k>
-     <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> @undef _:Map </fieldVals> ... </instance> ... </instances>
+//rule <k> @txenPacket => @drop ... </k>
+//     <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> @undef _:Map </fieldVals> ... </instance> ... </instances>
 
 //---------------- putting decralarions into configuration cells--------------------------------
 
@@ -1026,7 +1026,8 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 
 // miss
-rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ~> @callOrDeref(A) ... </k>
+//syntax Int ::= "$default_entry_index" [token]
+rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$rule", .K) ~> @setCrnt("$miss", true) ~> @callOrDeref(A) ~> @setCrnt("$rule", .K) ... </k>
      <crnt> ("$table" |-> T:TableName) _:Map </crnt>
      <tables> <table> <name> T </name> <default> A:ActionCallOrActionProfileRef </default> ... </table> ... </tables>
 rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ... </k>
@@ -1443,12 +1444,16 @@ rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then
      <crnt> ("$table" |-> CT:TableName) ("$rule" |-> CR:Int) _:Map </crnt>
      when
         ((B ==K $direct) impliesBool (T =/=K $counter)) andBool
-        ((B =/=K $static_global) impliesBool (#in_keys("$table", M) andBool (M["$table"] ==K CT))) andBool
+        //((B =/=K $static_global) impliesBool (#in_keys("$table", M) andBool (#castToId(M["$table"]) ==K CT))) andBool //M[$table] evaluates to Bottom it is problematic
+        ((B =/=K $static_global) impliesBool #table_matches(M,CT)) andBool
         ((B =/=K $direct) impliesBool (#in_keys("$instant_count", M) andBool (I <Int #get_instant_count(M))))
 
 syntax Int ::= "#get_instant_count" "(" Map ")" [function]
 rule #get_instant_count ("$instant_count" |-> I:Int _:Map) => I
 
+syntax Bool ::= "#table_matches" "(" Map "," TableName ")" [function]
+rule #table_matches( ("$table" |-> T:TableName) _:Map, CT:TableName) => T ==K CT
+rule #table_matches( M:Map, _) => false when notBool #in_keys("$table", M)
 
 syntax Id ::= "drop" [token]
 
@@ -1503,7 +1508,7 @@ rule <k> @isDrop => V ==K %DROP_PORT ...  </k>
 syntax KItem ::= "@addPayload"
 rule <k> @addPayload => .K ... </k>
      <packet> Packet:List  </packet>
-     <packetout> _:List (.List => range(Packet, I ,#listSize(Packet))) </packetout>
+     <packetout> _:List (.List => range(Packet, I ,0)) </packetout>
      <index> I:Int </index>
      when I <Int #listSize(Packet)
 rule <k> @addPayload => .K ... </k>
@@ -1769,9 +1774,10 @@ rule #castToFieldRef(X:FieldRef) => X
 //----------------------------temporary utils----------------------------------
 
 
-
-
 syntax KItem ::= "$pause" | "$compile_error" | "$internal_error"
+
+
+//----------------------------target specific semantics------------------------
 
 
 endmodule

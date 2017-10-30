@@ -5,22 +5,22 @@
             <name> port_mapping </name>
             <rules> .List   => (
                                  ListItem(
-                                    $rule(
+                                    $rule(0,
                                         $ctr(ListItem(@val ( 1 , 0 , false )))
                                     , @call(String2Id("set_bd") , $resolved( ListItem(@val(10,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(1,
                                         $ctr(ListItem(@val ( 2 , 0 , false )))
                                     , @call(String2Id("set_bd") , $resolved( ListItem(@val(10,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(2,
                                         $ctr(ListItem(@val ( 3 , 0 , false )))
                                     , @call(String2Id("set_bd") , $resolved( ListItem(@val(20,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(3,
                                         $ctr(ListItem(@val ( 4 , 0 , false )))
                                     , @call(String2Id("set_bd") , $resolved( ListItem(@val(20,0,false)) ) ))
                                  )
@@ -32,12 +32,12 @@
             <name> bd </name>
             <rules> .List => (
                                  ListItem(
-                                    $rule(
+                                    $rule(4,
                                         $ctr(ListItem(@val ( 10 , 0 , false )))
                                     , @call(String2Id("set_vrf") , $resolved( ListItem(@val(30,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(5,
                                         $ctr(ListItem(@val ( 20 , 0 , false )))
                                     , @call(String2Id("set_vrf") , $resolved( ListItem(@val(30,0,false)) ) ))
                                  )
@@ -49,13 +49,13 @@
             <name> ipv4_fib </name>
             <rules> .List => (
                                  ListItem(
-                                    $rule(
+                                    $rule(6,
                                                                                                //192.168.0.0
                                         $ctr(ListItem(@val ( 30 , 0 , false )) ListItem(@val ( 3232235520 , 0 , false )))
                                     , @call(String2Id("fib_hit_nexthop") , $resolved( ListItem(@val(1,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(7,
                                                                                                //10.0.0.0
                                         $ctr(ListItem(@val ( 30 , 0 , false )) ListItem(@val ( 167772160 , 0 , false )))
                                     , @call(String2Id("fib_hit_nexthop") , $resolved( ListItem(@val(3,0,false)) ) ))
@@ -68,22 +68,22 @@
             <name> nexthop </name>
             <rules> .List => (
                                  ListItem(
-                                    $rule(
+                                    $rule(8,
                                         $ctr(ListItem(@val ( 1 , 0 , false )) )
                                     , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(1,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(9,
                                         $ctr(ListItem(@val ( 2 , 0 , false )) )
                                     , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(2,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(10,
                                         $ctr(ListItem(@val ( 3 , 0 , false )) )
                                     , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(3,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(11,
                                         $ctr(ListItem(@val ( 4 , 0 , false )) )
                                     , @call(String2Id("set_egress_details") , $resolved( ListItem(@val(4,0,false)) ) ))
                                  )
@@ -96,25 +96,25 @@
             <name> rewrite_mac </name>
             <rules> .List => (
                                  ListItem(
-                                    $rule(
+                                    $rule(12,
                                         $ctr(ListItem(@val ( 1 , 0 , false )) )
                                                                                           //01:01:01:01:01:01                   //00:01:01:01:01:01
                                     , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1103823438081,0,false)) ListItem(@val(4311810305,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(13,
                                         $ctr(ListItem(@val ( 2 , 0 , false )) )
                                                                                           //01:02:02:02:02:02                   //00:02:02:02:02:02
                                     , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1108135248386,0,false)) ListItem(@val(8623620610,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(14,
                                         $ctr(ListItem(@val ( 3 , 0 , false )) )
                                                                                           //01:03:03:03:03:03                   //00:03:03:03:03:03
                                     , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1112447058691,0,false)) ListItem(@val(12935430915,0,false)) ) ))
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(15,
                                         $ctr(ListItem(@val ( 4 , 0 , false )) )
                                                                                           //01:04:04:04:04:04                   //00:04:04:04:04:04
                                     , @call(String2Id("rewrite_src_dst_mac") , $resolved( ListItem(@val(1116758868996,0,false)) ListItem(@val(17247241220,0,false)) ) ))
