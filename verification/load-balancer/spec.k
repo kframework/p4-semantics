@@ -1,11 +1,10 @@
-require "../../src/p4-semantics.k"
 
-module AVL-SPEC
-  imports P4-SEMANTINCS
+module SPEC
+  imports P4-SEMANTICS
 
 rule
 <T>
-    <k> @nextPacket </k>
+    <k> @nextPacket => @nextPacket </k>
     <headers>
         <header>
             <name> %standard_metadata_t </name>
@@ -35,7 +34,7 @@ rule
             <metadata> true </metadata>
             <typeName> meta_t </typeName>
             <name> meta </name>
-            <fieldVals> reg_val |-> @val ( 0 , 8 , false ) </fieldVals>
+            <fieldVals> reg_val |-> @val ( 0 , 8 , false ) =>  reg_val |-> @val ( 1 , 8 , false )</fieldVals>
         </instance>
     </instances>
     <initInstances>
@@ -52,7 +51,7 @@ rule
             <stype> $register </stype>
             <name> reg </name>
             <opts> "$instant_count" |-> 1 "$saturating" |-> false "$signed" |-> false "$binding" |-> $static_global </opts>
-            <vals> .Map </vals>
+            <vals> .Map => (0 |-> @val(1,8,false)) </vals>
             <width> 8 </width>
         </stateful>
     </statefuls>
@@ -94,20 +93,21 @@ rule
     </controlFlows>
     <cfset> SetItem ( ingress ) </cfset>
     <calcFieldSet> .Set </calcFieldSet>
-    <ctx> <frameStack> .List </frameStack> <crnt> .Map </crnt> </ctx>
-    <packet> . </packet>
-    <packetout> .List </packetout>
+    <ctx> <frameStack> .List => _ </frameStack> <crnt> .Map => _ </crnt> </ctx>
+    <packet> . => _ </packet>
+    <packetout> .List => _ </packetout>
     <parser>
         <graph>
             <onpath> .Set </onpath>
             <marked> <mstates> SetItem ( start ) </mstates> <mheaders> .Set </mheaders> </marked>
             <dporder> .List </dporder>
         </graph>
-        <pctx> <index> 0 </index> <lastExt> . </lastExt> <varWidth> . </varWidth> <packetSize> . </packetSize> </pctx>
+        <pctx> <index> 0 => _ </index> <lastExt> . => _ </lastExt> <varWidth> . => _ </varWidth> <packetSize> . => _ </packetSize> </pctx>
     </parser>
     <buffer>
-    <in> V0 </in>
-    <out> .List </out>
+        <in> ListItem($packet(.List,10)) => .List </in>
+        <out> .List => ListItem($packet(.List,0))  </out>
     </buffer>
 </T>
+
 endmodule
