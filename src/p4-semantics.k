@@ -449,7 +449,7 @@ rule <k> @nextPacket =>
      ... </k>
      <buffer> <in> (ListItem($packet(P:PacketData, Port:Int)) => .List) _:List </in> ... </buffer>
      <packet> _ => P </packet>
-     [transition]
+
 
 syntax KItem ::= "@txenPacket"
 //syntax Id ::= "egress_spec" [token]

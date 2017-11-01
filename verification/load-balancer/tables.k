@@ -32,10 +32,5 @@
 
      </tables>
 
-     <buffer>
-     <in> .List => ?L:List </in>
-
-     ...
-     </buffer>
 
 syntax Id ::=      "read_reg_table" [token] | "balance_table" [token]
