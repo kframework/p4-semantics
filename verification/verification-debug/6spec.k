@@ -19,9 +19,9 @@ ensures absInt(#onPort(?O2,0) -Int #onPort(?O2,1)) <=Int 1
 
 
 
-rule [main-spec]:
+rule [loop-inv]:
 <T>
-    <k> @start => @end </k>
+    <k> @start => @end </k> //<k> @nextPacket => @nextPacket </k> does not work but I don't know why,
     <index> 0 </index>
     <reg> 1 => _:Int </reg>
     <packet> _:List => _:List </packet>
@@ -29,6 +29,7 @@ rule [main-spec]:
     <in>  _:PacketList => $nilPacketList  </in>
     <out> $nilPacketList => ?O2:PacketList  </out>
 </T>
+ensures absInt(#onPort(?O2,0) -Int #onPort(?O2,1)) <=Int 1
 
 
 
