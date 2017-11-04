@@ -506,7 +506,7 @@ rule <k> @parse&ingress => return start;  ... </k>
 syntax Val ::= "@calculatePacketSize" "(" PacketData "," Int ")" [function]
 rule @calculatePacketSize(.List, I:Int) => @val(I /Int 8, 0, false)
 rule @calculatePacketSize(ListItem(@val(_,W:Int,_)) Rest:List, I:Int) => @calculatePacketSize(Rest, I +Int W)
-rule @calculatePacketSize(S:String, 0) => @calculatePacketSize(.List, lengthString(S))
+//rule @calculatePacketSize(S:String, 0) => @calculatePacketSize(.List, lengthString(S))
 
 rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
 rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structural]
@@ -1012,7 +1012,7 @@ rule NotExp(@val(V2,_,_)) => @val(~Int V2,0,true)
 //TODO: unify it with @negative
 
 rule BExpValid( H:HeaderRef )   => @isValid(H)
-rule BExpPar(BE:K) => BE
+//rule BExpPar(BE:K) => BE
 rule not B:Bool => notBool B
 
 rule B1:Bool or B2:Bool => B1 orBool B2
@@ -1517,15 +1517,15 @@ rule <k> @addPayload => .K ... </k>
      <index> I:Int </index>
      when I >=Int sizeList(Packet)
 
-rule <k> @addPayload => .K ... </k>
-     <packet> Packet:String  </packet>
-     <packetout> _:List (.List => ListItem(@val(String2Base(substrString(Packet,I,lengthString(Packet)),2), lengthString(Packet) -Int I  ,false))) </packetout>
-     <index> I:Int </index>
-     when I <Int lengthString(Packet)
-rule <k> @addPayload => .K ... </k>
-     <packet> Packet:String  </packet>
-     <index> I:Int </index>
-     when I >=Int lengthString(Packet)
+//rule <k> @addPayload => .K ... </k>
+//     <packet> Packet:String  </packet>
+//     <packetout> _:List (.List => ListItem(@val(String2Base(substrString(Packet,I,lengthString(Packet)),2), lengthString(Packet) -Int I  ,false))) </packetout>
+//     <index> I:Int </index>
+//     when I <Int lengthString(Packet)
+//rule <k> @addPayload => .K ... </k>
+//     <packet> Packet:String  </packet>
+//     <index> I:Int </index>
+//     when I >=Int lengthString(Packet)
 
 syntax Bool ::= "@egressDefined" "(" Set ")" [function]
 rule @egressDefined(S) => notBool notBool (egress in S) //workaround to get rid of ambiguities
@@ -1778,14 +1778,19 @@ syntax KItem ::= "$pause" | "$compile_error" | "$internal_error"
 
 //----------------------------target specific semantics------------------------
 
+//----------------------------verification utils------------------------------
+syntax KItem ::= "@end"
+rule <k> @nextPacket => @end </k>
+     <in> $nilPacketList </in>
 
-/*
-syntax List ::= "pd" "(" List ")" [pattern(1)]
-rule pd(ListItem(V:Val) L:List) => ListItem(V) pd(L) [pattern]
-rule pd(.List) => .List [pattern]
-rule ListItem(V:Val) pd(L:List) => pd(ListItem(V) L) [pattern-unfolding]
-*/
+syntax Int ::= "#onPort" "(" PacketList "," Int ")" [function, smtlib(smt_on_port)]
+rule #onPort($nilPacketList,_:Int) => 0
+rule #onPort($consPacketList($packet(_,P:Int),L:PacketList), P) => 1 +Int #onPort(L, P)
+rule #onPort($consPacketList($packet(_,P1:Int),L:PacketList), P2:Int) => #onPort(L, P2) when P1 =/=Int P2
 
+syntax Int ::= "#packetListSize" "(" PacketList ")" [function, smtlib(smt_packetlist_len)]
+rule #packetListSize($nilPacketList) => 0
+rule #packetListSize($consPacketList($packet(_,_),L:PacketList)) => 1 +Int #packetListSize(L)
 
 
 endmodule

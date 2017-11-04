@@ -1,5 +1,4 @@
 require "../../src/syntax/p4-syntax.k"
-require "int_list.k"
 
 module CONFIGURATION
 imports P4-COMMON
@@ -40,8 +39,8 @@ syntax KResult ::= "$pair" "(" Val "," Val ")"
 syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCallOrActionProfileRef ")"
 syntax Criteria ::= "$ctr" "(" List ")"
 
-syntax PacketData ::= List | String | Vals
-syntax Packet ::= "$packet" "(" PacketData "," Int ")" [smtlib(smt_packet)]
+syntax PacketData ::= List //| String
+syntax Packet ::= "$packet" "(" PacketData "," Int ")" //[smtlib(smt_packet)]
 
 syntax PacketList ::=
                        "$nilPacketList" [smtlib(nil_packst_list)]

@@ -91,7 +91,7 @@ rule <k> @init => . ... </k>
         </table>
 
      </tables>
-     //<in> _:PacketList => $consPacketList($packet(.List, ?_:Int) , $nilPacketList) </in>
+     //<in> _:PacketList => $consPacketList($packet(.List, 0) , $nilPacketList) </in>
 
 
 syntax Id ::=      "read_reg_table" [token] | "balance_table" [token]
