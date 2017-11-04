@@ -16,8 +16,8 @@ rule
     //<out> Lout:PacketList => $consPacketList($packet(P,0) , Lout)  </out>
 </T>
 //requires //absInt(#onPort(Lout,0) -Int #onPort(Lout,1)) <=Int 1
-//requires R1 ==Int 1 orBool R1 ==Int 0
-//ensures ?R2 ==Int 1 orBool ?R2 ==Int 0
+requires (R1 ==Int 1 orBool R1 ==Int 0)
+ensures ?R2 ==Int 1 orBool ?R2 ==Int 0
 
 
 
