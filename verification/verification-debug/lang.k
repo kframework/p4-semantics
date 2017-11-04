@@ -3,15 +3,15 @@ module LANG
 syntax Pgm ::= "@start"
 
 
-syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
+//syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
 
-syntax Vals ::= "@nil"
-                | "@cons" "(" Val "," Vals ")"
+//syntax Vals ::= "@nil"
+//                | "@cons" "(" Val "," Vals ")"
 
 
 
-syntax PacketData ::= List [smtlib(smt_packetdata_list)] | String | Vals
-syntax Packet ::= "$packet" "(" PacketData "," Int ")" [smtlib(smt_packet)]
+//syntax PacketData ::= List [smtlib(smt_packetdata_list)] | String | Vals
+syntax Packet ::= "$packet" "(" List "," Int ")" //[smtlib(smt_packet)]
 
 syntax PacketList ::=
                        "$nilPacketList" [smtlib(nil_packst_list)]
@@ -33,6 +33,10 @@ configuration
 
 rule @start => @nextPacket
 
+syntax KItem ::= "@end"
+rule <k> @nextPacket => @end </k>
+     <in> $nilPacketList </in>
+
 rule <k> @nextPacket => @changeReg ~> @addPayload ~> @txenPacket ~> @nextPacket </k>
      <in> $consPacketList($packet(Packet:List,Port:Int) , L:PacketList) => L </in>
      <packet> _:List => Packet </packet>
@@ -42,7 +46,9 @@ rule <k> @changeReg => .K ...</k>
      <reg> 0 => 1 </reg>
 rule <k> @changeReg => .K ...</k>
      <reg> 1 => 0 </reg>
-
+rule <k> @changeReg => .K ...</k>
+     <reg> P:Int => 3 </reg>
+     when P =/=Int 0 andBool P=/=Int 1
 
 syntax KItem ::= "@addPayload"
 rule <k> @addPayload => .K ... </k>

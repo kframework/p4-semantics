@@ -1,4 +1,4 @@
-
+// also checked manually
 
 module SPEC
 imports LANG
@@ -21,7 +21,7 @@ ensures absInt(#onPort(?O2,0) -Int #onPort(?O2,1)) <=Int 1
 
 rule [loop-inv]:
 <T>
-    <k> @start => @end </k> //<k> @nextPacket => @nextPacket </k> does not work but I don't know why,
+    <k> @start => @end </k>
     <index> 0 </index>
     <reg> 1 => _:Int </reg>
     <packet> _:List => _:List </packet>
