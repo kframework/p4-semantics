@@ -3,15 +3,8 @@ module LANG
 syntax Pgm ::= "@start"
 
 
-//syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
-
-//syntax Vals ::= "@nil"
-//                | "@cons" "(" Val "," Vals ")"
-
-
-
-//syntax PacketData ::= List [smtlib(smt_packetdata_list)] | String | Vals
-syntax Packet ::= "$packet" "(" List "," Int ")" //[smtlib(smt_packet)]
+syntax PacketData ::= List | String
+syntax Packet ::= "$packet" "(" PacketData "," Int ")" //[smtlib(smt_packet)]
 
 syntax PacketList ::=
                        "$nilPacketList" [smtlib(nil_packst_list)]
