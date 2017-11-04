@@ -2,31 +2,26 @@
 module SPEC
   imports P4-SEMANTICS
 
-  syntax Id ::= "meta_t" [token] | "reg_val" [token] | "meta" [token] | "reg" [token] | "balance" [token] | "read_reg" [token] | "port" [token] | "val" [token] | "ingress" [token]
+  syntax Id ::= "meta_t" [token] | "reg_val" [token] | "meta" [token]
 rule
-
-  //syntax List ::= "$pc" "(" List ")" [pattern(1)]
-  //rule $
-
-
 <T>
     <k> @nextPacket => @nextPacket </k>
     <headers>
         <header>
             <name> %standard_metadata_t </name>
             <opts> .Map </opts>
-            <fields> ingress_port : #token("32","DecimalValueToken@VALUE-SYNTAX") ( .FieldMods ) ;  ( egress_spec : #token("32","DecimalValueToken@VALUE-SYNTAX") ( .FieldMods ) ;  .FieldDecs ) </fields>
+            <fields> ?FD1:FieldDecs </fields>
             </header>
         <header>
             <name> meta_t </name>
             <opts> "$fixed_width" |-> 8 </opts>
-            <fields> reg_val : #token("8","DecimalValueToken@VALUE-SYNTAX") ( .FieldMods ) ;  .FieldDecs </fields>
+            <fields> ?FD2:FieldDecs </fields>
             </header>
         </headers>
     <arrays> .Map </arrays>
-    <fieldLists> .Bag </fieldLists>
-    <fieldListCalcs> .Bag </fieldListCalcs>
-    <calcFields> .Bag </calcFields>
+    <fieldLists> _ </fieldLists>
+    <fieldListCalcs> _ </fieldListCalcs>
+    <calcFields> _ </calcFields>
     <instances>
         <instance>
             <valid> true </valid>
@@ -43,14 +38,13 @@ rule
             <fieldVals> reg_val |-> @val ( 0 , 8 , false ) =>  reg_val |-> @val ( 1 , 8 , false )</fieldVals>
         </instance>
     </instances>
-    <initInstances> INITINSTANCES </initInstances>
-
+    <initInstances> _ </initInstances>
     <initArrays> .Map </initArrays>
     <parserStates>
-        <state> <name> start </name> <body> .ExtractOrSetStatements return ingress ; </body> </state>
+        <state> <name> start </name> <body> ?X1:ExtractOrSetStatements ExtractOrSetStatements return ingress ; </body> </state>
     </parserStates>
-    <valueSets> .Bag </valueSets>
-    <exceptionHandlers> .Bag </exceptionHandlers>
+    <valueSets> .ValueSetCellBag </valueSets>
+    <exceptionHandlers> .ExceptionHandlerCellBag </exceptionHandlers>
     <handledExceptions> .Set </handledExceptions>
     <statefuls>
         <stateful>
@@ -66,16 +60,16 @@ rule
         <action>
             <name> balance </name>
             <params> port , ( val , .ParamList ) </params>
-            <body> modify_field ( ( standard_metadata . egress_spec ) , ( port , .Args ) ) ;  ( register_write ( reg , ( #token("0","DecimalValueToken@VALUE-SYNTAX") , ( val , .Args ) ) ) ;  .ActionStatements ) </body>
+            <body> modify_field ( ( standard_metadata . egress_spec ) , ( port , .Args ) ) ;  ( register_write ( reg , ( 0 , ( val , .Args ) ) ) ;  .ActionStatements ) </body>
         </action>
         <action>
             <name> read_reg </name>
             <params> .ParamList </params>
-            <body> register_read ( ( meta . reg_val ) , ( reg , ( #token("0","DecimalValueToken@VALUE-SYNTAX") , .Args ) ) ) ;  .ActionStatements </body>
+            <body> register_read ( ( meta . reg_val ) , ( reg , ( 0 , .Args ) ) ) ;  .ActionStatements </body>
         </action>
     </actions>
-    <actionProfiles> .Bag </actionProfiles>
-    <actionSelectors> .Bag </actionSelectors>
+    <actionProfiles> .ActionProfileCellBag </actionProfiles>
+    <actionSelectors> .ActionSelectorCellBag </actionSelectors>
     <tables>
         <table>
             <name> balance_table </name>
@@ -111,8 +105,9 @@ rule
         <pctx> <index> 0 => _ </index> <lastExt> . => _ </lastExt> <varWidth> . => _ </varWidth> <packetSize> . => _ </packetSize> </pctx>
     </parser>
     <buffer>
-        <in> $consPacketList($packet(P:List,10) ,  L:PacketList) => L  </in>
-        <out> $nilPacketList => $consPacketList($packet(P,0) , $nilPacketList)  </out>
+        <in> ListItem($packet(.List,10)) => .List </in>
+        <out> .List => ListItem($packet(.List,0))  </out>
     </buffer>
 </T>
+
 endmodule

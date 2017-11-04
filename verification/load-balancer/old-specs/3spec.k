@@ -2,25 +2,16 @@
 module SPEC
   imports P4-SEMANTICS
 
+  syntax Id ::= "meta_t" [token] | "reg_val" [token] | "meta" [token] | "reg" [token] | "balance" [token] | "read_reg" [token] | "port" [token] | "val" [token] | "ingress" [token]
+
 rule
 <T>
     <k> @nextPacket => @nextPacket </k>
-    <headers>
-        <header>
-            <name> %standard_metadata_t </name>
-            <opts> .Map </opts>
-            <fields> ingress_port : 32 ( .FieldMods ) ;  ( egress_spec : 32 ( .FieldMods ) ;  .FieldDecs ) </fields>
-            </header>
-        <header>
-            <name> meta_t </name>
-            <opts> "$fixed_width" |-> 8 </opts>
-            <fields> reg_val : 8 ( .FieldMods ) ;  .FieldDecs </fields>
-            </header>
-        </headers>
+    <headers>... HEADERS:Bag ...</headers>
     <arrays> .Map </arrays>
-    <fieldLists> .FieldListCellBag </fieldLists>
-    <fieldListCalcs> .FieldListCalcCellBag </fieldListCalcs>
-    <calcFields> .CalcFieldCellBag </calcFields>
+    <fieldLists>... FIELDLISTS:Bag ...</fieldLists>
+    <fieldListCalcs>... FIELDLISTCALCS:Bag ...</fieldListCalcs>
+    <calcFields>... CALCFIELDS:Bag ...</calcFields>
     <instances>
         <instance>
             <valid> true </valid>
@@ -37,14 +28,13 @@ rule
             <fieldVals> reg_val |-> @val ( 0 , 8 , false ) =>  reg_val |-> @val ( 1 , 8 , false )</fieldVals>
         </instance>
     </instances>
-    <initInstances>
-        <instances>-fragment <instance> <valid> true </valid> <metadata> true </metadata> <typeName> %standard_metadata_t </typeName> <name> standard_metadata </name> <fieldVals> ingress_port |-> @undef egress_spec |-> @undef </fieldVals> </instance> <instance> <valid> true </valid> <metadata> true </metadata> <typeName> meta_t </typeName> <name> meta </name> <fieldVals> reg_val |-> @val ( 0 , 8 , false ) </fieldVals> </instance> </instances>-fragment </initInstances>
+    <initInstances>... INITINSTANCES:Bag ...</initInstances>
     <initArrays> .Map </initArrays>
     <parserStates>
         <state> <name> start </name> <body> .ExtractOrSetStatements return ingress ; </body> </state>
     </parserStates>
-    <valueSets> .ValueSetCellBag </valueSets>
-    <exceptionHandlers> .ExceptionHandlerCellBag </exceptionHandlers>
+    <valueSets>... VALUESETS:Bag ...</valueSets>
+    <exceptionHandlers>... EXCEPTIONHANDLERS:Bag ...</exceptionHandlers>
     <handledExceptions> .Set </handledExceptions>
     <statefuls>
         <stateful>
@@ -56,20 +46,9 @@ rule
         </stateful>
     </statefuls>
     <tableDirects> .Map </tableDirects>
-    <actions>
-        <action>
-            <name> balance </name>
-            <params> port , ( val , .ParamList ) </params>
-            <body> modify_field ( ( standard_metadata . egress_spec ) , ( port , .Args ) ) ;  ( register_write ( reg , ( 0 , ( val , .Args ) ) ) ;  .ActionStatements ) </body>
-        </action>
-        <action>
-            <name> read_reg </name>
-            <params> .ParamList </params>
-            <body> register_read ( ( meta . reg_val ) , ( reg , ( 0 , .Args ) ) ) ;  .ActionStatements </body>
-        </action>
-    </actions>
-    <actionProfiles> .ActionProfileCellBag </actionProfiles>
-    <actionSelectors> .ActionSelectorCellBag </actionSelectors>
+    <actions>... ACTIONS:Bag ...</actions>
+    <actionProfiles>... ACTIONPROFILES:Bag ...</actionProfiles>
+    <actionSelectors>... ACTIONSELECTORS:Bag  ...</actionSelectors>
     <tables>
         <table>
             <name> balance_table </name>

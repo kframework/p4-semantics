@@ -2,13 +2,8 @@
 module SPEC
   imports P4-SEMANTICS
 
-  syntax Id ::= "meta_t" [token] | "reg_val" [token] | "meta" [token] | "reg" [token] | "balance" [token] | "read_reg" [token] | "port" [token] | "val" [token] | "ingress" [token]
+   syntax Id ::= "meta_t" [token] | "reg_val" [token] | "meta" [token] | "reg" [token] | "balance" [token] | "read_reg" [token] | "port" [token] | "val" [token] | "ingress" [token]
 rule
-
-  //syntax List ::= "$pc" "(" List ")" [pattern(1)]
-  //rule $
-
-
 <T>
     <k> @nextPacket => @nextPacket </k>
     <headers>
@@ -43,8 +38,23 @@ rule
             <fieldVals> reg_val |-> @val ( 0 , 8 , false ) =>  reg_val |-> @val ( 1 , 8 , false )</fieldVals>
         </instance>
     </instances>
-    <initInstances> INITINSTANCES </initInstances>
-
+    <initInstances>
+        <instances>
+            <instance> <valid> true </valid>
+                <metadata> true </metadata>
+                <typeName> %standard_metadata_t </typeName>
+                <name> standard_metadata </name>
+                <fieldVals> ingress_port |-> @undef egress_spec |-> @undef </fieldVals>
+            </instance>
+            <instance>
+                <valid> true </valid>
+                <metadata> true </metadata>
+                <typeName> meta_t </typeName>
+                <name> meta </name>
+                <fieldVals> reg_val |-> @val ( 0 , 8 , false ) </fieldVals>
+            </instance>
+         </instances>
+    </initInstances>
     <initArrays> .Map </initArrays>
     <parserStates>
         <state> <name> start </name> <body> .ExtractOrSetStatements return ingress ; </body> </state>
@@ -111,8 +121,9 @@ rule
         <pctx> <index> 0 => _ </index> <lastExt> . => _ </lastExt> <varWidth> . => _ </varWidth> <packetSize> . => _ </packetSize> </pctx>
     </parser>
     <buffer>
-        <in> $consPacketList($packet(P:List,10) ,  L:PacketList) => L  </in>
-        <out> $nilPacketList => $consPacketList($packet(P,0) , $nilPacketList)  </out>
+        <in> ListItem($packet(.List,10)) => .List </in>
+        <out> .List => ListItem($packet(.List,0))  </out>
     </buffer>
 </T>
+
 endmodule
