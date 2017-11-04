@@ -5,15 +5,15 @@ imports LANG
 
 rule
 <T>
-    <k> @nextPacket => @end </k>
+    <k> @nextPacket => @end </k> //<k> @nextPacket => @nextPacket </k> does not work but I don't know why,
     <index> 0 </index>
-    <reg> (?R1:Int) => ?R2:Int </reg>
+    <reg> (R1:Int) => ?R2:Int </reg>
     <packet> _:List => _:List </packet>
     <packetout> _:List => _:List </packetout>
     <in>  _:PacketList => $nilPacketList  </in>
     <out> Lout:PacketList => ?Lout2:PacketList  </out>
 </T>
-requires ?R1 ==Int 1 orBool ?R1 ==Int 0
+requires R1 ==Int 1 orBool R1 ==Int 0
 ensures ?R2 ==Int 0 orBool ?R2 ==Int 1
 //requires //absInt(#onPort(Lout,0) -Int #onPort(Lout,1)) <=Int 1
 
