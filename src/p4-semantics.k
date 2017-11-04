@@ -678,7 +678,7 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@
      </headers>
      <packet> Packet:List </packet>
      <index> I:Int => I +Int 1 </index>
-     when I <Int #listSize(Packet)
+     when I <Int sizeList(Packet)
      //when U <Int size(Packet)
      //bug with K's build-in size(List)
 
@@ -699,7 +699,7 @@ rule <k> @extractField(N:InstanceName, F:FieldName , @val(W:Int,_,_) ) => @initF
 rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
      <packet> Packet:List </packet>
      <index> I:Int </index>
-     when I >=Int #listSize(Packet)
+     when I >=Int sizeList(Packet)
 
 rule <k> @extractField(_:InstanceName, _:FieldName , @val(W:Int,_,_) ) => @throw(p4_pe_out_of_packet) ... </k>
      <packet> Packet:String </packet>
@@ -1511,11 +1511,11 @@ rule <k> @addPayload => .K ... </k>
      <packet> Packet:List  </packet>
      <packetout> _:List (.List => range(Packet, I ,0)) </packetout>
      <index> I:Int </index>
-     when I <Int #listSize(Packet)
+     when I <Int sizeList(Packet)
 rule <k> @addPayload => .K ... </k>
      <packet> Packet:List  </packet>
      <index> I:Int </index>
-     when I >=Int #listSize(Packet)
+     when I >=Int sizeList(Packet)
 
 rule <k> @addPayload => .K ... </k>
      <packet> Packet:String  </packet>
