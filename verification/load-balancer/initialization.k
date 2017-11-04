@@ -12,34 +12,7 @@ syntax Criteria
 
 
 
-syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
-syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
-syntax ActionProfileEntryRef ::= "@apref" "(" Int ")"
-syntax ActionCallOrActionProfileRef ::= ActionCall | ActionProfileEntryRef
 
-
-syntax ResolvedArgs ::= "$resolved" "(" List ")"
-syntax KResult ::= ResolvedArgs
-
-syntax KResult ::= "$pair" "(" Val "," Val ")"
-
-// --------------------init------------------------------------
-
-
-//syntax Input ::= "packet" "(" String ")"
-
-//syntax Packet ::= "packet" "(" Int ")"
-
-//syntax Rule ::= "$rule" "(" Criteria  ","  ActionName ")"
-//syntax Criteria ::= "$ctr" "(" Matchs ")"
-//syntax Matchs ::= List{Match,","} [klable('Matchs)]
-//syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
-
-syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCallOrActionProfileRef ")"
-syntax Criteria ::= "$ctr" "(" List ")"
-
-syntax PacketData ::= List | String
-syntax Packet ::= "$packet" "(" PacketData "," Int ")"
 
 
 syntax Id ::=     "%standard_metadata_t" [token]
@@ -85,7 +58,43 @@ rule <k> @init => . ... </k>
      </instances>
      //maybe instead of doing above, it would be better to add it as a part of the program (p4-prelude)
 //======Hardcoded input packet and table entries=====
-#include_data
+     <tables>
+        ...
+        <table>
+            ...
+            <name> read_reg_table </name>
+            <rules> .List   => (
+                                 ListItem(
+                                    $rule(0,
+                                        $ctr(ListItem(@val ( 1 , 0 , false )))
+                                    , @call(String2Id("read_reg") , $resolved( .List ) ) )
+                                 )
+                               )
+            </rules>
+        </table>
+        <table>
+            ...
+            <name> balance_table </name>
+            <rules> .List   => (
+                                 ListItem(
+                                    $rule(0,
+                                        $ctr(ListItem(@val ( 0 , 0 , false )))
+                                    , @call(String2Id("balance") , $resolved( ListItem(@val(0,0,false)) ListItem(@val(1,0,false)) ) ) )
+                                 )
+                                 ListItem(
+                                     $rule(1,
+                                         $ctr(ListItem(@val ( 1 , 0 , false )))
+                                     , @call(String2Id("balance") , $resolved( ListItem(@val(1,0,false)) ListItem(@val(0,0,false)) ) ) )
+                                  )
+                               )
+            </rules>
+        </table>
+
+     </tables>
+     //<in> _:PacketList => $consPacketList($packet(.List, 0) , $nilPacketList) </in>
+
+
+syntax Id ::=      "read_reg_table" [token] | "balance_table" [token]
 //===================================================
 
 //note: String2Id("port_mapping") does not match, because String2Id is a function and can not be used in LHS

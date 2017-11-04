@@ -1,0 +1,513 @@
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+271: Source(./p4-semantics.k) Location(35,6,38,19)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+44: Source(./p4-semantics.k) Location(94,6,101,111)
+42: Source(./p4-semantics.k) Location(136,6,138,102)
+386: Source(./p4-semantics.k) Location(143,6,143,115)
+51: Source(./p4-semantics.k) Location(147,6,155,19)
+330: null null
+178: Source(./p4-semantics.k) Location(754,6,755,70)
+167: Source(./p4-semantics.k) Location(763,6,764,22)
+451: null null
+447: Source(./p4-semantics.k) Location(158,6,162,21)
+69: Source(./p4-semantics.k) Location(142,6,142,37)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+156: Source(./p4-semantics.k) Location(167,6,172,26)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+456: Source(./p4-semantics.k) Location(224,6,236,18)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+249: Source(./p4-semantics.k) Location(282,6,287,21)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+242: Source(./p4-semantics.k) Location(317,6,322,25)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+249: Source(./p4-semantics.k) Location(282,6,287,21)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+242: Source(./p4-semantics.k) Location(317,6,322,25)
+80: Source(./p4-semantics.k) Location(27,6,27,86)
+434: Source(./p4-semantics.k) Location(327,6,333,44)
+309: Source(./p4-semantics.k) Location(29,6,29,41)
+193: Source(./p4-semantics.k) Location(358,6,362,21)
+151: null null
+369: Source(./p4-semantics.k) Location(417,6,418,55)
+201: null null
+173: Source(./p4-semantics.k) Location(1647,6,1647,45)
+236: Source(./p4-semantics.k) Location(413,6,414,76)
+402: Source(./p4-semantics.k) Location(370,6,370,83)
+480: Source(./p4-semantics.k) Location(376,6,380,22)
+248: Source(/home/ali/P4/p4k/verification/load-balancer/./initialization.k) Location(24,6,93,15)
+99: Source(./p4-semantics.k) Location(428,6,432,39)
+142: Source(./p4-semantics.k) Location(437,7,437,27)
+277: Source(./p4-semantics.k) Location(1783,6,1784,31)
+142: Source(./p4-semantics.k) Location(437,7,437,27)
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	Bool@BOOL-SYNTAX(#"true")
+  implies 
+	Bool@BOOL-SYNTAX(#"true")
+Implication proved by simplification
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_1618:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1618:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(#packetListSize(_)(_1530:PacketList@CONFIGURATION),, Int@INT-SYNTAX(#"0")),, #packetListSize(_)(_1618:PacketList@CONFIGURATION)))
+  implies 
+	_andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_1618:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1618:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#packetListSize(_)(_1530:PacketList@CONFIGURATION),, #packetListSize(_)(_1618:PacketList@CONFIGURATION)))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _1618 () PacketList)
+(declare-fun _1530 () PacketList)
+(assert (and (and (= (<= (int_abs (- (smt_on_port _1618 0) (smt_on_port _1618 1))) 1) true) (= (+ (smt_packetlist_len _1530) 0) (smt_packetlist_len _1618))) (not (and (= (smt_packetlist_len _1530) (smt_packetlist_len _1618))))))
+Proved!
+206: Source(./p4-semantics.k) Location(442,6,451,31)
+277: Source(./p4-semantics.k) Location(1783,6,1784,31)
+394: Source(./p4-semantics.k) Location(475,6,486,13)
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $nilPacketList(.KList@BASIC-K)),, _==K_(_orBool_(_andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1")))),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1"))))),, Bool@BOOL-SYNTAX(#"true")))
+  implies 
+	_andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(Int@INT-SYNTAX(#"0"),, #packetListSize(_)(_1560:PacketList@CONFIGURATION)),, #packetListSize(_)(_1560:PacketList@CONFIGURATION)))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _1559 () Int)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (or (and (= _1559 1) (= (smt_on_port _1560 0) (+ (smt_on_port _1560 1) 1))) (and (= _1559 0) (= (smt_on_port _1560 0) (smt_on_port _1560 1)))) true)) (not (and (= (<= (int_abs (- (smt_on_port _1560 0) (smt_on_port _1560 1))) 1) true) (= (+ 0 (smt_packetlist_len _1560)) (smt_packetlist_len _1560))))))
+Proved!
+233: Source(./p4-semantics.k) Location(734,6,738,21)
+347: Source(./p4-semantics.k) Location(502,6,504,65)
+368: Source(./p4-semantics.k) Location(518,6,520,34)
+128: Source(./p4-semantics.k) Location(511,6,511,73)
+351: Source(./p4-semantics.k) Location(514,6,514,34)
+435: Source(./p4-semantics.k) Location(523,6,524,87)
+163: Source(./p4-semantics.k) Location(831,6,832,42)
+344: Source(./p4-semantics.k) Location(834,6,834,34)
+74: Source(./p4-semantics.k) Location(973,6,977,21)
+149: Source(./p4-semantics.k) Location(913,6,913,61)
+194: Source(./p4-semantics.k) Location(922,6,926,15)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+78: Source(./p4-semantics.k) Location(1039,6,1040,189)
+151: null null
+483: Source(./p4-semantics.k) Location(1046,6,1047,60)
+490: null null
+92: null null
+139: Source(./p4-semantics.k) Location(1066,6,1066,66)
+383: null null
+337: Source(./p4-semantics.k) Location(1706,6,1706,48)
+427: null null
+182: Source(./p4-semantics.k) Location(1689,6,1690,78)
+331: null null
+320: Source(./p4-semantics.k) Location(1707,6,1710,19)
+124: null null
+491: Source(./p4-semantics.k) Location(1070,6,1070,41)
+38: null null
+10: Source(./p4-semantics.k) Location(1050,6,1050,45)
+384: Source(./p4-semantics.k) Location(988,6,988,49)
+104: null null
+272: null null
+166: Source(./p4-semantics.k) Location(1045,6,1045,43)
+136: null null
+107: Source(./p4-semantics.k) Location(1733,6,1733,42)
+201: null null
+466: Source(./p4-semantics.k) Location(1646,6,1646,45)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+116: Source(./p4-semantics.k) Location(1084,6,1087,32)
+486: Source(./p4-semantics.k) Location(1466,6,1466,82)
+98: Source(./p4-semantics.k) Location(1166,6,1170,16)
+441: Source(./p4-semantics.k) Location(1181,6,1182,67)
+215: Source(./p4-semantics.k) Location(1174,6,1174,41)
+55: Source(./p4-semantics.k) Location(1187,6,1187,61)
+362: Source(./p4-semantics.k) Location(1191,6,1191,78)
+452: null null
+509: Source(./p4-semantics.k) Location(1143,6,1143,95)
+468: Source(./p4-semantics.k) Location(1158,6,1159,78)
+24: Source(./p4-semantics.k) Location(1144,6,1144,88)
+120: Source(./p4-semantics.k) Location(1753,6,1753,55)
+130: Source(./p4-semantics.k) Location(1145,6,1145,86)
+199: Source(./p4-semantics.k) Location(1142,6,1142,45)
+426: null null
+356: Source(./p4-semantics.k) Location(1431,6,1432,106)
+332: Source(./p4-semantics.k) Location(1443,6,1450,110)
+56: Source(./p4-semantics.k) Location(1433,6,1433,105)
+373: null null
+506: Source(./p4-semantics.k) Location(1125,6,1126,113)
+225: null null
+498: Source(./p4-semantics.k) Location(722,6,722,90)
+77: null null
+182: Source(./p4-semantics.k) Location(1689,6,1690,78)
+404: null null
+208: Source(./p4-semantics.k) Location(723,6,731,21)
+93: null null
+178: Source(./p4-semantics.k) Location(754,6,755,70)
+167: Source(./p4-semantics.k) Location(763,6,764,22)
+299: null null
+233: Source(./p4-semantics.k) Location(734,6,738,21)
+290: Source(./p4-semantics.k) Location(1188,6,1188,61)
+88: Source(./p4-semantics.k) Location(1183,6,1184,66)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+46: Source(./p4-semantics.k) Location(932,6,932,46)
+149: Source(./p4-semantics.k) Location(913,6,913,61)
+194: Source(./p4-semantics.k) Location(922,6,926,15)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+78: Source(./p4-semantics.k) Location(1039,6,1040,189)
+151: null null
+483: Source(./p4-semantics.k) Location(1046,6,1047,60)
+490: null null
+92: null null
+91: Source(./p4-semantics.k) Location(1062,6,1062,121)
+410: Source(./p4-semantics.k) Location(1665,6,1665,63)
+113: null null
+182: Source(./p4-semantics.k) Location(1689,6,1690,78)
+307: null null
+144: Source(./p4-semantics.k) Location(1666,6,1669,19)
+38: null null
+10: Source(./p4-semantics.k) Location(1050,6,1050,45)
+384: Source(./p4-semantics.k) Location(988,6,988,49)
+104: null null
+272: null null
+166: Source(./p4-semantics.k) Location(1045,6,1045,43)
+136: null null
+107: Source(./p4-semantics.k) Location(1733,6,1733,42)
+201: null null
+173: Source(./p4-semantics.k) Location(1647,6,1647,45)
+466: Source(./p4-semantics.k) Location(1646,6,1646,45)
+78: Source(./p4-semantics.k) Location(1039,6,1040,189)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+151: null null
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+483: Source(./p4-semantics.k) Location(1046,6,1047,60)
+116: Source(./p4-semantics.k) Location(1084,6,1087,32)
+490: null null
+486: Source(./p4-semantics.k) Location(1466,6,1466,82)
+92: null null
+98: Source(./p4-semantics.k) Location(1166,6,1170,16)
+91: Source(./p4-semantics.k) Location(1062,6,1062,121)
+441: Source(./p4-semantics.k) Location(1181,6,1182,67)
+410: Source(./p4-semantics.k) Location(1665,6,1665,63)
+127: Source(./p4-semantics.k) Location(1175,6,1176,70)
+113: null null
+127: Source(./p4-semantics.k) Location(1175,6,1176,70)
+182: Source(./p4-semantics.k) Location(1689,6,1690,78)
+215: Source(./p4-semantics.k) Location(1174,6,1174,41)
+307: null null
+55: Source(./p4-semantics.k) Location(1187,6,1187,61)
+144: Source(./p4-semantics.k) Location(1666,6,1669,19)
+362: Source(./p4-semantics.k) Location(1191,6,1191,78)
+38: null null
+452: null null
+10: Source(./p4-semantics.k) Location(1050,6,1050,45)
+509: Source(./p4-semantics.k) Location(1143,6,1143,95)
+384: Source(./p4-semantics.k) Location(988,6,988,49)
+446: Source(./p4-semantics.k) Location(1153,6,1154,69)
+104: null null
+199: Source(./p4-semantics.k) Location(1142,6,1142,45)
+272: null null
+426: null null
+166: Source(./p4-semantics.k) Location(1045,6,1045,43)
+119: Source(./p4-semantics.k) Location(1339,6,1341,42)
+136: null null
+498: Source(./p4-semantics.k) Location(722,6,722,90)
+107: Source(./p4-semantics.k) Location(1733,6,1733,42)
+77: null null
+201: null null
+182: Source(./p4-semantics.k) Location(1689,6,1690,78)
+466: Source(./p4-semantics.k) Location(1646,6,1646,45)
+404: null null
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+208: Source(./p4-semantics.k) Location(723,6,731,21)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+93: null null
+116: Source(./p4-semantics.k) Location(1084,6,1087,32)
+178: Source(./p4-semantics.k) Location(754,6,755,70)
+486: Source(./p4-semantics.k) Location(1466,6,1466,82)
+167: Source(./p4-semantics.k) Location(763,6,764,22)
+98: Source(./p4-semantics.k) Location(1166,6,1170,16)
+299: null null
+441: Source(./p4-semantics.k) Location(1181,6,1182,67)
+233: Source(./p4-semantics.k) Location(734,6,738,21)
+127: Source(./p4-semantics.k) Location(1175,6,1176,70)
+55: Source(./p4-semantics.k) Location(1187,6,1187,61)
+127: Source(./p4-semantics.k) Location(1175,6,1176,70)
+362: Source(./p4-semantics.k) Location(1191,6,1191,78)
+215: Source(./p4-semantics.k) Location(1174,6,1174,41)
+452: null null
+55: Source(./p4-semantics.k) Location(1187,6,1187,61)
+468: Source(./p4-semantics.k) Location(1158,6,1159,78)
+362: Source(./p4-semantics.k) Location(1191,6,1191,78)
+24: Source(./p4-semantics.k) Location(1144,6,1144,88)
+452: null null
+120: Source(./p4-semantics.k) Location(1753,6,1753,55)
+509: Source(./p4-semantics.k) Location(1143,6,1143,95)
+130: Source(./p4-semantics.k) Location(1145,6,1145,86)
+446: Source(./p4-semantics.k) Location(1153,6,1154,69)
+446: Source(./p4-semantics.k) Location(1153,6,1154,69)
+199: Source(./p4-semantics.k) Location(1142,6,1142,45)
+199: Source(./p4-semantics.k) Location(1142,6,1142,45)
+426: null null
+426: null null
+119: Source(./p4-semantics.k) Location(1339,6,1341,42)
+269: Source(./p4-semantics.k) Location(1438,6,1439,106)
+498: Source(./p4-semantics.k) Location(722,6,722,90)
+332: Source(./p4-semantics.k) Location(1443,6,1450,110)
+77: null null
+339: Source(./p4-semantics.k) Location(1440,6,1440,81)
+182: Source(./p4-semantics.k) Location(1689,6,1690,78)
+61: Source(./p4-semantics.k) Location(1117,6,1118,126)
+404: null null
+443: null null
+208: Source(./p4-semantics.k) Location(723,6,731,21)
+361: Source(./p4-semantics.k) Location(760,6,760,123)
+93: null null
+167: Source(./p4-semantics.k) Location(763,6,764,22)
+178: Source(./p4-semantics.k) Location(754,6,755,70)
+315: null null
+167: Source(./p4-semantics.k) Location(763,6,764,22)
+293: Source(./p4-semantics.k) Location(1121,6,1122,109)
+299: null null
+290: Source(./p4-semantics.k) Location(1188,6,1188,61)
+233: Source(./p4-semantics.k) Location(734,6,738,21)
+88: Source(./p4-semantics.k) Location(1183,6,1184,66)
+55: Source(./p4-semantics.k) Location(1187,6,1187,61)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+362: Source(./p4-semantics.k) Location(1191,6,1191,78)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+452: null null
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+468: Source(./p4-semantics.k) Location(1158,6,1159,78)
+46: Source(./p4-semantics.k) Location(932,6,932,46)
+24: Source(./p4-semantics.k) Location(1144,6,1144,88)
+357: Source(./p4-semantics.k) Location(912,6,912,61)
+120: Source(./p4-semantics.k) Location(1753,6,1753,55)
+217: Source(./p4-semantics.k) Location(1488,6,1503,24)
+130: Source(./p4-semantics.k) Location(1145,6,1145,86)
+151: null null
+446: Source(./p4-semantics.k) Location(1153,6,1154,69)
+274: Source(./p4-semantics.k) Location(1506,6,1507,147)
+199: Source(./p4-semantics.k) Location(1142,6,1142,45)
+201: null null
+426: null null
+173: Source(./p4-semantics.k) Location(1647,6,1647,45)
+269: Source(./p4-semantics.k) Location(1438,6,1439,106)
+173: Source(./p4-semantics.k) Location(1647,6,1647,45)
+332: Source(./p4-semantics.k) Location(1443,6,1450,110)
+282: Source(./p4-semantics.k) Location(1540,6,1540,40)
+339: Source(./p4-semantics.k) Location(1440,6,1440,81)
+237: Source(./p4-semantics.k) Location(1510,6,1514,34)
+301: Source(./p4-semantics.k) Location(1515,6,1518,35)
+61: Source(./p4-semantics.k) Location(1117,6,1118,126)
+210: Source(./p4-semantics.k) Location(456,6,466,19)
+210: Source(./p4-semantics.k) Location(456,6,466,19)
+443: null null
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_8515:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_8515:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1")))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _8515 () IntSeq)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (< 0 (smt_seq_len _8515)) true) (= (smt_on_port _1560 0) (smt_on_port _1560 1))) (not (and (= (+ 1 (smt_on_port _1560 0)) (+ (smt_on_port _1560 1) 1))))))
+Proved!
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_8546:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_8546:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1")))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _8546 () IntSeq)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (>= 0 (smt_seq_len _8546)) true) (= (smt_on_port _1560 0) (smt_on_port _1560 1))) (not (and (= (+ 1 (smt_on_port _1560 0)) (+ (smt_on_port _1560 1) 1))))))
+Proved!
+361: Source(./p4-semantics.k) Location(760,6,760,123)
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_8515:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_8515:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_8689:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_8689:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(#packetListSize(_)(_1649:PacketList@CONFIGURATION),, _+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1560:PacketList@CONFIGURATION))),, #packetListSize(_)(_8689:PacketList@CONFIGURATION))))))))
+  implies 
+	_andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_8689:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_8689:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(_+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1649:PacketList@CONFIGURATION)),, #packetListSize(_)(_1560:PacketList@CONFIGURATION)),, #packetListSize(_)(_8689:PacketList@CONFIGURATION)))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _8689 () PacketList)
+(declare-fun _1649 () PacketList)
+(declare-fun _8515 () IntSeq)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (< 0 (smt_seq_len _8515)) true) (= (<= (int_abs (- (smt_on_port _8689 0) (smt_on_port _8689 1))) 1) true) (= (+ 1 (smt_on_port _1560 0)) (+ (smt_on_port _1560 1) 1)) (= (smt_on_port _1560 0) (smt_on_port _1560 1)) (= (+ (smt_packetlist_len _1649) (+ 1 (smt_packetlist_len _1560))) (smt_packetlist_len _8689))) (not (and (= (+ (+ 1 (smt_packetlist_len _1649)) (smt_packetlist_len _1560)) (smt_packetlist_len _8689))))))
+Proved!
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_8546:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_8546:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_8719:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_8719:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(#packetListSize(_)(_1649:PacketList@CONFIGURATION),, _+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1560:PacketList@CONFIGURATION))),, #packetListSize(_)(_8719:PacketList@CONFIGURATION))))))))
+  implies 
+	_andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_8719:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_8719:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(_+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1649:PacketList@CONFIGURATION)),, #packetListSize(_)(_1560:PacketList@CONFIGURATION)),, #packetListSize(_)(_8719:PacketList@CONFIGURATION)))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _8719 () PacketList)
+(declare-fun _1649 () PacketList)
+(declare-fun _8546 () IntSeq)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (<= (int_abs (- (smt_on_port _8719 0) (smt_on_port _8719 1))) 1) true) (= (+ (smt_packetlist_len _1649) (+ 1 (smt_packetlist_len _1560))) (smt_packetlist_len _8719)) (= (>= 0 (smt_seq_len _8546)) true) (= (+ 1 (smt_on_port _1560 0)) (+ (smt_on_port _1560 1) 1)) (= (smt_on_port _1560 0) (smt_on_port _1560 1))) (not (and (= (+ (+ 1 (smt_packetlist_len _1649)) (smt_packetlist_len _1560)) (smt_packetlist_len _8719))))))
+Proved!
+167: Source(./p4-semantics.k) Location(763,6,764,22)
+315: null null
+293: Source(./p4-semantics.k) Location(1121,6,1122,109)
+290: Source(./p4-semantics.k) Location(1188,6,1188,61)
+88: Source(./p4-semantics.k) Location(1183,6,1184,66)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+75: Source(./p4-semantics.k) Location(1074,6,1075,39)
+46: Source(./p4-semantics.k) Location(932,6,932,46)
+357: Source(./p4-semantics.k) Location(912,6,912,61)
+217: Source(./p4-semantics.k) Location(1488,6,1503,24)
+151: null null
+274: Source(./p4-semantics.k) Location(1506,6,1507,147)
+201: null null
+173: Source(./p4-semantics.k) Location(1647,6,1647,45)
+173: Source(./p4-semantics.k) Location(1647,6,1647,45)
+282: Source(./p4-semantics.k) Location(1540,6,1540,40)
+237: Source(./p4-semantics.k) Location(1510,6,1514,34)
+301: Source(./p4-semantics.k) Location(1515,6,1518,35)
+210: Source(./p4-semantics.k) Location(456,6,466,19)
+210: Source(./p4-semantics.k) Location(456,6,466,19)
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_9317:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_9317:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1"))))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _9317 () IntSeq)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (smt_on_port _1560 0) (+ (smt_on_port _1560 1) 1)) (= (< 0 (smt_seq_len _9317)) true)) (not (and (= (smt_on_port _1560 0) (+ 1 (smt_on_port _1560 1)))))))
+Proved!
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_9348:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_9348:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1"))))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _9348 () IntSeq)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (>= 0 (smt_seq_len _9348)) true) (= (smt_on_port _1560 0) (+ (smt_on_port _1560 1) 1))) (not (and (= (smt_on_port _1560 0) (+ 1 (smt_on_port _1560 1)))))))
+Proved!
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_9317:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_9317:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, _andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_9426:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_9426:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(#packetListSize(_)(_1649:PacketList@CONFIGURATION),, _+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1560:PacketList@CONFIGURATION))),, #packetListSize(_)(_9426:PacketList@CONFIGURATION))))))))
+  implies 
+	_andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_9426:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_9426:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(_+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1649:PacketList@CONFIGURATION)),, #packetListSize(_)(_1560:PacketList@CONFIGURATION)),, #packetListSize(_)(_9426:PacketList@CONFIGURATION)))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _9426 () PacketList)
+(declare-fun _1649 () PacketList)
+(declare-fun _9317 () IntSeq)
+(declare-fun _1560 () PacketList)
+(assert (and (and (= (smt_on_port _1560 0) (+ (smt_on_port _1560 1) 1)) (= (< 0 (smt_seq_len _9317)) true) (= (+ (smt_packetlist_len _1649) (+ 1 (smt_packetlist_len _1560))) (smt_packetlist_len _9426)) (= (<= (int_abs (- (smt_on_port _9426 0) (smt_on_port _9426 1))) 1) true) (= (smt_on_port _1560 0) (+ 1 (smt_on_port _1560 1)))) (not (and (= (+ (+ 1 (smt_packetlist_len _1649)) (smt_packetlist_len _1560)) (smt_packetlist_len _9426))))))
+Proved!
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"ingress")
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in .Set
+warning: builtinset match not supported in Id@ID(#"start")
+warning: builtinset match not supported in .Set
+Attempting to prove: 
+	_andBool_(_==K_(_1558:PacketList@CONFIGURATION,, $consPacketList(_,_)($packet(_,_)(_9348:List@LIST,, _1645:Int@INT-SYNTAX),, _1649:PacketList@CONFIGURATION)),, _andBool_(_==K_(_1559:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_9348:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(#onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_1560:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, _andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_9456:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_9456:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(#packetListSize(_)(_1649:PacketList@CONFIGURATION),, _+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1560:PacketList@CONFIGURATION))),, #packetListSize(_)(_9456:PacketList@CONFIGURATION))))))))
+  implies 
+	_andBool_(_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_9456:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_9456:PacketList@CONFIGURATION,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")),, _==K_(_+Int_(_+Int_(Int@INT-SYNTAX(#"1"),, #packetListSize(_)(_1649:PacketList@CONFIGURATION)),, #packetListSize(_)(_1560:PacketList@CONFIGURATION)),, #packetListSize(_)(_9456:PacketList@CONFIGURATION)))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _9348 () IntSeq)
+(declare-fun _1649 () PacketList)
+(declare-fun _1560 () PacketList)
+(declare-fun _9456 () PacketList)
+(assert (and (and (= (>= 0 (smt_seq_len _9348)) true) (= (smt_on_port _1560 0) (+ (smt_on_port _1560 1) 1)) (= (<= (int_abs (- (smt_on_port _9456 0) (smt_on_port _9456 1))) 1) true) (= (smt_on_port _1560 0) (+ 1 (smt_on_port _1560 1))) (= (+ (smt_packetlist_len _1649) (+ 1 (smt_packetlist_len _1560))) (smt_packetlist_len _9456))) (not (and (= (+ (+ 1 (smt_packetlist_len _1649)) (smt_packetlist_len _1560)) (smt_packetlist_len _9456))))))
+Proved!
+true

@@ -1,0 +1,116 @@
+6: Source(./lang.k) Location(34,6,34,27)
+3: Source(./lang.k) Location(37,6,38,31)
+3: Source(./lang.k) Location(37,6,38,31)
+5: Source(./lang.k) Location(40,6,42,41)
+Attempting to prove: 
+	_andBool_(_==K_(_138:PacketList@LANG,, $nilPacketList(.KList@BASIC-K)),, _==K_(_orBool_(_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, _andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))))),, Bool@BOOL-SYNTAX(#"true")))
+  implies 
+	_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true"))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _131 () PacketList)
+(declare-fun _130 () Int)
+(assert (and (and (= (or (and (= _130 1) (= (smt_on_port _131 0) (smt_on_port _131 1))) (and (= _130 0) (= (smt_on_port _131 0) (+ (smt_on_port _131 1) 1)))) true)) (not (and (= (<= (int_abs (- (smt_on_port _131 0) (smt_on_port _131 1))) 1) true)))))
+Proved!
+4: Source(./lang.k) Location(47,6,48,25)
+8: Source(./lang.k) Location(45,6,46,25)
+1: Source(./lang.k) Location(54,6,58,34)
+7: Source(./lang.k) Location(59,6,62,35)
+1: Source(./lang.k) Location(54,6,58,34)
+7: Source(./lang.k) Location(59,6,62,35)
+2: Source(./lang.k) Location(65,6,68,24)
+2: Source(./lang.k) Location(65,6,68,24)
+2: Source(./lang.k) Location(65,6,68,24)
+2: Source(./lang.k) Location(65,6,68,24)
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1")))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _131 () PacketList)
+(declare-fun _158 () IntSeq)
+(assert (and (and (= (< 0 (smt_seq_len _158)) true) (= (smt_on_port _131 0) (smt_on_port _131 1))) (not (and (= (+ 1 (smt_on_port _131 0)) (+ (smt_on_port _131 1) 1))))))
+Proved!
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1")))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _131 () PacketList)
+(declare-fun _158 () IntSeq)
+(assert (and (and (= (smt_on_port _131 0) (smt_on_port _131 1)) (= (>= 0 (smt_seq_len _158)) true)) (not (and (= (+ 1 (smt_on_port _131 0)) (+ (smt_on_port _131 1) 1))))))
+Proved!
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1"))))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _131 () PacketList)
+(declare-fun _158 () IntSeq)
+(assert (and (and (= (< 0 (smt_seq_len _158)) true) (= (smt_on_port _131 0) (+ (smt_on_port _131 1) 1))) (not (and (= (smt_on_port _131 0) (+ 1 (smt_on_port _131 1)))))))
+Proved!
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))))))
+  implies 
+	_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1"))))
+(declare-sort Packet)
+(declare-sort PacketList)
+(declare-fun cons_packet_list (Packet PacketList) PacketList)
+(declare-fun nil_packst_list () PacketList)
+(declare-fun smt_packetlist_len (PacketList) Int)
+(declare-fun smt_on_port (PacketList Int) Int)
+(declare-fun _131 () PacketList)
+(declare-fun _158 () IntSeq)
+(assert (and (and (= (smt_on_port _131 0) (+ (smt_on_port _131 1) 1)) (= (>= 0 (smt_seq_len _158)) true)) (not (and (= (smt_on_port _131 0) (+ 1 (smt_on_port _131 1)))))))
+Proved!
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_229:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_229:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")))))))
+  implies 
+	_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_229:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_229:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true"))
+Implication proved by simplification
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"1")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(_+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0"))),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_238:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_238:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")))))))
+  implies 
+	_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_238:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_238:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true"))
+Implication proved by simplification
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_<Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, _==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_247:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_247:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")))))))
+  implies 
+	_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_247:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_247:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true"))
+Implication proved by simplification
+Attempting to prove: 
+	_andBool_(_==K_(_130:Int@INT-SYNTAX,, Int@INT-SYNTAX(#"0")),, _andBool_(_==K_(_138:PacketList@LANG,, $consPacketList(_,_)($packet(_,_)(_158:List@LIST,, _151:Int@INT-SYNTAX),, _152:PacketList@LANG)),, _andBool_(_==K_(_>=Int_(Int@INT-SYNTAX(#"0"),, sizeList(_158:List@LIST)),, Bool@BOOL-SYNTAX(#"true")),, _andBool_(_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")),, Int@INT-SYNTAX(#"1"))),, _andBool_(_==K_(#onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, _+Int_(Int@INT-SYNTAX(#"1"),, #onPort(_,_)(_131:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, _==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_256:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_256:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true")))))))
+  implies 
+	_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_256:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_256:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true"))
+Implication proved by simplification
+6: Source(./lang.k) Location(34,6,34,27)
+Attempting to prove: 
+	Bool@BOOL-SYNTAX(#"true")
+  implies 
+	Bool@BOOL-SYNTAX(#"true")
+Implication proved by simplification
+Attempting to prove: 
+	_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_272:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_272:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true"))
+  implies 
+	_==K_(_<=Int_(absInt(_-Int_(#onPort(_,_)(_272:PacketList@LANG,, Int@INT-SYNTAX(#"0")),, #onPort(_,_)(_272:PacketList@LANG,, Int@INT-SYNTAX(#"1")))),, Int@INT-SYNTAX(#"1")),, Bool@BOOL-SYNTAX(#"true"))
+Implication proved by simplification
+true
