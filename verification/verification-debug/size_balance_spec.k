@@ -21,7 +21,7 @@ ensures         (absInt(#onPort(?O2,0) -Int #onPort(?O2,1)) <=Int 1)
 
 
 
-rule [loop-inv]:
+rule [spec]:
 <T>
     <k> @start => @end </k>
     <index> 0 </index>
