@@ -73,4 +73,9 @@ rule #onPort($nilPacketList,_:Int) => 0
 rule #onPort($consPacketList($packet(_,P:Int),L:PacketList), P) => 1 +Int #onPort(L, P)
 rule #onPort($consPacketList($packet(_,P1:Int),L:PacketList), P2:Int) => #onPort(L, P2) when P1 =/=Int P2
 
+syntax Int ::= "#packetListSize" "(" PacketList ")" [function, smtlib(smt_packetlist_len)]
+rule #packetListSize($nilPacketList) => 0
+rule #packetListSize($consPacketList($packet(_,_),L:PacketList)) => 1 +Int #packetListSize(L)
+
+
 endmodule
