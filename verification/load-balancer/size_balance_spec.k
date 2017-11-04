@@ -110,13 +110,14 @@ rule [loop-inv]:
         <pctx> <index> 0 => _ </index> <lastExt> _ => _ </lastExt> <varWidth> _ => _ </varWidth> <packetSize> _ => _ </packetSize> </pctx>
     </parser>
     <buffer>
-        <in>  _:PacketList => $nilPacketList  </in>
+        <in>  I:PacketList => $nilPacketList  </in>
         <out> O1:PacketList => ?O2:PacketList  </out>
     </buffer>
 </T>
 requires        (R ==Int 1 andBool (#onPort(O1, 0) ==Int #onPort(O1,1) +Int 1))
          orBool (R ==Int 0 andBool (#onPort(O1,0) ==Int (#onPort(O1,1))))
-ensures absInt(#onPort(?O2,0) -Int #onPort(?O2,1)) <=Int 1
+ensures         (absInt(#onPort(?O2,0) -Int #onPort(?O2,1)) <=Int 1)
+         andBool(#packetListSize(I) +Int #packetListSize(O1) ==Int #packetListSize(?O2))
 
 
 
@@ -229,10 +230,11 @@ rule [spec]:
         <pctx> <index> 0 => _ </index> <lastExt> _ => _ </lastExt> <varWidth> _ => _ </varWidth> <packetSize> _ => _ </packetSize> </pctx>
     </parser>
     <buffer>
-        <in>  _:PacketList => $nilPacketList  </in>
+        <in>  I:PacketList => $nilPacketList  </in>
         <out> $nilPacketList => ?O:PacketList  </out>
     </buffer>
 </T>
 ensures absInt(#onPort(?O,0) -Int #onPort(?O,1)) <=Int 1
+andBool (#packetListSize(I) ==Int #packetListSize(?O))
 
 endmodule
