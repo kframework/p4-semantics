@@ -57,6 +57,7 @@ module IMPP
   imports IMPP-SYNTAX
   imports COMMON
 
+
   syntax Id ::= "main" [token]
 
   configuration <L2>
@@ -65,7 +66,7 @@ module IMPP
                   <funs> .Map </funs>
                   <stack> .List </stack>
                   //API
-                  <in> $consPacketList($packet(ListItem(@val(1,0,false)) ListItem(@val(1,0,false)),10) , $nilPacketList) </in>
+                  <in> $nilPacketList </in>
                   <out> $nilPacketList </out>
                   <packet>  .List </packet>
                   <packetout> .List </packetout>
