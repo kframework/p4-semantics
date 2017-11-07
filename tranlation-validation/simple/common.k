@@ -3,7 +3,6 @@ module COMMON
     syntax Bool ::= vars(List)
     //========
 
-    syntax ActionName ::= Id
 
     syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
 
@@ -12,7 +11,7 @@ module COMMON
 
 
     //syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
-    syntax ActionCall ::= "@call" "(" ActionName "," ResolvedArgs /* ResolvedArgs */ ")"
+    syntax ActionCall ::= "@call" "(" Id "," ResolvedArgs /* ResolvedArgs */ ")"
     syntax ActionProfileEntryRef ::= "@apref" "(" Int ")"
     syntax ActionCallOrActionProfileRef ::= ActionCall | ActionProfileEntryRef
 
