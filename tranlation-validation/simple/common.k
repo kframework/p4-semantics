@@ -4,7 +4,7 @@ module COMMON
     //========
 
 
-    syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
+    syntax Val ::= "@val" "("Int","Int","Bool")" [smtlib(smt_val)] //int,width,signed
 
     syntax Vals ::= "@nil"
                     | "@cons" "(" Val "," Vals ")"
@@ -32,4 +32,7 @@ module COMMON
                            "$nilPacketList" [smtlib(nil_packst_list)]
                          | "$consPacketList" "(" Packet "," PacketList ")" [smtlib(cons_packet_list)]
 
+    syntax EntryList ::=
+                           "$nilEntryList" [smtlib(nil_entry_list)]
+                         | "$consEntryList" "(" Packet "," EntryList ")" [smtlib(cons_entry_list)]
 endmodule

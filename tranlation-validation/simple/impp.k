@@ -60,17 +60,21 @@ module IMPP
 
   syntax Id ::= "main" [token]
 
+  syntax Id ::= "b" [token]
+
   configuration <L2>
                   <k> $PGM:Pgm ~> main ( .Args ); </k>
                   <state> .Map </state>
                   <funs> .Map </funs>
                   <stack> .List </stack>
                   //API
-                  <in> $nilPacketList </in>
+                  <in> $consPacketList($packet(ListItem(@val(0,8,false)) ListItem(@val(0,8,false)), 30), $nilPacketList) </in>
+                  //<in> $nilPacketList </in>
                   <out> $nilPacketList </out>
                   <packet>  .List </packet>
                   <packetout> .List </packetout>
-                  <table> .List </table>
+                  <table> ListItem($rule(1,$ctr(ListItem(@val(0,8,false))), @call (b, $resolved(.List)))) </table>
+                  //<table> .List </table>
                   <crntE> .List </crntE>
                   <index> 0 </index>
                 </L2>
@@ -108,7 +112,7 @@ module IMPP
   rule I1 + I2 => I1 +Int I2
 // BExp
   rule I1 <= I2 => I1 <=Int I2
-  rule I1 == I2 => I1 == I2
+  rule I1 == I2 => I1 ==Int I2
   rule ! T => notBool T
   rule true && B => B
   rule false && _ => false
@@ -147,7 +151,7 @@ module IMPP
          <table> T </table>
          <packetout> _ => .List </packetout>
 
-    rule <k> #outputPacket (.IVals) => 0 ... </k>
+    rule <k> #output_packet (.IVals) => 0 ... </k>
          <packetout> P:List </packetout>
          <state> standard_metadata_egress_spec |-> I:Int _:Map </state>
          <out> L:PacketList => $consPacketList($packet(P,I), L) </out>
@@ -160,6 +164,7 @@ module IMPP
 
     rule <k> #get_next_packet (.IVals) => true ... </k>
          <in> $consPacketList($packet(P:List, _:Int), L:PacketList) => L </in>
+         <packet> _ => P </packet>
 
     rule <k> #get_next_packet (.IVals) => false ... </k>
          <in> $nilPacketList </in>
@@ -176,7 +181,7 @@ module IMPP
     rule <k> (.K =>L[I]) ~> #extract_next (W:Int,S:Bool, .IVals)  ... </k>
          <packet> L:List </packet>
          <index> I:Int => I +Int 1 </index>
-    rule <k> @val(V:Int,W,S) ~> #extract_next (W:Int,S:Bool, .IVals) => V ... </k>
+    rule <k> ListItem(@val(V:Int,W,S)) ~> #extract_next (W:Int,S:Bool, .IVals) => V ... </k>
 
 
     rule <k> #get_next_enrty (.IVals) => false ... </k>
@@ -192,8 +197,8 @@ module IMPP
          <crntE> ListItem($rule(_, $ctr(ListItem(@val(J:Int,_,_))), _)) _:List </crntE>
       when I =/=Int J
 
-    //rule <k> call_entry_action (.IVals) => A (#valList2IVals(L)) ... </k>
-    //     <crntE> ListItem($rule(_, _, @call(A:Id, $resolved (L:List) ))) _:List </crntE>
+    rule <k> #call_entry_action (.IVals) => A (#valList2IVals(L)) ... </k>
+         <crntE> ListItem($rule(_, _, @call(A:Id, $resolved (L:List) ))) _:List </crntE>
 
 
     syntax KResult ::= Val | Vals
