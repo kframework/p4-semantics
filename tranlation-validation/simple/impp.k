@@ -68,14 +68,16 @@ module IMPP
                   <funs> .Map </funs>
                   <stack> .List </stack>
                   //API
-                  <in> $consPacketList($packet(ListItem(@val(0,8,false)) ListItem(@val(0,8,false)), 30), $nilPacketList) </in>
+                  //<in> $consPacketList($packet(ListItem(@val(0,8,false)) ListItem(@val(0,8,false)), 30), $nilPacketList) </in>
+                  <in> $consPacketList($packet(@cons(@val(0,8,false) , @cons (@val(0,8,false) , @nil)), 30), $nilPacketList) </in>
                   //<in> $nilPacketList </in>
                   <out> $nilPacketList </out>
-                  <packet>  .List </packet>
-                  <packetout> .List </packetout>
-                  <table> ListItem($rule(1,$ctr(ListItem(@val(0,8,false))), @call (b, $resolved(.List)))) </table>
+                  <packet>  @nil </packet>
+                  <packetout> @nil </packetout>
+                  //<table> ListItem($rule(1,$ctr(ListItem(@val(0,8,false))), @call (b, $resolved(.List)))) </table>
                   //<table> .List </table>
-                  <crntE> .List </crntE>
+                  <table> $consEntryList($rule(1,$ctr(@cons(@val(0,8,false),  @nil)), @call(b, $resolved(@nil))), $nilEntryList) </table>
+                  <crntE> $nilEntryList </crntE>
                   <index> 0 </index>
                 </L2>
 
@@ -149,10 +151,10 @@ module IMPP
          <index> _ => 0 </index>
          <crntE> _ => T </crntE>
          <table> T </table>
-         <packetout> _ => .List </packetout>
+         <packetout> _ => @nil </packetout>
 
     rule <k> #output_packet (.IVals) => 0 ... </k>
-         <packetout> P:List </packetout>
+         <packetout> P:Vals </packetout>
          <state> standard_metadata_egress_spec |-> I:Int _:Map </state>
          <out> L:PacketList => $consPacketList($packet(P,I), L) </out>
          when I =/=Int -1
@@ -160,53 +162,51 @@ module IMPP
     rule <k> #drop (.IVals) => 0 ... </k>
 
     rule <k> #emit (V:Int ,W:Int, S:Bool , .IVals) => 0 ... </k>
-         <packetout> _:List (.List => ListItem(@val(V,W,S))) </packetout>
+         <packetout> L:Vals => @cons(@val(V,W,S),L) </packetout>
 
     rule <k> #get_next_packet (.IVals) => true ... </k>
-         <in> $consPacketList($packet(P:List, _:Int), L:PacketList) => L </in>
+         <in> $consPacketList($packet(P:Vals, _:Int), L:PacketList) => L </in>
          <packet> _ => P </packet>
 
     rule <k> #get_next_packet (.IVals) => false ... </k>
          <in> $nilPacketList </in>
 
-    rule <k> #has_next (_:Int , .IVals) => true ... </k>
-         <packet> L:List </packet>
-         <index> I:Int </index>
-         when I <Int sizeList(L)
     rule <k> #has_next (_:Int , .IVals) => false ... </k>
-         <packet> L:List </packet>
+         <packet> @nil </packet>
          <index> I:Int </index>
-         when I >=Int sizeList(L)
 
-    rule <k> (.K =>L[I]) ~> #extract_next (W:Int,S:Bool, .IVals)  ... </k>
-         <packet> L:List </packet>
+    rule <k> #has_next (_:Int , .IVals) => true ... </k>
+         <packet> @cons(_,_) </packet>
+         <index> I:Int </index>
+
+
+    rule <k> #extract_next (W:Int,S:Bool, .IVals) => V  ... </k>
+         <packet> @cons(@val(V:Int, W, S), Vs:Vals) => Vs </packet>
          <index> I:Int => I +Int 1 </index>
-    rule <k> ListItem(@val(V:Int,W,S)) ~> #extract_next (W:Int,S:Bool, .IVals) => V ... </k>
 
 
     rule <k> #get_next_enrty (.IVals) => false ... </k>
-         <crntE> .List </crntE>
+         <crntE> $nilEntryList </crntE>
     rule <k> #get_next_enrty (.IVals) => true ... </k>
-         <crntE> ListItem(_) _:List </crntE>
+         <crntE> $consEntryList(_,_) </crntE>
 
 
     rule <k> #entry_matches (I:Int , .IVals) => true ... </k>
-         <crntE> ListItem($rule(_, $ctr(ListItem(@val(I,_,_))), _)) _:List </crntE>
+         <crntE> $consEntryList($rule(_, $ctr(@cons(@val(I,_,_), @nil)), _), _) </crntE>
 
     rule <k> #entry_matches (I:Int , .IVals) => false ... </k>
-         <crntE> ListItem($rule(_, $ctr(ListItem(@val(J:Int,_,_))), _)) _:List </crntE>
+         <crntE> $consEntryList($rule(_, $ctr(@cons(@val(J:Int,_,_), @nil)), _), _) </crntE>
       when I =/=Int J
 
-    rule <k> #call_entry_action (.IVals) => A (#valList2IVals(L)) ... </k>
-         <crntE> ListItem($rule(_, _, @call(A:Id, $resolved (L:List) ))) _:List </crntE>
+    rule <k> #call_entry_action (.IVals) => A (#vals2IVals(L)) ... </k>
+         <crntE> $consEntryList($rule(_, _, @call(A:Id, $resolved (L:Vals) )), _) </crntE>
 
 
     syntax KResult ::= Val | Vals
 
-    syntax IVals ::= "#valList2IVals" "(" List ")" [function]
-    rule #valList2IVals(.List) => .IVals
-    rule #valList2IVals(ListItem(@val(I:Int,_,_)) L:List) => I , #valList2IVals(L)
-
+    syntax IVals ::= "#vals2IVals" "(" Vals ")" [function]
+    rule #vals2IVals(@nil) => .IVals
+    rule #vals2IVals(@cons(@val(I:Int,_,_), L:Vals)) => I , #vals2IVals(L)
 
 
     syntax Id ::= "standard_metadata_egress_spec" [token]
