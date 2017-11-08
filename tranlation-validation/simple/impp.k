@@ -49,6 +49,8 @@ module IMPP-SYNTAX
                 |"#get_next_enrty" [token]
                 |"#has_next" [token]
                 |"#extract_next" [token]
+                |"#has_default_action" [token]
+                |"#call_default_action" [token]
 
 
 endmodule
@@ -76,8 +78,10 @@ module IMPP
                   <packetout> @nil </packetout>
                   //<table> ListItem($rule(1,$ctr(ListItem(@val(0,8,false))), @call (b, $resolved(.List)))) </table>
                   //<table> .List </table>
-                  <table> $consEntryList($rule(1,$ctr(@cons(@val(0,8,false),  @nil)), @call(b, $resolved(@nil))), $nilEntryList) </table>
+                  <table> $consEntryList($rule(1,$ctr(@cons(@val(1,8,false),  @nil)), @call(b, $resolved(@nil))), $nilEntryList) </table>
                   <crntE> $nilEntryList </crntE>
+                  <ce> .K </ce>
+                  <default> $nothing </default>
                   <index> 0 </index>
                 </L2>
 
@@ -188,19 +192,31 @@ module IMPP
     rule <k> #get_next_enrty (.IVals) => false ... </k>
          <crntE> $nilEntryList </crntE>
     rule <k> #get_next_enrty (.IVals) => true ... </k>
-         <crntE> $consEntryList(_,_) </crntE>
+         <crntE> $consEntryList(R:Rule,L:EntryList) => L </crntE>
+         <ce> _ => R </ce>
 
 
     rule <k> #entry_matches (I:Int , .IVals) => true ... </k>
-         <crntE> $consEntryList($rule(_, $ctr(@cons(@val(I,_,_), @nil)), _), _) </crntE>
+         //<crntE> $consEntryList($rule(_, $ctr(@cons(@val(I,_,_), @nil)), _), _) </crntE>
+         <ce> $rule(_, $ctr(@cons(@val(I,_,_), @nil)), _) </ce>
 
     rule <k> #entry_matches (I:Int , .IVals) => false ... </k>
-         <crntE> $consEntryList($rule(_, $ctr(@cons(@val(J:Int,_,_), @nil)), _), _) </crntE>
+         //<crntE> $consEntryList($rule(_, $ctr(@cons(@val(J:Int,_,_), @nil)), _), _) </crntE>
+         <ce> $rule(_, $ctr(@cons(@val(J:Int,_,_), @nil)), _) </ce>
       when I =/=Int J
 
     rule <k> #call_entry_action (.IVals) => A (#vals2IVals(L)) ... </k>
-         <crntE> $consEntryList($rule(_, _, @call(A:Id, $resolved (L:Vals) )), _) </crntE>
+         //<crntE> $consEntryList($rule(_, _, @call(A:Id, $resolved (L:Vals) )), _) </crntE>
+         <ce> $rule(_, _, @call(A:Id, $resolved (L:Vals) )) </ce>
 
+    rule <k> #has_default_action (.IVals) => true ... </k>
+         <default> @call (_,_) </default>
+
+    rule <k> #has_default_action (.IVals) => false ... </k>
+         <default> $nothing </default>
+
+    rule <k> #call_default_action (.IVals) => A (#vals2IVals(L))  ... </k>
+         <default> @call(A:Id, $resolved (L:Vals)) </default>
 
     syntax KResult ::= Val | Vals
 
