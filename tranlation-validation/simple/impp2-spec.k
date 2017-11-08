@@ -9,7 +9,7 @@ syntax Id ::= "h_t" [token] | "h1_f1" [token] | "h1_f2" [token] | "h1_valid" [to
 //rule
 //<L2>
 //   <k>main ( .Args ) ;</k>
-//   <state>h1_f1 |-> 0 h1_f2 |-> 0 h1_valid |-> false standard_metadata_egress_spec |-> 0 </state>
+//   <state>h1_f1 |-> 0 h1_f2 |-> 0 h1_valid |-> false standard_metadata_egress_spec |-> 0</state>
 //   <funs>
 //      start |-> $fun ( .Params , { if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f1 = #extract_next ( 8 , ( false , .Args ) ) ; if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f2 = #extract_next ( 8 , ( false , .Args ) ) ; h1_valid = true ; return true ; } )
 //      apply_t |-> $fun ( .Params , { while ( #get_next_enrty ( .Args ) ) { if ( #entry_matches ( h1_f1 , .Args ) ) { #call_entry_action ( .Args ) ; return 0 ; } } } )
@@ -35,9 +35,9 @@ syntax Id ::= "h_t" [token] | "h1_f1" [token] | "h1_f2" [token] | "h1_valid" [to
 rule
 <L2>
    <k>main ( .Args ) ;</k>
-   <state>h1_f1 |-> 0 h1_f2 |-> 0 h1_valid |-> false standard_metadata_egress_spec |-> 0 </state>
+   <state>h1_f1 |-> 0 h1_f2 |-> 0 h1_valid |-> false standard_metadata_egress_spec |-> 0</state>
    <funs>
-      start |-> $fun ( .Params , { if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f1 = #extract_next ( 8 , ( false , .Args ) ) ; if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f2 = #extract_next ( 8 , ( false , .Args ) ) ; h1_valid = true ; return true ; } )
+      start |-> $fun ( .Params , { if ( ! ( #has_next ( 8 , .Args ) ) ) { h1_valid = ! (! h1_valid); return false ; } h1_f1 = #extract_next ( 8 , ( false , .Args ) ) ; if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f2 = #extract_next ( 8 , ( false , .Args ) ) ; h1_valid = true ; return true ; } )
       apply_t |-> $fun ( .Params , { while ( #get_next_enrty ( .Args ) ) { if ( #entry_matches ( h1_f1 , .Args ) ) { #call_entry_action ( .Args ) ; return 0 ; } } } )
       parse |-> $fun ( .Params , { return start ( .Args ) ; } )
       b |-> $fun ( .Params , { standard_metadata_egress_spec = 2 ; } )
@@ -65,7 +65,7 @@ rule
    <k> .K </k>
    <state>h1_f1 |-> _ h1_f2 |-> _ h1_valid |-> _ standard_metadata_egress_spec |-> _</state>
    <funs>
-      start |-> $fun ( .Params , { if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f1 = #extract_next ( 8 , ( false , .Args ) ) ; if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f2 = #extract_next ( 8 , ( false , .Args ) ) ; h1_valid = true ; return true ; } )
+      start |-> $fun ( .Params , { if ( ! ( #has_next ( 8 , .Args ) ) ) { h1_valid = ! (! h1_valid); return false ; } h1_f1 = #extract_next ( 8 , ( false , .Args ) ) ; if ( ! ( #has_next ( 8 , .Args ) ) ) { return false ; } h1_f2 = #extract_next ( 8 , ( false , .Args ) ) ; h1_valid = true ; return true ; } )
       apply_t |-> $fun ( .Params , { while ( #get_next_enrty ( .Args ) ) { if ( #entry_matches ( h1_f1 , .Args ) ) { #call_entry_action ( .Args ) ; return 0 ; } } } )
       parse |-> $fun ( .Params , { return start ( .Args ) ; } )
       b |-> $fun ( .Params , { standard_metadata_egress_spec = 2 ; } )
