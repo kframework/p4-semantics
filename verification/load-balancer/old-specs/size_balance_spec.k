@@ -114,11 +114,9 @@ rule [loop-inv]:
         <out> O1:PacketList => ?O2:PacketList  </out>
     </buffer>
 </T>
-requires        ((R ==Int 1 andBool (#onPort(O1, 0) ==Int #onPort(O1,1) +Int 1))
-         orBool (R ==Int 0 andBool (#onPort(O1,0) ==Int (#onPort(O1,1)))))
-         andBool (#onPort(O1,0) +Int #onPort(O1,1) ==Int #packetListSize(O1))
+requires        (R ==Int 1 andBool (#onPort(O1, 0) ==Int #onPort(O1,1) +Int 1))
+         orBool (R ==Int 0 andBool (#onPort(O1,0) ==Int (#onPort(O1,1))))
 ensures         (absInt(#onPort(?O2,0) -Int #onPort(?O2,1)) <=Int 1)
-         andBool (#onPort(?O2,0) +Int #onPort(?O2,1) ==Int #packetListSize(?O2))
          andBool(#packetListSize(I) +Int #packetListSize(O1) ==Int #packetListSize(?O2))
 
 
@@ -236,8 +234,7 @@ rule [spec]:
         <out> $nilPacketList => ?O:PacketList  </out>
     </buffer>
 </T>
-ensures (absInt(#onPort(?O,0) -Int #onPort(?O,1)) <=Int 1)
+ensures absInt(#onPort(?O,0) -Int #onPort(?O,1)) <=Int 1
 andBool (#packetListSize(I) ==Int #packetListSize(?O))
-andBool (#onPort(?O,0) +Int #onPort(?O,1) ==Int #packetListSize(?O))
 
 endmodule
