@@ -11,13 +11,10 @@ imports INITIALIZATION
 
 syntax Val ::= "%DROP_PORT" // [function]
 //rule %DROP_PORT => @val(0,32,false) [macro]
-
+syntax Int ::= "%SPECIAL_OPERATION_PORT"
 
 syntax Int ::= "#csum16" "(" Int "," Int "," Int ")"       [hook(CSUM.csum16),   function]
 
-//IMPORTANT: added only for stf tests
-rule <k> @txenPacket => @drop ... </k>
-     <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> @undef _:Map </fieldVals> ... </instance> ... </instances>
 
 //---------------- putting decralarions into configuration cells--------------------------------
 
@@ -99,7 +96,7 @@ rule <k> @processDec(metadata Type:HeaderTypeName Name:InstanceName { Asgn:Field
         </instance>
     ) ... </instances>
     <headers>  <header>  <name> Type </name>  <fields> Fields:FieldDecs </fields> ... </header> ... </headers>
-    <insts> (.List => ListItem(Name)) _:List </insts>
+
 
 rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... </k>
     <instances> (.Bag =>
@@ -107,7 +104,6 @@ rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName ; ) => . ... <
              <valid> false </valid> <metadata> false </metadata> <typeName> Type </typeName> <name> Name </name>  ...
         </instance>
     ) ... </instances>
-    <insts> (.List => ListItem(Name)) _:List </insts>
 rule <k> @processDec(header Type:HeaderTypeName Name:InstanceName [ Size:UnsignedValue ] ; ) => @createArrayElement(Type, Name, USgnVal2Int(Size)) ... </k> //TODO (minor) : Size should be ConstValue
      <arrays> (.Map => Name |-> $array(USgnVal2Int(Size), 0, -1)) M:Map </arrays>
 
@@ -280,7 +276,7 @@ rule <k> @addTableDirect(N:Id) => . ...</k>
 
 //action
 
-rule <k> @processDec(action Name:Id ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>
+rule <k> @processDec(action Name:ActionName ( Params:ParamList ) { Body:ActionStatements }  ) => . ... </k>
     <actions> (.Bag =>
           <action>
             <name> Name </name> <params> Params </params> <body> Body </body> ...
@@ -318,7 +314,7 @@ rule table N:TableName { A:TableActions O:TableOptionals } => table N { reads { 
 rule <k> @processDec(table Name:TableName { reads { FM:FieldMatchs }  Act:TableActions Opt:TableOptionals } ) => . ... </k>
          <tables>... (.Bag =>
                <table>
-                 <name> Name </name> <reads> FM </reads> <acts> Act </acts> <opts> Opt </opts>  ...
+                 <name> Name </name> <reads> FM </reads> <acts> Act </acts> <opts> Opt </opts> <rules> .List </rules> ...
                </table>
          ) ... </tables>
 
@@ -426,47 +422,16 @@ rule <k> @is_state_marked(P:ParserStateName) => P in S ... </k>
 //rule #in_set(X, SetItem(Y) Rest:Set) => #in_set(X, Rest) when X =/=K Y
 
 // -----------------------
-//rule <k> @fillInitInstances => .K ... </k>
-//     <instances> Init:Bag </instances>
-//     <initInstances> .K => Init </initInstances>
-//     <arrays> M:Map </arrays>
-//     <initArrays> _ => M </initArrays> //https://github.com/kframework/k/issues/2352
-rule <k> @fillInitInstances => @fillInit (S)  ... </k>
-     <insts> S:List </insts>
-     <initInstances> _ => .Bag </initInstances>
+rule <k> @fillInitInstances => .K ... </k>
+     <instances> Init:Bag </instances>
+     <initInstances> .K => Init </initInstances>
      <arrays> M:Map </arrays>
      <initArrays> _ => M </initArrays> //https://github.com/kframework/k/issues/2352
-
-syntax KItem ::= "@fillInit" "(" List ")"
-rule <k> @fillInit(.List) => .K ... </k>
-rule <k> @fillInit((ListItem(N:InstanceName) => .List) _:List) ... </k>
-     <instances>
-        <instance>
-         <valid> V:Bool </valid>
-         <metadata> M:Bool </metadata>
-         <typeName> TN:Id </typeName>
-         <name> N </name>
-         <fieldVals> Vs:Map </fieldVals>
-        </instance>
-        ...
-     </instances>
-     <initInstances>
-        (.Bag =>
-            <instance>
-                 <valid> V </valid>
-                 <metadata> M </metadata>
-                 <typeName> TN </typeName>
-                 <name> N </name>
-                 <fieldVals> Vs </fieldVals>
-            </instance>
-        )
-        ...
-     </initInstances>
 
 // --------------------init------------------------------------
 
 // moved to initialization.k
-rule  @exec => @fillInitInstances ~> @nextPacket
+rule  @exec => @nextPacket
 
 // ------------------------packet to/from buffer-----------------------------
 
@@ -475,19 +440,36 @@ rule <k> @nextPacket =>
            @resetPerPacketState
         ~> @writeField(standard_metadata, ingress_port, @val(Port,32,false))
         ~> @parse&ingress
+        ~> @ingressSpecialOperation
         ~> @egress
+        ~> @egressSpecialOperation
         ~> @txenPacket
         ~> @nextPacket
      ... </k>
-     <buffer> <in> $consPacketList($packet(P:Vals, Port:Int) , L:PacketList) => L </in> ... </buffer>
+     <buffer> <in> (ListItem($packet(P:PacketData, Port:Int)) => .List) _:List </in> ... </buffer>
      <packet> _ => P </packet>
+     <original> _=> P </original>
 
+rule <k> @nextPacket =>
+           @resetPerPacketState
+        ~> @processInitFromPacket (Init)
+        ~> @writeField(standard_metadata, ingress_port, @val(Port,32,false))
+        ~> @parse&ingress
+        ~> @ingressSpecialOperation
+        ~> @egress
+        ~> @egressSpecialOperation
+        ~> @txenPacket
+        ~> @nextPacket
+     ... </k>
+     <buffer> <in> (ListItem($packet(P:PacketData, Port:Int, Init:Map)) => .List) _:List </in> ... </buffer>
+     <packet> _ => P </packet>
+     <original> _=> P </original>
 
 syntax KItem ::= "@txenPacket"
 //syntax Id ::= "egress_spec" [token]
 rule <k> @txenPacket => . ... </k>
-     <packetout> P:Vals => @nil </packetout>
-     <buffer> <out>   L:PacketList => $consPacketList($packet(P,Port) , L)  </out> ... </buffer>
+     <packetout> P:List => .List </packetout>
+     <buffer> <out>   _:List (.List => ListItem($packet(P,Port))) </out> ... </buffer>
       <instances>
           <instance>
               <name> standard_metadata </name>
@@ -500,54 +482,24 @@ rule <k> @txenPacket => . ... </k>
 
 syntax KItem ::= "@drop"
 rule <k> @drop ~> _:K => @nextPacket </k>
-     <packetout> P:Vals => @nil </packetout>
+     <packetout> P:List => .List </packetout>
 //todo: unify @drop and parser_drop
 
 syntax KItem ::= "@resetPerPacketState"
-//rule <k> @resetPerPacketState => .K ... </k>
-     //<instances> _:Bag => Init </instances>
-     //<initInstances> Init:Bag </initInstances>
+rule <k> @resetPerPacketState => .K ... </k>
+     <instances> _:Bag => Init </instances>
+     <initInstances> Init:Bag </initInstances>
      //<arrays> A:Map => #resetArrays(A,.Map) </arrays>
-rule <k> (@resetPerPacketState) => (@resetPerPacketState(S)) ... </k>
-     <instances> _ => .Bag </instances>
-     <insts> S:List </insts>
      <arrays> _ => M  </arrays>
      <initArrays> M:Map </initArrays>
-     <packetout> _ => @nil </packetout>
      <pctx>
         <index> _ => 0 </index>
         <lastExt> _ => .K </lastExt>
         <varWidth> _ => .K </varWidth>
         <packetSize> _ => .K </packetSize>
      </pctx>
-
-syntax KItem ::= "@resetPerPacketState" "(" List ")"
-rule <k> @resetPerPacketState(.List) => .K ... </k>
-rule <k> @resetPerPacketState((ListItem(N:InstanceName) => .List) _:List) ... </k>
-     <initInstances>
-        <instance>
-         <valid> V:Bool </valid>
-         <metadata> M:Bool </metadata>
-         <typeName> TN:Id </typeName>
-         <name> N </name>
-         <fieldVals> Vs:Map </fieldVals>
-        </instance>
-        ...
-     </initInstances>
-     <instances>
-        (.Bag =>
-            <instance>
-                 <valid> V </valid>
-                 <metadata> M </metadata>
-                 <typeName> TN </typeName>
-                 <name> N </name>
-                 <fieldVals> Vs </fieldVals>
-            </instance>
-        )
-        ...
-     </instances>
-
-
+     <crnt> _ => .Map </crnt>
+     <packetInit> _ => .Map </packetInit>
 
 //https://github.com/kframework/k/issues/2352
 //syntax KItem ::= "@resetArrays" "(" Set ")"
@@ -561,16 +513,23 @@ rule <k> @resetPerPacketState((ListItem(N:InstanceName) => .List) _:List) ... </
 //rule #resetArrays((N:InstanceName |-> $array(S:Int,_,_)) R:Map, M:Map ) => #resetArrays(R, (N |-> $array(S,0,-1)) M)
 
 
+syntax KItem ::= "@processInitFromPacket" "(" Map ")"
+rule @processInitFromPacket(.Map) => .
+rule @processInitFromPacket ((F:FieldRef |-> V:Val) Rest:Map) => @writeFieldAdjusted(F,V) ~>  @processInitFromPacket(Rest)
+
+
+
+
 //--------------------parsing------------------------------
 syntax KItem ::= "@parse&ingress" | "@egress"
 rule <k> @parse&ingress => return start;  ... </k>
-     <packet> P </packet>
+     <packet> P:PacketData </packet>
      <packetSize> _ => @calculatePacketSize(P , 0) </packetSize>
 
-syntax Val ::= "@calculatePacketSize" "(" Vals "," Int ")" [function]
-rule @calculatePacketSize(@nil, I:Int) => @val(I /Int 8, 0, false)
-rule @calculatePacketSize(@cons(@val(_,W:Int,_), Rest), I:Int) => @calculatePacketSize(Rest, I +Int W)
-//rule @calculatePacketSize(S:String, 0) => @calculatePacketSize(.List, lengthString(S))
+syntax Val ::= "@calculatePacketSize" "(" PacketData "," Int ")" [function]
+rule @calculatePacketSize(.List, I:Int) => @val(I /Int 8, 0, false)
+rule @calculatePacketSize(ListItem(@val(_,W:Int,_)) Rest:List, I:Int) => @calculatePacketSize(Rest, I +Int W)
+rule @calculatePacketSize(S:String, 0) => @calculatePacketSize(.List, lengthString(S))
 
 rule ESs:ExtractOrSetStatements R:ReturnStatement => ESs ~> R           [structural]
 rule ES:ExtractOrSetStatement ESs:ExtractOrSetStatements => ES ~> ESs   [structural]
@@ -631,9 +590,6 @@ rule @caseReturnToReturn(PS:ParserStateName) => return PS ;
 rule @caseReturnToReturn(CF:ControlFunctionName) => return CF ;
 rule @caseReturnToReturn(parse_error PE:ParserExceptionName) => parse_error PE ;
 
-//TODO: rule V:Val mask M:Val => ?
-//TODO: rule VS:ValueSetName => ?
-
 
 
 syntax KItem /* Vals */ ::= "@readFDRefs" "(" SelectExp ")"
@@ -646,12 +602,11 @@ rule @readFDRef(F:FieldRef) => @readField(F)
 rule <k> @readFDRef(latest . FN:FieldName) =>  @readField(H.FN) ... </k>
         <lastExt> H:InstanceName </lastExt>
 
-//rule <k> @readFDRef(current(O:UnsignedValue,W:UnsignedValue)) =>  @val ( String2Base(substrString(Packet, I +Int USgnVal2Int(O), I +Int USgnVal2Int(O) +Int USgnVal2Int(W) ),2) ,USgnVal2Int(W), false) ... </k>
-//     <packet> Packet:String </packet>
-//     <index> I:Int </index>
-//     when I +Int USgnVal2Int(O) +Int USgnVal2Int(W) <=Int lengthString(Packet)
+rule <k> @readFDRef(current(O:UnsignedValue,W:UnsignedValue)) =>  @val ( String2Base(substrString(Packet, I +Int USgnVal2Int(O), I +Int USgnVal2Int(O) +Int USgnVal2Int(W) ),2) ,USgnVal2Int(W), false) ... </k>
+     <packet> Packet:String </packet>
+     <index> I:Int </index>
+     when I +Int USgnVal2Int(O) +Int USgnVal2Int(W) <=Int lengthString(Packet)
 //TODO(minor): I,W must be ConstValue
-//TODO (minor) : current() for PacketData ::= List
 
 
 //set metadata
@@ -731,22 +686,7 @@ rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLeng
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ ")" [strict(3)]
 
 
-//rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
-//     <instances>
-//        <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
-//        ...
-//     </instances>
-//     <headers>
-//              <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
-//              ...
-//     </headers>
-//     <packet> Packet:List </packet>
-//     <index> I:Int => I +Int 1 </index>
-//     when I <Int sizeList(Packet)
-//     //when U <Int size(Packet)
-//     //bug with K's build-in size(List)
-
-rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,V) ... </k>
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
         ...
@@ -755,36 +695,35 @@ rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,V
               <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
               ...
      </headers>
-     <packet> @cons(V, L) => L</packet>
+     <packet> Packet:List </packet>
+     <index> I:Int => I +Int 1 </index>
+     when I <Int sizeList(Packet)
      //when U <Int size(Packet)
      //bug with K's build-in size(List)
 
-//rule <k> @extractField(N:InstanceName, F:FieldName , @val(W:Int,_,_) ) => @initField(N,F,@extractFieldValFromPacket(@val(String2Base(substrString(Packet, I, I +Int W),2),W,false) , @getAttr(F,Fs))) ... </k>
-//     <instances>
-//        <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
-//        ...
-//     </instances>
-//     <headers>
-//              <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
-//              ...
-//     </headers>
-//     <packet> Packet:String </packet>
-//     <index> I:Int => I +Int W </index>
-//     when I +Int W <=Int lengthString(Packet)
 
-//rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
-//     <packet> Packet:List </packet>
-//     <index> I:Int </index>
-//     when I >=Int sizeList(Packet)
+rule <k> @extractField(N:InstanceName, F:FieldName , @val(W:Int,_,_) ) => @initField(N,F,@extractFieldValFromPacket(@val(String2Base(substrString(Packet, I, I +Int W),2),W,false) , @getAttr(F,Fs))) ... </k>
+     <instances>
+        <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
+        ...
+     </instances>
+     <headers>
+              <header> <name> H </name> <fields> Fs:FieldDecs </fields> ... </header>
+              ...
+     </headers>
+     <packet> Packet:String </packet>
+     <index> I:Int => I +Int W </index>
+     when I +Int W <=Int lengthString(Packet)
 
 rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
-     <packet> @nil </packet>
+     <packet> Packet:List </packet>
+     <index> I:Int </index>
+     when I >=Int sizeList(Packet)
 
-
-//rule <k> @extractField(_:InstanceName, _:FieldName , @val(W:Int,_,_) ) => @throw(p4_pe_out_of_packet) ... </k>
-//     <packet> Packet:String </packet>
-//     <index> I:Int </index>
-//     when I +Int W >Int lengthString(Packet)
+rule <k> @extractField(_:InstanceName, _:FieldName , @val(W:Int,_,_) ) => @throw(p4_pe_out_of_packet) ... </k>
+     <packet> Packet:String </packet>
+     <index> I:Int </index>
+     when I +Int W >Int lengthString(Packet)
 
 //bug with K's build-in size(List)
 syntax Int ::= "#listSize" "(" List ")" [function]
@@ -842,7 +781,6 @@ rule @adjustVal("$width" |-> W:Int "$signed" |-> Sg:Bool "$saturating" |-> St:Bo
 syntax KItem /* Val */ ::= "@adjustVal" "(" Int "," Bool "," Bool "," K /* Val */ ")" [strict(4)]
 rule @adjustVal(W2:Int,Sg2:Bool,St:Bool,@val(V,W1,Sg1)) =>
        @val(V,W2,Sg2)
-//TODO: (VERY IMPORTANT ***): fix and complete this ***************************************
 
 syntax Bool ::= "@isSigned" "(" FieldMods ")" [function]
 rule @isSigned(.FieldMods) => false
@@ -862,7 +800,7 @@ syntax KItem /* Val */ ::= "@extractFieldValFromPacket" "(" Val "," FieldDec ")"
 rule @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : Wd:UnsignedValue ( _:FieldMods ) ;)
     => @val(V,W,S)  when W ==Int USgnVal2Int(Wd)
                                  //    => @val(String2Base(S,2),USgnVal2Int(Wd),false)
-//TODO: IMPORTANT: fix and complete this
+
 rule <k> @extractFieldValFromPacket( @val(V:Int,W:Int,S:Bool) , _:FieldName : * ( _:FieldMods ) ;)
     => @val(V,W,S) ... </k>
     <parser> <varWidth> @val(Wd:Int,_,_) </varWidth> ... </parser>
@@ -882,7 +820,7 @@ rule <k> @throw(E:ParserExceptionName) => #if p4_pe_default in S #then @throw(p4
      <handledExceptions> S:Set </handledExceptions>
      when notBool E in S andBool E =/=K $unhandled_exception
 
-rule @throw($unhandled_exception) => parser_drop //TODO: actually change it an exception handler that sets some relevant metadata
+rule @throw($unhandled_exception) => parser_drop //TODO: actually change it to an exception handler that sets some relevant metadata
 
 rule .SetStatements => .K                           [structural]
 rule S:SetStatement Rest:SetStatements => S ~> Rest [structural]
@@ -935,9 +873,7 @@ rule @verifyCalcField(F:FieldRef, ListItem(verify FLC:FieldListCalculationName i
             (@if (F %== @calculateFLC(FLC)) @then //probably should check width
                 .K
              @else
-                //@throw(p4_pe_checksum)
-                // TODO: right now the checksum is a dummy number, so now throwing exceptions
-                .K
+                @throw(p4_pe_checksum)
              @fi
             )
         @else
@@ -972,7 +908,7 @@ rule @getFieldsAsFLI(H:HeaderRef , F:FieldName : _:BitWidth  ( _:FieldMods ); Re
 rule @getFieldsAsFLI(_:HeaderRef , .FieldDecs , FLI:FieldListEntryItems) => FLI
 
 syntax KItem ::= "@calculateChecksum" "(" K /* Val */ "," StreamFunctionAlgorithmName "," Int ")" [strict(1)]
-//TODO: fix this, need to create a hook in k
+
 //rule @calculateChecksum (_:Val,_:StreamFunctionAlgorithmName,W:Int) => @val(0,W,false)
 syntax Id ::= "csum16" [token]
 rule @calculateChecksum (@val(V:Int,Wi:Int,false),csum16,Wo:Int) => @val(#csum16(V,Wi,Wo),Wo,false)
@@ -1001,7 +937,7 @@ rule apply (T:TableName) ; => apply (T) { .HitMissCases }   [macro]
 //TODO: for now assuming that a snapshot of current rules are taken before matching
 rule <k> apply (T:TableName) { C:CaseList } => @setCrnt("$table", T) ~> @checkNextRule(FM,R) ~> @setCrnt("$table", .K) ~> @checkNextAppSelCase (C) ... </k>
      <tables>
-        <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:EntryList </rules> ... </table>
+        <table> <name> T </name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
      ...
      </tables>
 
@@ -1033,7 +969,7 @@ rule <k> @checkNextAppSelCase(AD:ActionOrDefault B:ControlBlock Rest:ActionCases
 
 syntax Bool ::= "@isDefault" "(" ActionOrDefault ")" [function]
 rule @isDefault(default) => true
-rule @isDefault(_:Id) => false
+rule @isDefault(_:ActionName) => false
 /*TODO ISSUE: Just to make sure: if a default action in a table is defined and
                 the default action is taken, 1) is it a hit or miss? 2) does the default case
                 in a apply and select block gets gets elected?
@@ -1048,15 +984,17 @@ rule else I:IfElseStatement => else { I } [macro]
 rule if ( B:BoolExpr ) T:ControlBlock else F:ControlBlock =>
         @if B @then T @else F @fi
 
-
+syntax Id ::= "ingress" [token]
 //call
-rule <k> F:ControlFunctionName () ; => Body  ... </k>
+rule <k> F:ControlFunctionName () ; => @if (F ==K ingress) andBool T ==K @egress_clone @then . @else Body @fi  ... </k>
      <controlFlows>
         <control> <name> F </name> <body> Body </body> ... </control>
         ...
      </controlFlows>
+     <instances> <instance> <name> standard_metadata </name> <fieldVals> (instance_type |-> T:Val) _:Map </fieldVals> ... </instance> ... </instances>
 //should distinguish between action call with zero arguments and control function call
 //UPDATE: it is disinguishable because the former is Id ( .Args ) ; the later is Id () ;
+
 
 //-----------------expr and boolean expr---------------
 
@@ -1092,7 +1030,7 @@ rule NotExp(@val(V2,_,_)) => @val(~Int V2,0,true)
 //TODO: unify it with @negative
 
 rule BExpValid( H:HeaderRef )   => @isValid(H)
-//rule BExpPar(BE:K) => BE
+rule BExpPar(BE:K) => BE
 rule not B:Bool => notBool B
 
 rule B1:Bool or B2:Bool => B1 orBool B2
@@ -1100,34 +1038,28 @@ rule B1:Bool and B2:Bool => B1 andBool B2
 //TODO ISSUE: short circuit ? doesn't matter because no side effect
 
 //---------------table match-----------------------------
-syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," EntryList /*rules*/ ")"
+syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
-//TODO: assumming rules are checked for consistency at the time of insertion and are  are sorted by their priority
-
-
+//assumming rules are checked for consistency at the time of insertion and are  are sorted by their priority
 
 // miss
 //syntax Int ::= "$default_entry_index" [token]
-rule <k> @checkNextRule(_:FieldMatchs, $nilEntryList  ) => @setCrnt("$rule", .K) ~> @setCrnt("$miss", true) ~> @callDefaultAction ~> @callOrDeref(A) ~> @afterDefaultAction ~> @setCrnt("$rule", .K) ... </k>
+rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$rule", .K) ~> @setCrnt("$miss", true) ~> @callOrDeref(A) ~> @setCrnt("$rule", .K) ... </k>
      <crnt> ("$table" |-> T:TableName) _:Map </crnt>
-     <tables> <table> <name> T </name> <default> A:RuleActionCallOrActionProfileRef </default> ... </table> ... </tables>
-rule <k> @checkNextRule(_:FieldMatchs, $nilEntryList  ) => @setCrnt("$miss", true) ... </k>
+     <tables> <table> <name> T </name> <default> A:ActionCallOrActionProfileRef </default> ... </table> ... </tables>
+rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ... </k>
      <crnt> ("$table" |-> T:TableName) _:Map </crnt>
-     <tables> <table> <name> T </name> <default> $nothing </default> ... </table> ... </tables>
+     <tables> <table> <name> T </name> <default> .K </default> ... </table> ... </tables>
 
-syntax KItem ::= "@callDefaultAction"
-rule @callDefaultAction => .K
-syntax KItem ::= "@afterDefaultAction"
-rule @afterDefaultAction => .K
 
-rule @checkNextRule(FM:FieldMatchs, $consEntryList($rule(Id:Int, $ctr(R:Vals),CD:RuleActionCallOrActionProfileRef ), Rest:EntryList))
+rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
     => @if @matchAll(FM,R) @then @setCrnt("$miss", false) ~> @setCrnt("$rule", Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrnt("$rule", .K)  @else @checkNextRule(FM,Rest) @fi
 
 //rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
 
-syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," Vals /*criteria*/  ")"
-rule @matchAll(.FieldMatchs,@nil) => true
-rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, @cons(V:Val, R2:Vals))
+syntax KItem /* Bool */ ::= "@matchAll" "(" FieldMatchs "," List /*criteria*/  ")"
+rule @matchAll(.FieldMatchs,.List) => true
+rule @matchAll(FMR:FieldOrMaskedRef : MT:FieldMatchType ; R1:FieldMatchs, ListItem(V:K) R2:List)
     => @match(@readFMRef(FMR,MT),V,MT) %&& @matchAll(R1,R2)
 
 syntax KItem /* Bool */ ::= "@match" "(" K /* KResult */ "," K /* KResult */ "," FieldMatchType  ")" [strict(1,2)]
@@ -1195,7 +1127,7 @@ rule @updateMeter(M:Id, I:Int , F:FieldRef) => @writeStatefulAdjusted(M, I, @doU
 
 syntax KItem ::= "@doUpdateMeter" "(" Id "," Int ")"
 rule @doUpdateMeter(_,_) => @val(0,2,false)
-//TODO (minor): doing nothing for the meter
+//doing nothing for the meter
 
 syntax KItem ::= "@writeStatefulAdjusted" "(" Id "," Int "," K /*Val*/ ")" [strict(3)]
 rule <k> @writeStatefulAdjusted(N:Id, I:Int, V:Val) => @writeStateful(N, I, @adjustVal(Opts["$width" <- W],V)) ... </k>
@@ -1244,21 +1176,10 @@ rule <k> @resolveArgs((X:Id , Rest:Args) => Rest, $resolved(_:List (.List => Lis
 
 
 
-//only for rule action calls
-rule <k> @rcall( A:Id , $rv(Ag) ) => @pushstack ~> @rbindParams(P,Ag) ~> B ~> @popstack ... </k>
-     <actions>
-        <action> <name> A </name> <params> P:ParamList </params> <body> B:ActionStatements </body> ... </action>
-        ...
-     </actions>
-
-syntax KItem ::= "@rbindParams" "(" ParamList "," Vals ")"
-rule @rbindParams(.ParamList, @nil) => .
-rule <k> @rbindParams((P:ParamName , PR:ParamList), @cons(A:Val, AR:Vals)) => @rbindParams(PR,AR) ... </k>
-     <frameStack> ListItem(M:Map => M [P <- A]) _:List  </frameStack>
 
 
 //compound actions
-rule <k> @call( A:Id , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
+rule <k> @call( A:ActionName , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag) ~> B ~> @popstack ... </k>
      <actions>
         <action> <name> A </name> <params> P:ParamList </params> <body> B:ActionStatements </body> ... </action>
         ...
@@ -1283,7 +1204,7 @@ rule A:ActionStatement Rest:ActionStatements => A ~> Rest   [structural]
 rule .ActionStatements => .                                 [structural]
 
 
-rule A:Id ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
+rule A:ActionName ( Ag:Args ) ; => @call(A,@resolveArgs(Ag,$resolved(.List)))
 
 
 //primitive actions
@@ -1512,6 +1433,88 @@ rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Va
 // for bit_and,bit_or,bit_xor: Targets may require dest, value1 and value2 to be the same bit width.
 // for shift_left,shift_right: value2 must be positive => TODO ISSUE: what if it is not? is the result undefined or something else should happen? how about shift more that width?
 
+
+syntax Id ::=    "clone_ingress_pkt_to_ingree" [token]
+               | "clone_egress_pkt_to_ingress" [token]
+               | "clone_ingress_pkt_to_egress" [token]
+               | "clone_egress_pkt_to_egress" [token]
+               | "recirculate" [token]
+               | "resubmit"    [token]
+
+
+rule @call (resubmit,    $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$resbutmit") ~> @createPacketInit(FL;.FieldListEntryItems)
+rule @call (recirculate, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$recirculate") ~> @createPacketInit(FL;.FieldListEntryItems)
+rule @call (clone_ingress_pkt_to_ingree, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$cii") ~> @createPacketInit(FL;.FieldListEntryItems)
+rule @call (clone_egress_pkt_to_ingress, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","cei") ~> @createPacketInit(FL;.FieldListEntryItems )
+rule @call (clone_ingress_pkt_to_egress, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$cie") ~> @createPacketInit(FL; .FieldListEntryItems)
+rule @call (clone_egress_pkt_to_egress, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$cee") ~> @createPacketInit(FL; .FieldListEntryItems)
+
+syntax KItem ::= "@ingressSpecialOperation" | "@egressSpecialOperation"
+rule <k> @ingressSpecialOperation => . ... </k>
+     <crnt> M:Map </crnt>
+when notBool #in_keys("$specialOp",M)
+rule <k> @egressSpecialOperation => . ... </k>
+     <crnt> M:Map </crnt>
+when notBool #in_keys("$specialOp",M)
+
+rule <k> (@ingressSpecialOperation ~> _ ) => @nextPacket </k>
+     <crnt> "$specialOp" |-> "$resubmit" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M))) _:List </in>
+     <original> P </original>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @ingressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cii" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @ingress_clone)))) _:List </in>
+     <original> P </original>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @ingressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cie" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @egress_clone)))) _:List </in>
+     <original> P </original>
+     <packetInit> M:Map </packetInit>
+
+rule <k> (@egressSpecialOperation ~> _ ) => @nextPacket </k>
+     <crnt> "$specialOp" |-> "$recirculate" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M))) _:List </in>
+     <packetout> P </packetout>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @egressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cei" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @ingress_clone)))) _:List </in>
+     <packetout> P </packetout>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @egressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cee" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @egress_clone)))) _:List </in>
+     <packetout> P </packetout>
+     <packetInit> M:Map </packetInit>
+//TODO: directly support cie cee
+
+
+syntax Val ::= "@ingress_clone" | "@egress_clone"
+
+syntax KItem ::=        "@createPacketInit" "(" FieldListEntryItems ")"
+
+rule @createPacketInit(.FieldListEntryItems) => .
+//rule @createPacketInit(V:FieldValue ; Rest:FieldListEntryItems)
+rule @createPacketInit(F:FieldRef ; Rest:FieldListEntryItems) => @addPacketInit(F) ~> @createPacketInit(Rest)
+rule <k> @createPacketInit(N:FieldListName ; Rest:FieldListEntryItems) => @createPacketInit(E)  ~> @createPacketInit(Rest) ... </k>
+     <fieldLists> <fieldList> <name> N </name> <fields> E:FieldListEntryItems </fields> ... </fieldList> ... </fieldLists>
+rule <k> @createPacketInit(N:InstanceName ; Rest:FieldListEntryItems) => @createPacketInit(@getFieldsAsFLI(N,F,Rest)) ~> createPacketInit(Rest) ... </k> //todo: array
+     <instances> <instance> <name> N </name> <typeName> H:HeaderTypeName </typeName> ...   </instance> ... </instances>
+     <headers> <header> <name> H </name> <fields> F:FieldDecs </fields> ... </header> ... </headers>
+
+syntax KItem ::=    "@addPacketInit" "(" FieldRef")"
+rule <k> @addPacketInit( I:InstanceName . F:FieldName ) =>  . </k> //todo: array
+     <instances> <instance> <name> I </name> <metadata> true </metadata> <fieldVals> F |-> V:Val _:Map </fieldVals> ... </instance> ... </instances>
+     <packetInit> M:Map => M [(I.F) <- V] </packetInit>
+
+
+
 syntax Id ::= "count" [token]
 rule <k> @call (count , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @updateCounter(C, 0) ... </k>
      <statefuls> <stateful> <name> C </name> <stype> $counter </stype>  ... </stateful> ... </statefuls>
@@ -1557,25 +1560,25 @@ rule @call (drop , $resolved( .List )) => @writeField(standard_metadata, egress_
 //TODO: there should be some limitation in using the action which is not currently enforced, check progress.txt
 
 //-------------------action profile-------------------------
-syntax KItem ::= "@callOrDeref" "(" RuleActionCallOrActionProfileRef ")"
-rule @callOrDeref(@rcall(A:Id, X)) => @rcall(A,X) ~> @setCrnt("$action", A)
+syntax KItem ::= "@callOrDeref" "(" ActionCallOrActionProfileRef ")"
+rule @callOrDeref(@call(A:ActionName, X)) => @call(A,X) ~> @setCrnt("$action", A)
 rule <k> @callOrDeref(@apref(Id:Int)) => @deref(P, Id) ... </k>
      <tables> <table> <name> T </name> <acts> action_profile: P:ActionProfileName  ;</acts> ... </table> ... </tables>
      <crnt> ("$table" |-> T:TableName) _:Map </crnt>
 
 syntax KItem ::= "@deref" "(" ActionProfileName "," Int ")"
-//rule <k> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(C) ... </k>
-//     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> C:ActionCall _:Map </entries> ... </actionProfile> ... </actionProfiles>
-//rule <k> @deref(P:ActionProfileName , Id:Int) => @calculateFLC(FLC) ~> @deref(P,Id) ... </k>
-//     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> G:List _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
-//     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
-//rule <k> @val(I:Int,_,false) ~> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(#castToActionCall(G[I modInt size(G)])) ... </k>
-//     <actionProfiles> <actionProfile> <name> P </name> <entries> (Id |-> G:List) _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
-//     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
-//
-//syntax ActionCall ::= "#castToActionCall" "(" K ")" [function]
-////rule #castToActionCall(X:ActionCall) => X
-//rule #castToActionCall(ListItem(X:ActionCall)) => X //workaround for K issue #2343
+rule <k> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(C) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> C:ActionCall _:Map </entries> ... </actionProfile> ... </actionProfiles>
+rule <k> @deref(P:ActionProfileName , Id:Int) => @calculateFLC(FLC) ~> @deref(P,Id) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> Id |-> G:List _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
+     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
+rule <k> @val(I:Int,_,false) ~> @deref(P:ActionProfileName , Id:Int) => @callOrDeref(#castToActionCall(G[I modInt size(G)])) ... </k>
+     <actionProfiles> <actionProfile> <name> P </name> <entries> (Id |-> G:List) _:Map </entries> <opts> "$selector" |-> S:SelectorName _:Map </opts> ... </actionProfile> ... </actionProfiles>
+     <actionSelectors> <actionSelector> <name> S </name> <key> FLC:FieldListCalculationName </key> ... </actionSelector> ... </actionSelectors>
+
+syntax ActionCall ::= "#castToActionCall" "(" K ")" [function]
+//rule #castToActionCall(X:ActionCall) => X
+rule #castToActionCall(ListItem(X:ActionCall)) => X //workaround for K issue #2343
 
 
 //-------------------deparsing------------------------------
@@ -1602,32 +1605,25 @@ rule <k> @isDrop => V ==K %DROP_PORT ...  </k>
      <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> V:Val _:Map </fieldVals> ... </instance> ... </instances>
 
 syntax KItem ::= "@addPayload"
-//rule <k> @addPayload => .K ... </k>
-//     <packet> Packet:Vals  </packet>
-//     <packetout> _:List (.List => range(Packet, I ,0)) </packetout>
-//     <index> I:Int </index>
-//     when I <Int sizeList(Packet)
-//rule <k> @addPayload => .K ... </k>
-//     <packet> Packet:List  </packet>
-//     <index> I:Int </index>
-//     when I >=Int sizeList(Packet)
-
-rule <k> @addPayload ... </k>
-     <packet> @cons(V:Val, L:Vals) => L  </packet>
-     <packetout> PO:Vals => @cons(V, PO) </packetout>
 rule <k> @addPayload => .K ... </k>
-     <packet> @nil  </packet>
+     <packet> Packet:List  </packet>
+     <packetout> _:List (.List => range(Packet, I ,0)) </packetout>
+     <index> I:Int </index>
+     when I <Int sizeList(Packet)
+rule <k> @addPayload => .K ... </k>
+     <packet> Packet:List  </packet>
+     <index> I:Int </index>
+     when I >=Int sizeList(Packet)
 
-
-//rule <k> @addPayload => .K ... </k>
-//     <packet> Packet:String  </packet>
-//     <packetout> _:List (.List => ListItem(@val(String2Base(substrString(Packet,I,lengthString(Packet)),2), lengthString(Packet) -Int I  ,false))) </packetout>
-//     <index> I:Int </index>
-//     when I <Int lengthString(Packet)
-//rule <k> @addPayload => .K ... </k>
-//     <packet> Packet:String  </packet>
-//     <index> I:Int </index>
-//     when I >=Int lengthString(Packet)
+rule <k> @addPayload => .K ... </k>
+     <packet> Packet:String  </packet>
+     <packetout> _:List (.List => ListItem(@val(String2Base(substrString(Packet,I,lengthString(Packet)),2), lengthString(Packet) -Int I  ,false))) </packetout>
+     <index> I:Int </index>
+     when I <Int lengthString(Packet)
+rule <k> @addPayload => .K ... </k>
+     <packet> Packet:String  </packet>
+     <index> I:Int </index>
+     when I >=Int lengthString(Packet)
 
 syntax Bool ::= "@egressDefined" "(" Set ")" [function]
 rule @egressDefined(S) => notBool notBool (egress in S) //workaround to get rid of ambiguities
@@ -1638,8 +1634,7 @@ rule @egressDefined(S) => notBool notBool (egress in S) //workaround to get rid 
 //rule @egressDefined(<controlFlows> .Bag </controlFlows>) => false
 
 syntax KItem ::= "@deparseNext" "(" List ")"
-//rule @deparseNext(ListItem(H:HeaderExtractRef) Rest:List) => @deparseHeader(H) ~> @deparseNext(Rest)
-rule <k> @deparseNext(ListItem(H:InstanceName) Rest:List) => (@deparseHeader(H) ~> @deparseNext(Rest)) ... </k>
+rule @deparseNext(ListItem(H:HeaderExtractRef) Rest:List) => @deparseHeader(H) ~> @deparseNext(Rest) [structural]
 rule @deparseNext(.List) => @addPayload
 
 syntax KItem ::= "@deparseHeader" "(" HeaderExtractRef ")"
@@ -1697,29 +1692,19 @@ rule <k> @deparseField(I:InstanceName,F:FieldName) => @packetOut(@adjustVal(@get
 //     <packetout> P:String => P +String S </packetout>
 syntax KItem ::= "@packetOut" "(" K /* Val */ ")" [strict]
 rule <k> @packetOut(V:Val) => . ... </k>
-       <packetout> PO => @cons(V, PO) </packetout>
+       <packetout> _:List (.List => ListItem(V)) </packetout>
 
 
 
 //syntax KItem ::= "@FieldVal2String" "(" K /* Val */ "," FieldDec ")" [strict(1)]
 //rule @FieldVal2String(@val(I,_,_), _:FieldName : W:UnsignedValue ( .FieldMods );)  =>
 //    @addPadding(Base2String(I,2),USgnVal2Int(W) -Int lengthString(Base2String(I,2)) ,"0")
-//TODO: complete this
 
 //syntax String ::= "@addPadding" "(" String "," Int "," String ")" [function] /* String , width , char */
 //rule @addPadding(S,0,_) => S
 //rule @addPadding(S,I,C) => C +String @addPadding(S,I -Int 1,C) when I >Int 0
 
 
-
-//----------------header and field ref--------------------
-//syntax HRef ::= "@href" "(" InstanceName ")"
-//syntax FieldRef ::= HRef "." FieldName
-//syntax KResult ::= HRef
-//
-//rule HI:InstanceName => @href(HI)
-//TODO: support array
-//TODO:maybe @href is not needed, instance name is enough
 
 
 
@@ -1842,6 +1827,8 @@ rule @makePair(V1:Val,V2:Val) => $pair(V1,V2)
 //------------------const value--------------------------
 
 
+
+syntax Vals ::= "@nil" | "@cons" "(" Val "," Vals ")"
 syntax KResult ::= Val | Vals
 
 syntax KItem /* Vals */ ::= "@makeCons" "(" K /* Val */ "," K /* Vals */ ")" [seqstrict]
@@ -1877,23 +1864,6 @@ rule #castToFieldRef(X:FieldRef) => X
 
 
 syntax KItem ::= "$pause" | "$compile_error" | "$internal_error"
-
-
-//----------------------------target specific semantics------------------------
-
-//----------------------------verification utils------------------------------
-syntax KItem ::= "@end"
-rule <k> @nextPacket => @end </k>
-     <in> $nilPacketList </in>
-
-syntax Int ::= "#onPort" "(" PacketList "," Int ")" [function, smtlib(smt_on_port)]
-rule #onPort($nilPacketList,_:Int) => 0
-rule #onPort($consPacketList($packet(_,P:Int),L:PacketList), P) => 1 +Int #onPort(L, P)
-rule #onPort($consPacketList($packet(_,P1:Int),L:PacketList), P2:Int) => #onPort(L, P2) when P1 =/=Int P2
-
-syntax Int ::= "#packetListSize" "(" PacketList ")" [function, smtlib(smt_packetlist_len)]
-rule #packetListSize($nilPacketList) => 0
-rule #packetListSize($consPacketList($packet(_,_),L:PacketList)) => 1 +Int #packetListSize(L)
 
 
 endmodule

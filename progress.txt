@@ -167,6 +167,12 @@
   - (Done) Push/pop
     - https://github.com/p4lang/p4-spec/issues/431
   - clone, resubmit, recirculate
+    - what happens if multiple of these actions are called on the same packet ?
+  - resubmit: "If multiple resubmit actions get executed on one packet, the union of all
+               the fields in the field lists should be resubmitted"
+               only mentioned for resubmit (not recirculate/clone)
+
+
   - drop
     - "This primitive is intended
        for the egress pipeline where it is the only way to indicate that the

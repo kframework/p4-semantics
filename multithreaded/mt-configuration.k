@@ -1,16 +1,71 @@
-require "syntax/p4-syntax.k"
+require "../src/syntax/p4-syntax.k"
 
 module CONFIGURATION
 imports P4-COMMON
 
-syntax KItem ::= "@init" | "@exec" | "@fillInitInstances"
+syntax KItem ::= "@init" | "@exec" "(" Int ")" | "@fillInitInstances"
 syntax KItem ::=  "@parseOrder" "(" K ")"
 syntax Id ::= "start" [token]
 
 
 configuration
 <T>
-    <k>  $PGM:P4Program ~> @parseOrder (start) ~>  @init ~> @fillInitInstances ~> @exec  </k>
+
+    <threads>
+        <thread multiplicity="*">
+            <threadId> 1 </threadId>
+            <k>  $PGM:P4Program ~> @parseOrder (start) ~>  @init ~> @fillInitInstances ~> @exec ($N:Int)  </k> //creates N threads
+            <ctx>
+                <frameStack>
+                    .List
+                </frameStack>
+                <crnt> .Map </crnt>
+                <packetInit> .Map </packetInit> //intializer carried with packet for resubmit, recurculate, clone
+                //<crntTable> .K </crntTable>
+                //<crntRule> .K </crntRule>
+                //<crntAction> .K </crntAction>
+                //<crntHit> .K </crntHit>
+            </ctx>
+
+
+            <packet>
+                .K
+            </packet>
+
+            <original> //Packet
+                .K
+            </original>
+
+
+            <packetout>
+                .List
+            </packetout>
+
+
+
+            <pctx>
+                <index> 0 </index>
+                <lastExt> .K </lastExt>
+                <varWidth> .K </varWidth>
+                <packetSize> .K </packetSize>
+            </pctx>
+
+
+        </thread>
+    </threads>
+
+
+    <parser>
+        <graph>
+            <onpath> .Set </onpath>
+            <marked>
+                <mstates> .Set </mstates>
+                <mheaders> .Set </mheaders>
+            </marked>
+            <dporder> .List </dporder>
+        </graph>
+    </parser>
+
 
     <headers>
         <header multiplicity="*">
@@ -153,49 +208,6 @@ configuration
     <cfset> .Set </cfset> //TODO: temporary fix for K issue #2279
     <calcFieldSet> .Set </calcFieldSet> //set or list? depens on which order the calc fields need to be verified
 
-    <ctx>
-        <frameStack>
-            .List
-        </frameStack>
-        <crnt> .Map </crnt>
-        <packetInit> .Map </packetInit> //intializer carried with packet for resubmit, recurculate, clone
-        //<crntTable> .K </crntTable>
-        //<crntRule> .K </crntRule>
-        //<crntAction> .K </crntAction>
-        //<crntHit> .K </crntHit>
-    </ctx>
-
-
-    <packet>
-        .K
-    </packet>
-
-    <original> //Packet
-        .K
-    </original>
-
-
-    <packetout>
-        .List
-    </packetout>
-
-
-    <parser>
-        <graph>
-            <onpath> .Set </onpath>
-            <marked>
-                <mstates> .Set </mstates>
-                <mheaders> .Set </mheaders>
-            </marked>
-            <dporder> .List </dporder>
-        </graph>
-        <pctx>
-            <index> 0 </index>
-            <lastExt> .K </lastExt>
-            <varWidth> .K </varWidth>
-            <packetSize> .K </packetSize>
-        </pctx>
-    </parser>
 
     //<input stream="stdin">
     //    .List

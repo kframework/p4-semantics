@@ -42,7 +42,4 @@ module COMMON
     rule #wellDefined($consEntryList($rule(_,_,@rcall(X:Id,_)), _)) => (X ==K a) orBool (X ==K b)
     rule #wellDefined($consEntryList($rule(_,_,@apref(_)), _)) => false
 
-    syntax Int ::= "#egressToInt" "(" Val ")" [smtlib(egress_to_int)]
-    rule #egressToInt(@undef) => -1
-    rule #egressToInt(@val(V:Int,_,_)) => V
 endmodule

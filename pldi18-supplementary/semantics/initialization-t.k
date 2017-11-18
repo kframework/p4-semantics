@@ -26,14 +26,6 @@ syntax KResult ::= "$pair" "(" Val "," Val ")"
 // --------------------init------------------------------------
 
 
-//syntax Input ::= "packet" "(" String ")"
-
-//syntax Packet ::= "packet" "(" Int ")"
-
-//syntax Rule ::= "$rule" "(" Criteria  ","  ActionName ")"
-//syntax Criteria ::= "$ctr" "(" Matchs ")"
-//syntax Matchs ::= List{Match,","} [klable('Matchs)]
-//syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
 
 syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCallOrActionProfileRef ")"
 syntax Criteria ::= "$ctr" "(" List ")"

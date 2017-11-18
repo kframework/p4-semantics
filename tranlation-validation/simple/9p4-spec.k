@@ -140,7 +140,7 @@ rule
          <metadata>true</metadata>
          <typeName>%standard_metadata_t</typeName>
          <name>standard_metadata</name>
-         <fieldVals>ingress_port |-> _:Val egress_spec |-> _:Val </fieldVals>
+         <fieldVals>ingress_port |-> @undef egress_spec |-> @undef </fieldVals>
       </instance>
       <instance>
          <valid>false</valid>
@@ -151,9 +151,9 @@ rule
       </instance>
    </instances>
    <initInstances>
-      _
+      .Bag
    </initInstances>
-   <insts>SetItem ( h1 ) SetItem ( standard_metadata )</insts>
+   <insts>ListItem ( h1 ) ListItem ( standard_metadata )</insts>
    <initArrays>.Map</initArrays>
    <parserStates>
       <state>
@@ -186,8 +186,8 @@ rule
          <reads>( h1 . f1 ) : exact ;  .FieldMatchs</reads>
          <acts>actions { a ;  ( b ;  .ActionNameItems ) }</acts>
          <opts>.TableOptionals</opts>
-         <rules> .List </rules>
-         <default>.</default>
+         <rules> $nilEntryList </rules>
+         <default> $nothing </default>
       </table>
    </tables>
    <controlFlows>
@@ -202,8 +202,8 @@ rule
       <frameStack>.List</frameStack>
       <crnt>("$rule" |-> (_:K)) ("$table" |-> (_:K)) ("$action" |-> (_:K)) ("$miss" |-> (_:K))</crnt>
    </ctx>
-   <packet> _:List </packet>
-   <packetout> _:List </packetout>
+   <packet> _ </packet>
+   <packetout> _ </packetout>
    <parser>
       <graph>
          <onpath>.Set</onpath>
@@ -221,11 +221,11 @@ rule
       </pctx>
    </parser>
    <buffer>
-      <in> $consPacketList($packet(ListItem(@val(0,8,false)) ListItem(@val(0,8,false)), 30), $nilPacketList) </in>
+      <in> $consPacketList($packet(@cons(@val(0,8,false), @cons(@val(0,8,false), @nil)), 30), $nilPacketList) </in>
       <out>$nilPacketList</out>
    </buffer>
 </L1>
-ensures vars(ListItem(L) ListItem(T))
+ensures vars(ListItem(0) ListItem(0))
 
 
 rule
@@ -264,7 +264,7 @@ rule
       </instance>
    </instances>
    <initInstances> _ </initInstances>
-   <insts>SetItem ( h1 ) SetItem ( standard_metadata )</insts>
+   <insts>ListItem ( h1 ) ListItem ( standard_metadata )</insts>
    <initArrays>.Map</initArrays>
    <parserStates>
       <state>
@@ -297,8 +297,8 @@ rule
          <reads>( h1 . f1 ) : exact ;  .FieldMatchs</reads>
          <acts>actions { a ;  ( b ;  .ActionNameItems ) }</acts>
          <opts>.TableOptionals</opts>
-         <rules> T:List </rules>
-         <default>.</default>
+         <rules> _ </rules>
+         <default> _ </default>
       </table>
    </tables>
    <controlFlows>
@@ -313,8 +313,8 @@ rule
       <frameStack>.List</frameStack>
       <crnt>("$rule" |-> (_:K)) ("$table" |-> (_:K)) ("$action" |-> (_:K)) ("$miss" |-> (_:K))</crnt>
    </ctx>
-   <packet> _:List </packet>
-   <packetout> _:List </packetout>
+   <packet> _</packet>
+   <packetout> _ </packetout>
    <parser>
       <graph>
          <onpath>.Set</onpath>

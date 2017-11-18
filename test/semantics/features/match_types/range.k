@@ -5,12 +5,12 @@
             <name> routing </name>
             <rules> .List   => (
                                  ListItem(
-                                     $rule(
+                                     $rule(0,
                                          $ctr(ListItem( $pair(@val(1,32,false),@val(2, 0, false))))
                                      , @call(String2Id("route_ipv4") , $resolved( ListItem (@val (1 , 0 , false) ) ) ) )
                                  )
                                  ListItem(
-                                    $rule(
+                                    $rule(1,
                                         $ctr(ListItem( $pair(@val(167772159,32,false),@val(167772161, 0, false))))
                                     , @call(String2Id("route_ipv4") , $resolved( ListItem (@val (2 , 0 , false) ) ) ) )
                                  )

@@ -5,7 +5,7 @@
             <name> routing </name>
             <rules> .List   => (
                                  ListItem(
-                                    $rule(
+                                    $rule(0,
                                         $ctr(ListItem(@val ( 1 , 0 , false )))
                                     , @call(String2Id("do_drop") , $resolved( .List ) ) )
                                  )

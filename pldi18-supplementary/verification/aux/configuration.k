@@ -1,11 +1,50 @@
-require "syntax/p4-syntax.k"
+require "../../src/syntax/p4-syntax.k"
 
 module CONFIGURATION
 imports P4-COMMON
+//imports INT-LIST
 
 syntax KItem ::= "@init" | "@exec" | "@fillInitInstances"
 syntax KItem ::=  "@parseOrder" "(" K ")"
 syntax Id ::= "start" [token]
+
+
+syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
+
+syntax Vals ::= "@nil"
+                | "@cons" "(" Val "," Vals ")"
+
+syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
+syntax ActionProfileEntryRef ::= "@apref" "(" Int ")"
+syntax ActionCallOrActionProfileRef ::= ActionCall | ActionProfileEntryRef
+
+
+syntax ResolvedArgs ::= "$resolved" "(" List ")"
+syntax KResult ::= ResolvedArgs
+
+syntax KResult ::= "$pair" "(" Val "," Val ")"
+
+// --------------------init------------------------------------
+
+
+//syntax Input ::= "packet" "(" String ")"
+
+//syntax Packet ::= "packet" "(" Int ")"
+
+//syntax Rule ::= "$rule" "(" Criteria  ","  ActionName ")"
+//syntax Criteria ::= "$ctr" "(" Matchs ")"
+//syntax Matchs ::= List{Match,","} [klable('Matchs)]
+//syntax Match ::= FieldOrMaskedRef ":" ConstValue //TODO:complete this
+
+syntax Rule ::= "$rule" "(" Int /* Id */ "," Criteria "," ActionCallOrActionProfileRef ")"
+syntax Criteria ::= "$ctr" "(" List ")"
+
+syntax PacketData ::= List //| String
+syntax Packet ::= "$packet" "(" PacketData "," Int ")" //[smtlib(smt_packet)]
+
+syntax PacketList ::=
+                       "$nilPacketList" [smtlib(nil_packst_list)]
+                     | "$consPacketList" "(" Packet "," PacketList ")" [smtlib(cons_packet_list)]
 
 
 configuration
@@ -158,7 +197,6 @@ configuration
             .List
         </frameStack>
         <crnt> .Map </crnt>
-        <packetInit> .Map </packetInit> //intializer carried with packet for resubmit, recurculate, clone
         //<crntTable> .K </crntTable>
         //<crntRule> .K </crntRule>
         //<crntAction> .K </crntAction>
@@ -169,10 +207,6 @@ configuration
     <packet>
         .K
     </packet>
-
-    <original> //Packet
-        .K
-    </original>
 
 
     <packetout>
@@ -202,8 +236,8 @@ configuration
     //</input>
 
     <buffer>
-        <in> .List </in>
-        <out> .List </out>
+        <in> $nilPacketList </in>
+        <out> $nilPacketList </out>
     </buffer>
 
 </T>

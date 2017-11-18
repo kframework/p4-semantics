@@ -30,7 +30,7 @@ hash_action_gateway         ok  # had default_action in table declaration
 hash_action_two_separate    ok  # had default_action in table declaration
 hitmiss                     ok  # found a bug using this test (wrong crnt action/miss)
 instruct5                   ok  # had (and needed) default_action in table declaration, also had extra[0].x1 = x1;, found bug (actually misunderstanding of semantics) in pop
-#instruct6                 fail # has modify_field_with_shift
+#instruct6                  ok  # has modify_field_with_shift
 parser_dc_full             (ok) # had (and needed) default_action in table declaration, had preproc directives, also had data.data = 255;, also has csum16, also deparse order is not unique, was failing due to difference in order of mpls and mpls_bos. changed order and now the test passes
 repeater                    ok  # had bit<32> in header dec, also called drop
 ternary_match1              ok

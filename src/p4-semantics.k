@@ -11,13 +11,10 @@ imports INITIALIZATION
 
 syntax Val ::= "%DROP_PORT" // [function]
 //rule %DROP_PORT => @val(0,32,false) [macro]
-
+syntax Int ::= "%SPECIAL_OPERATION_PORT"
 
 syntax Int ::= "#csum16" "(" Int "," Int "," Int ")"       [hook(CSUM.csum16),   function]
 
-//IMPORTANT: added only for stf tests
-//rule <k> @txenPacket => @drop ... </k>
-//     <instances> <instance> <name> standard_metadata </name> <fieldVals> egress_spec |-> @undef _:Map </fieldVals> ... </instance> ... </instances>
 
 //---------------- putting decralarions into configuration cells--------------------------------
 
@@ -443,13 +440,30 @@ rule <k> @nextPacket =>
            @resetPerPacketState
         ~> @writeField(standard_metadata, ingress_port, @val(Port,32,false))
         ~> @parse&ingress
+        ~> @ingressSpecialOperation
         ~> @egress
+        ~> @egressSpecialOperation
         ~> @txenPacket
         ~> @nextPacket
      ... </k>
      <buffer> <in> (ListItem($packet(P:PacketData, Port:Int)) => .List) _:List </in> ... </buffer>
      <packet> _ => P </packet>
+     <original> _=> P </original>
 
+rule <k> @nextPacket =>
+           @resetPerPacketState
+        ~> @processInitFromPacket (Init)
+        ~> @writeField(standard_metadata, ingress_port, @val(Port,32,false))
+        ~> @parse&ingress
+        ~> @ingressSpecialOperation
+        ~> @egress
+        ~> @egressSpecialOperation
+        ~> @txenPacket
+        ~> @nextPacket
+     ... </k>
+     <buffer> <in> (ListItem($packet(P:PacketData, Port:Int, Init:Map)) => .List) _:List </in> ... </buffer>
+     <packet> _ => P </packet>
+     <original> _=> P </original>
 
 syntax KItem ::= "@txenPacket"
 //syntax Id ::= "egress_spec" [token]
@@ -484,6 +498,8 @@ rule <k> @resetPerPacketState => .K ... </k>
         <varWidth> _ => .K </varWidth>
         <packetSize> _ => .K </packetSize>
      </pctx>
+     <crnt> _ => .Map </crnt>
+     <packetInit> _ => .Map </packetInit>
 
 //https://github.com/kframework/k/issues/2352
 //syntax KItem ::= "@resetArrays" "(" Set ")"
@@ -495,6 +511,13 @@ rule <k> @resetPerPacketState => .K ... </k>
 //syntax Map ::= "#resetArrays" "(" Map "," Map ")" [function]
 //rule #restArrays(.Map,M:Map) => M
 //rule #resetArrays((N:InstanceName |-> $array(S:Int,_,_)) R:Map, M:Map ) => #resetArrays(R, (N |-> $array(S,0,-1)) M)
+
+
+syntax KItem ::= "@processInitFromPacket" "(" Map ")"
+rule @processInitFromPacket(.Map) => .
+rule @processInitFromPacket ((F:FieldRef |-> V:Val) Rest:Map) => @writeFieldAdjusted(F,V) ~>  @processInitFromPacket(Rest)
+
+
 
 
 //--------------------parsing------------------------------
@@ -968,15 +991,17 @@ rule else I:IfElseStatement => else { I } [macro]
 rule if ( B:BoolExpr ) T:ControlBlock else F:ControlBlock =>
         @if B @then T @else F @fi
 
-
+syntax Id ::= "ingress" [token]
 //call
-rule <k> F:ControlFunctionName () ; => Body  ... </k>
+rule <k> F:ControlFunctionName () ; => @if (F ==K ingress) andBool T ==K @egress_clone @then . @else Body @fi  ... </k>
      <controlFlows>
         <control> <name> F </name> <body> Body </body> ... </control>
         ...
      </controlFlows>
+     <instances> <instance> <name> standard_metadata </name> <fieldVals> (instance_type |-> T:Val) _:Map </fieldVals> ... </instance> ... </instances>
 //should distinguish between action call with zero arguments and control function call
 //UPDATE: it is disinguishable because the former is Id ( .Args ) ; the later is Id () ;
+
 
 //-----------------expr and boolean expr---------------
 
@@ -1417,6 +1442,88 @@ rule @call (F:Id, $resolved(ListItem(D:FieldRef) ListItem(V1:Val) ListItem(V2:Va
 // for bit_and,bit_or,bit_xor: Targets may require dest, value1 and value2 to be the same bit width.
 // for shift_left,shift_right: value2 must be positive => TODO ISSUE: what if it is not? is the result undefined or something else should happen? how about shift more that width?
 
+
+syntax Id ::=    "clone_ingress_pkt_to_ingree" [token]
+               | "clone_egress_pkt_to_ingress" [token]
+               | "clone_ingress_pkt_to_egress" [token]
+               | "clone_egress_pkt_to_egress" [token]
+               | "recirculate" [token]
+               | "resubmit"    [token]
+
+
+rule @call (resubmit,    $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$resbutmit") ~> @createPacketInit(FL;.FieldListEntryItems)
+rule @call (recirculate, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$recirculate") ~> @createPacketInit(FL;.FieldListEntryItems)
+rule @call (clone_ingress_pkt_to_ingree, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$cii") ~> @createPacketInit(FL;.FieldListEntryItems)
+rule @call (clone_egress_pkt_to_ingress, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","cei") ~> @createPacketInit(FL;.FieldListEntryItems )
+rule @call (clone_ingress_pkt_to_egress, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$cie") ~> @createPacketInit(FL; .FieldListEntryItems)
+rule @call (clone_egress_pkt_to_egress, $resolved(ListItem(FL:FieldListName))) ~> @setCrnt("$specialOp","$cee") ~> @createPacketInit(FL; .FieldListEntryItems)
+
+syntax KItem ::= "@ingressSpecialOperation" | "@egressSpecialOperation"
+rule <k> @ingressSpecialOperation => . ... </k>
+     <crnt> M:Map </crnt>
+when notBool #in_keys("$specialOp",M)
+rule <k> @egressSpecialOperation => . ... </k>
+     <crnt> M:Map </crnt>
+when notBool #in_keys("$specialOp",M)
+
+rule <k> (@ingressSpecialOperation ~> _ ) => @nextPacket </k>
+     <crnt> "$specialOp" |-> "$resubmit" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M))) _:List </in>
+     <original> P </original>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @ingressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cii" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @ingress_clone)))) _:List </in>
+     <original> P </original>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @ingressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cie" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @egress_clone)))) _:List </in>
+     <original> P </original>
+     <packetInit> M:Map </packetInit>
+
+rule <k> (@egressSpecialOperation ~> _ ) => @nextPacket </k>
+     <crnt> "$specialOp" |-> "$recirculate" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M))) _:List </in>
+     <packetout> P </packetout>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @egressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cei" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @ingress_clone)))) _:List </in>
+     <packetout> P </packetout>
+     <packetInit> M:Map </packetInit>
+
+rule <k> @egressSpecialOperation => . ...</k>
+     <crnt> "$specialOp" |-> "$cee" _:Map </crnt>
+     <in> (.List => ListItem($packet(P,%SPECIAL_OPERATION_PORT,M (standard_metadata.instance_type |-> @egress_clone)))) _:List </in>
+     <packetout> P </packetout>
+     <packetInit> M:Map </packetInit>
+//TODO: directly support cie cee
+
+
+syntax Val ::= "@ingress_clone" | "@egress_clone"
+
+syntax KItem ::=        "@createPacketInit" "(" FieldListEntryItems ")"
+
+rule @createPacketInit(.FieldListEntryItems) => .
+//rule @createPacketInit(V:FieldValue ; Rest:FieldListEntryItems)
+rule @createPacketInit(F:FieldRef ; Rest:FieldListEntryItems) => @addPacketInit(F) ~> @createPacketInit(Rest)
+rule <k> @createPacketInit(N:FieldListName ; Rest:FieldListEntryItems) => @createPacketInit(E)  ~> @createPacketInit(Rest) ... </k>
+     <fieldLists> <fieldList> <name> N </name> <fields> E:FieldListEntryItems </fields> ... </fieldList> ... </fieldLists>
+rule <k> @createPacketInit(N:InstanceName ; Rest:FieldListEntryItems) => @createPacketInit(@getFieldsAsFLI(N,F,Rest)) ~> createPacketInit(Rest) ... </k> //todo: array
+     <instances> <instance> <name> N </name> <typeName> H:HeaderTypeName </typeName> ...   </instance> ... </instances>
+     <headers> <header> <name> H </name> <fields> F:FieldDecs </fields> ... </header> ... </headers>
+
+syntax KItem ::=    "@addPacketInit" "(" FieldRef")"
+rule <k> @addPacketInit( I:InstanceName . F:FieldName ) =>  . </k> //todo: array
+     <instances> <instance> <name> I </name> <metadata> true </metadata> <fieldVals> F |-> V:Val _:Map </fieldVals> ... </instance> ... </instances>
+     <packetInit> M:Map => M [(I.F) <- V] </packetInit>
+
+
+
 syntax Id ::= "count" [token]
 rule <k> @call (count , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,_)))) => @getStatefulIndexInActionCall(C, I) ~> @updateCounter(C, 0) ... </k>
      <statefuls> <stateful> <name> C </name> <stype> $counter </stype>  ... </stateful> ... </statefuls>
@@ -1776,9 +1883,6 @@ rule #castToFieldRef(X:FieldRef) => X
 
 
 syntax KItem ::= "$pause" | "$compile_error" | "$internal_error"
-
-
-//----------------------------target specific semantics------------------------
 
 
 endmodule
