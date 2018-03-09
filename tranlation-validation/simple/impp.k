@@ -228,7 +228,8 @@ module IMPP
 
 
 
-    syntax KResult ::= Val | Vals
+   // syntax KResult ::= Val | Vals  // Ints should be the KResult in this language
+   syntax KResult ::= Int
 
     syntax IVals ::= "#vals2IVals" "(" Vals ")" [function]
     rule #vals2IVals(@nil) => .IVals
