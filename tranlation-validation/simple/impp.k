@@ -88,7 +88,7 @@ module IMPP
 
 
   syntax IVal ::= Int | Bool
-  syntax IVals ::= List{IVal,","}
+  syntax IVals ::= List{IVal,","} //[smtlib(ivals)]
   syntax KResult ::= IVal | IVals
 
   syntax AExp ::= IVal
@@ -233,8 +233,10 @@ module IMPP
 
     syntax IVals ::= "#vals2IVals" "(" Vals ")" [function]
     rule #vals2IVals(@nil) => .IVals
-    rule #vals2IVals(@cons(@val(I:Int,_,_), L:Vals)) => I , #vals2IVals(L)
+    rule #vals2IVals(@cons(V:Val, L:Vals)) => #val2Int(V) , #vals2IVals(L)
 
+    syntax Int ::= "#val2Int" "(" Val ")" [function]
+    rule #val2Int(@val(I:Int,_,_)) => I
 
     syntax Id ::= "standard_metadata_egress_spec" [token]
 

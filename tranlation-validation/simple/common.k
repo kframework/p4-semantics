@@ -36,13 +36,43 @@ module COMMON
                            "$nilEntryList" [smtlib(nil_entry_list)]
                          | "$consEntryList" "(" Rule "," EntryList ")" [smtlib(cons_entry_list)]
 
-    syntax Id ::= "a" [token]  | "b" [token]
-    syntax Bool ::= "#wellDefined" "(" EntryList ")" [function,smtlib(smt_welldef)]
-    rule #wellDefined($nilEntryList) => true
-    rule #wellDefined($consEntryList($rule(_,_,@rcall(X:Id,_)), _)) => (X ==K a) orBool (X ==K b)
-    rule #wellDefined($consEntryList($rule(_,_,@apref(_)), _)) => false
+//    syntax Id ::= "a" [token]  | "b" [token]
+//    syntax Bool ::= "#wellDefined" "(" EntryList ")" [function,smtlib(smt_welldef)]
+//    rule #wellDefined($nilEntryList) => true
+//    rule #wellDefined($consEntryList($rule(_,_,@rcall(X:Id,_)), _)) => (X ==K a) orBool (X ==K b)
+//    rule #wellDefined($consEntryList($rule(_,_,@apref(_)), _)) => false
+//
+//    syntax Int ::= "#egressToInt" "(" Val ")" [function,smtlib(egress_to_int)]
+//    rule #egressToInt(@undef) => -1
+//    rule #egressToInt(@val(V:Int,_,_)) => V
 
-    syntax Int ::= "#egressToInt" "(" Val ")" [function,smtlib(egress_to_int)]
-    rule #egressToInt(@undef) => -1
-    rule #egressToInt(@val(V:Int,_,_)) => V
+   //currenty wellDef* is defined for program simpler.{p4,impp} but can be easily generalized
+   syntax Id ::= "a" [token]  | "b" [token]
+   syntax Bool ::= "#wellDefTable" "(" EntryList ")" [function]//,smtlib(smt_welldef_table)]
+   rule #wellDefTable ( $nilEntryList ) => true                                                 //[smt-lemma]
+   rule #wellDefTable ( $consEntryList (R, E) ) => #wellDefRule(R) andBool #wellDefTable(E)     //[smt-lemma]
+
+   syntax Bool ::= "#wellDefRule" "(" Rule ")" [function]//,smtlib(smt_welldef_rule)]
+   //rule #wellDefRule(R) => R ==K $rule(?_,$ctr(@cons(@val(?_,8,false),@nil)),@rcall(?X:Id,$rv(?Vs:Vals))) andBool ((?X ==K b andBool ?Vs ==K @nil ) orBool (?X ==K a andBool ?Vs ==K @cons(@val(?_,8,false),@nil)))
+   rule #wellDefRule ($rule(_,$ctr(@nil),_)) => false   //[smt-lemma]
+   //rule #wellDefRule ($rule(_,$ctr(@cons(@val(_,8,false),@nil)),RC:RuleActionCallOrActionProfileRef)) => #wellDefRCall(RC)
+   //rule #wellDefRule ($rule(_,$ctr(@cons(@val(_,W:Int,S:Bool),@nil)),_)) => false when W =/=Int 8 orBool S =/=Bool false
+   rule #wellDefRule ($rule(_,$ctr(@cons(@val(_,W:Int,S:Bool),@nil)),RC:RuleActionCallOrActionProfileRef)) => (W ==Int 8) andBool (S ==Bool false) andBool (#wellDefRCall(RC)) //[smt-lemma]
+   rule #wellDefRule ($rule(_,$ctr(@cons(_,@cons(_,_))),_)) => false //[smt-lemma]
+
+   syntax Bool ::= "#wellDefDefaultAction" "(" DefaultEntry ")" [function]//,smtlib(smt_welldef_defaultaction)]
+   rule #wellDefDefaultAction($nothing) => true //[smt-lemma]
+   rule #wellDefDefaultAction(RC:RuleActionCallOrActionProfileRef) => #wellDefRCall(RC)// [smt-lemma]
+
+   syntax Bool ::= "#wellDefRCall" "(" RuleActionCallOrActionProfileRef ")" [function]//,smtlib(smt_welldef_rcall)]
+   rule #wellDefRCall(@apref(_)) => false   //[smt-lemma]
+   rule #wellDefRCall(@rcall(X:Id,$rv(Vs:Vals))) => (X ==K b andBool Vs ==K @nil) orBool (X ==K a andBool #wellDefaArg(Vs)) //[smt-lemma]
+
+   syntax Bool ::= "#wellDefaArg" "(" Vals ")" [function]//,smtlib(smt_welldef_aarg)]
+   rule #wellDefaArg(@nil) => false //[smt-lemma]
+   rule #wellDefaArg(@cons(_,@cons(_,_))) => false //[smt-lemma]
+   //rule #wellDefaArg(@cons(@val(_,8,false),@nil)) => true //TODO: check the value ?
+   //rule #wellDefaArg(@cons(@val(_,W:Int,S:Bool),@nil)) => false when W =/=Int 8 orBool S =/=Bool false //TODO: is this neccessary?
+   rule #wellDefaArg(@cons(@val(_,W:Int,S:Bool),@nil)) => (W ==Int 8) andBool (S ==Bool false) //[smt-lemma]
+
 endmodule
