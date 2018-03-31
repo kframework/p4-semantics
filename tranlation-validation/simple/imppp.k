@@ -71,8 +71,9 @@ module IMPPP
                   <funs> .Map </funs>
                   <stack> .List </stack>
                   //API
-                  //<in> $consPacketList($packet(ListItem(@val(0,8,false)) ListItem(@val(0,8,false)), 30), $nilPacketList) </in>
+                  //<in> $consPacketList($packet(@cons(@undef , @cons (@val(0,8,false) , @nil)), 30), $nilPacketList) </in>
                   <in> $consPacketList($packet(@cons(@val(0,8,false) , @cons (@val(0,8,false) , @nil)), 30), $nilPacketList) </in>
+                  //<in> $consPacketList($packet(ListItem(@val(0,8,false)) ListItem(@val(0,8,false)), 30), $nilPacketList) </in>
                   //<in> $nilPacketList </in>
                   <out> $nilPacketList </out>
                   <packet>  @nil </packet>
