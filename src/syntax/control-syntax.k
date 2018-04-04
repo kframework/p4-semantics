@@ -45,7 +45,7 @@ imports PARSER-SYNTAX //for ControlFunctionName
 
     syntax BoolExpr ::=
                       "not" BoolExpr        [strict,left]
-                    | "(" BoolExpr ")"      [braket,prefer,klabel(BExpPar)] //clash with ( K ) (both prefer and klabel is required)
+                    | "(" BoolExpr ")"      [bracket,prefer,klabel(BExpPar)] //clash with ( K ) (both prefer and klabel is required)
                     |  "valid" "(" HeaderRef ")"         [klabel(BExpValid)]
                     >
                       Exp "<" Exp           [strict,left]
