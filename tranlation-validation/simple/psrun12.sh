@@ -1,0 +1,1 @@
+keq -v --debug --def0 common-kompiled --def1 p4-semantics-kompiled --def2 imppp-kompiled --prove1 12p4-4syncpoints-spec.k --prove2 12imppp-4syncpoints-spec.k --smt_prelude ../../verification/load-balancer/list.smt2
