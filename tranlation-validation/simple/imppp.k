@@ -178,6 +178,10 @@ module IMPPP
          <out> L:PacketList => $consPacketList($packet(P,I), L) </out>
          when I =/=Int -1
 
+    rule <k> @call #output_packet (@nilIVals) => 1 ... </k>
+             <packetout> P:Vals </packetout>
+             <state> standard_metadata_egress_spec |-> -1 _:Map </state>
+
     rule <k> @call #drop (@nilIVals) => 0 ... </k>
 
     rule <k> @call #emit (@consIVals(V:Int , @consIVals(W:Int , @consIVals(S:Bool , @nilIVals)))) => 0 ... </k>
@@ -248,10 +252,11 @@ module IMPPP
     //syntax IVals ::= "#vals2IVals" "(" Vals ")" [function]
     syntax IExp ::= "@vals2IVals" "(" Vals ")"
     rule @vals2IVals(@nil) => @nilIVals
-    rule @vals2IVals(@cons(V:Val, L:Vals)) => @makeCons(#val2Int(V) , @vals2IVals(L))
+    //rule @vals2IVals(@cons(V:Val, L:Vals)) => @makeCons(#val2Int(V) , @vals2IVals(L))
+    rule @vals2IVals(@cons(V:Val, L:Vals)) => @makeCons(#egressVal2Int(V) , @vals2IVals(L))
 
-    syntax Int ::= "#val2Int" "(" Val ")" [function]
-    rule #val2Int(@val(I:Int,_,_)) => I
+    //syntax Int ::= "#val2Int" "(" Val ")" [function,smtlib(val_to_int)]
+    //rule #val2Int(@val(I:Int,_,_)) => I [smt-lemma]
 
     syntax Id ::= "standard_metadata_egress_spec" [token]
 
