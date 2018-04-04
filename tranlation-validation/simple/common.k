@@ -75,4 +75,20 @@ module COMMON
    //rule #wellDefaArg(@cons(@val(_,W:Int,S:Bool),@nil)) => false when W =/=Int 8 orBool S =/=Bool false //TODO: is this neccessary?
    rule #wellDefaArg(@cons(@val(_,W:Int,S:Bool),@nil)) => (W ==Int 8) andBool (S ==Bool false) //[smt-lemma]
 
+
+   syntax Bool ::= "#noUndefPacket" "(" Vals ")" [function, smtlib(no_undef_packet)]
+   rule #noUndefPacket(@nil) => true    [smt-lemma]
+   rule #noUndefPacket(@cons(V:Val,Vs:Vals)) => (V ==K @val(?A:Int,?B:Int,?C:Bool)) andBool #noUndefPacket(Vs) [smt-lemma]
+   //z3 can not prove using the following lemmas!
+   //rule #noUndefPacket(@cons(@val(_,_,_),R)) => #noUndefPacket(R) [smt-lemma]
+   //rule #noUndefPacket(@cons(@undef,_)) => false    [smt-lemma]
+
+   syntax Bool ::= "#noUndefPacketList" "(" PacketList ")" [function]
+   rule #noUndefPacketList($nilPacketList) => true
+   rule #noUndefPacketList($consPacketList($packet(Vs,_),R)) => #noUndefPacket(Vs) andBool #noUndefPacketList(R)
+
+
+   syntax Int ::= "#egressVal2Int" "(" Val ")" [function, smtlib(egress_to_int)]
+   rule #egressVal2Int ( @undef ) => -1  [smt-lemma]
+   rule #egressVal2Int (@val(I:Int,_,_)) => I  [smt-lemma]
 endmodule
