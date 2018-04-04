@@ -10,7 +10,7 @@ imports INITIALIZATION
 //macros
 
 syntax Val ::= "%DROP_PORT" // [function]
-//rule %DROP_PORT => @val(0,32,false) [macro]
+rule %DROP_PORT => @val(-1,32,false) [macro]
 
 
 syntax Int ::= "#csum16" "(" Int "," Int "," Int ")"       [hook(CSUM.csum16),   function]
@@ -746,7 +746,8 @@ syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," K /* Val */ 
 //     //when U <Int size(Packet)
 //     //bug with K's build-in size(List)
 
-rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,V) ... </k>
+//rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initField(N,F,V) ... </k>
+rule <k> @extractField(N:InstanceName, F:FieldName , W:Val ) => @initFieldAdjusted(N,F,V) ... </k> //this is needed because impp assumes certain width during emission, so we need to know the width here as well.
      <instances>
         <instance> <name> N </name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
         ...
@@ -1883,7 +1884,7 @@ syntax KItem ::= "$pause" | "$compile_error" | "$internal_error"
 
 //----------------------------verification utils------------------------------
 syntax KItem ::= "@end"
-rule <k> @nextPacket => @end </k>
+rule <k> (@nextPacket ~> _) => @end </k>
      <in> $nilPacketList </in>
 
 syntax Int ::= "#onPort" "(" PacketList "," Int ")" [function, smtlib(smt_on_port)]
