@@ -1,7 +1,11 @@
 # P4K: Formal Semantics of P4 in K
 
 This is an ongoing attempt to give **complete** formal semantics to the [P4](http://p4.org/) language (version 1.0.4)  using the K framework.
-Based on this semantics, K provides various tools for the language, including an interpreter, a symbolic execution engine, etc ... 
+Based on this semantics, K provides various tools for the language, including an interpreter, a symbolic execution engine, etc ...
+
+For a high level overview of P4K and its applications you can checkout the following resources:
+- P4K: A Formal Semantics of P4 and Applications, [arXiv draft](https://arxiv.org/abs/1804.01468)
+- Executable Formal Semantics of P4 and Applications, [P4 Workshop 2017](https://p4.org/assets/p4-ws-2017-p4k-executable-formal-semantic.pdf)   
 
 ## Using P4K:
 
