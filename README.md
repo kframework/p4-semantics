@@ -149,22 +149,16 @@ And then kompile the semantics and then run the input program with it.
 
 ### Misc. 
 
-#### Currently unsupported features 
-Note: crossed means now supported
-- ~~Variable length header fields~~
-- Saturating fields 
-- Signed numbers (partially supported)
-- ~~Header stacks (array instances)~~
-- ~~Field lists~~
-- ~~Field lists calculations~~ 
-- ~~Calculated fields (so the checksum of packets won't be verified or updated)~~
-- ~~Parser exceptions~~
-- ~~Implicit exceptions~~
-- ~~Value set declarations~~
-- ~~~Counters, meters, and registers~~
-- ~~Action profiles~~
-- ~~Any matching type other than exact and valid (ternary, lpm, range)~~
-- Primitive actions related to recirculation and cloning, ~~add/remove/copy header~~, ~~push/pop~~, drop/truncate
+#### Limitations
+The following features are partially supported:
+- Saturating and signed fields/numbers
+- Expressions containing numbers with different widths
+- Overflows
+
+Also the ingress and egress pipelines are currently modeled together as a single thread.
+So the buffering mechanism can only contain a single packet at a time.
+As a result, the support for cloning a packet into ingress is a bit hacky.   
+  
 
 #### Parsing P4 programs into KAST 
 
