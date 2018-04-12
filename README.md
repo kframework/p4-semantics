@@ -1,7 +1,7 @@
 # P4K: Formal Semantics of P4 in K
 
 P4K aims at providing **complete** formal semantics for the [P4](http://p4.org/) language (currently P4_14 v. 1.0.4)  using the K framework.
-Based on this semantics, K provides various tools for the language, including an interpreter, a symbolic execution engine and model checker, deductive program verifier, cross-language program equivalence checker etc ...
+Based on this semantics, K provides various tools for the language, including an interpreter, a symbolic execution engine and model checker, a deductive program verifier, a cross-language program equivalence checker, etc ...
 
 For a high level overview of P4K and its applications you can checkout the following resources:
 - P4K: A Formal Semantics of P4 and Applications, [arXiv draft](https://arxiv.org/abs/1804.01468)
