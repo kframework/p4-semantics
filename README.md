@@ -1,7 +1,7 @@
 # P4K: Formal Semantics of P4 in K
 
-This is an ongoing attempt to give **complete** formal semantics to the [P4](http://p4.org/) language (currently P4_14 v. 1.0.4)  using the K framework.
-Based on this semantics, K provides various tools for the language, including an interpreter, a symbolic execution engine, etc ...
+P4K aims at providing **complete** formal semantics for the [P4](http://p4.org/) language (currently P4_14 v. 1.0.4)  using the K framework.
+Based on this semantics, K provides various tools for the language, including an interpreter, a symbolic execution engine and model checker, deductive program verifier, cross-language program equivalence checker etc ...
 
 For a high level overview of P4K and its applications you can checkout the following resources:
 - P4K: A Formal Semantics of P4 and Applications, [arXiv draft](https://arxiv.org/abs/1804.01468)
@@ -22,8 +22,8 @@ For a high level overview of P4K and its applications you can checkout the follo
 
 K automatically derives an interpreter for the P4 language directly from our semantics.
 The interpreter can be used to execute and test P4 programs (this is especially useful for making sure that the semantics is correct).  
-In order to run a P4 program, you should first compile (`kompile`) the our language definition using K.
-Our current preferred method to provide input (packets, table entries, etc) for a P4 program is to do it statically in which case the input will be hard-coded in the semantics.
+In order to run a P4 program, you should first compile (`kompile`) our language definition using K.
+The current preferred method to provide input (packets, table entries, etc) for a P4 program is to do it statically (the input will be hard-coded in the semantics).
 Such input is provided to the program under execution during the "initialization phase" ([more info]((https://arxiv.org/abs/1804.01468))) of the execution. 
 In order to `kompile` the language definition with a static input run:
 ```
@@ -65,8 +65,8 @@ The program will run until it is finished processing all packets in the input pa
 In either case, the configuration of the program in its last state will be printed.
 If the program is finished processing the input packet stream (when you see `<k> @nextPacket </k>` and `<in> . </in>` in the configuration), the output packet stream can be seen from the output buffer (the `<out>` cell).
 You may also inspect other parts of the configuration. For example you can view the final value of the fields for the last packet (the `<fieldVals>` cell) in the instances (the `<instance>` cell).
-Each value is of the form `@val(I,W,S)` where `I` is the decimal value, `W` is its width, and `S` indicates whether the value is signed (`true`) or unsigned (`false`) (I might replace this with fix width bitvectors in the near future, but it is more human readable in this form)
-If it is hard to read the configuration you may use a XML formatter to make it more human readable (my preference is to save the output in a `.xml` format and view it in a browser).
+Each value is of the form `@val(I,W,S)` where `I` is the decimal value, `W` is its width, and `S` indicates whether the value is signed (`true`) or unsigned (`false`) (I might replace this with fix width bitvectors in the near future, but it is more human readable in the current form)
+If it is hard to read the configuration you may use a XML formatter. My preference is to save the output in with `.xml` extension and view it in a browser).
  
 If you want to see the computation step by step, you can run the program in the debug (`--debugger`) mode and use `step`/`s` to step, `backstep`/`b` to step back and `peak`/`p` to see the configuration in each step, 
 
@@ -137,32 +137,48 @@ And then kompile the semantics and then run the input program with it.
 
 ### Program Verification
 
-K features a language independent program verification infrastructure based on Reachability Logic.
-It can be instantiated with the semantics of a programming language such as P4 to automatically provide a sound and relatively complete program verifier for that language.
+K features a language independent program verification infrastructure based on [Reachability Logic](http://dx.doi.org/10.1145/2983990.2984027);
+It can be instantiated with the semantics of a programming language such as P4 to automatically provide a sound and relatively complete program verifier for the language.
 This eliminates the need for development of an additional semantics for verification of complex properties about P4 programs and networks.
-In this system, properties to be verified are given using a set of reachability assertions, where each reachability assertion
+In this system, properties to be verified are given using a set of reachability assertions.
 The standard pre/post conditions and loop invariants used in Hoare style program verification can be encoded as reachability assertions.
 
 There is an example in the `verification/load-balancer` directory that illustrates the the use of K's deductive verifier to prove a property about a simple P4 program.
 The program features a very simple load balancer that balances the input packets from all of its ports between two output ports. 
 We try to prove that program (along with its table inputs) correctly balances the load: 
 "For any input stream of packets, after processing all the packets, no packet is dropped and no new packet is added; all the packets in the output are either sent to port 0 or port 1; and the absolute difference between the number of packets sent to ports 0 and 1 is less than or equal to 1".
-The `load-balancer.p4` file contains the load balancer program, 
-The `tables.k` file contains the table entries.
-The  `size_balance_spec.k` file contains the property to be proved in expressed in form of a reachability assertion (`rule [spec]`). 
-It also contains the loop invariant that is necessary for the verification (`rule [loop-inv]`).
-The `list.smt2` file contains some `Z3` declarations and axioms that are necessary for the proof to go through (not all of it is needed thought).
+`load-balancer.p4` contains the load balancer program; 
+`tables.k` contains the table entries;
+and `size_balance_spec.k` contains the property to be proved in expressed in form of a reachability assertion (`rule [spec]`). 
+It also contains a loop invariant that is necessary for the verification (`rule [loop-inv]`).
+`list.smt2` contains a few Z3 declarations and axioms that are necessary for the proof to go through (not all of it is needed thought).
 More information on the program, the entries, the property, and the invariant can be found [here](https://arxiv.org/abs/1804.01468).
-In order to run the program verifier, run `prove.sh`. `true` means that the property is satisfied. 
+In order to run the program verifier, run `prove.sh`. `true` means that the property is proved. 
 
 ### Translation Validation
 
-//TODO
+Recently, K has introduced a prototype tool for cross language program equivalence check using a generalized notion of bisimulation.
+The tool takes K semantics of two programming languages and two input programs written in the
+respective languages as input and and checks whether or not the two programs are equivalent.
+In doing so, the tool usually needs a few hints from the translator. 
+The hints are provided in form of synchronization points. 
+Each synchronization point is a pair of symbolic states in the two input programs that are supposed to correspond to each other. 
+
+To illustrate the use of the tool, we developed a simple C-like language (called IMP+) and its semantics using K.
+We then manually translated an example P4 program into IMP+ and used the equivalence checker tool to establish the equivalence. 
+Our goal was to prove that: starting from any input stream of packets and any table entries, the two programs will generate the same output stream of packets according to their semantics.  
+`impp.k` contains the semantics of IMP+. `
+simple.p4` and `simple.imp` are the example P4 program and its translation to IMP+, respectively.
+`p4-spec.k` and `impp-spec.k` contain the respective synchronization points in the P4 and the IMP+ programs.
+More information on the synchronization points can be found [here](https://arxiv.org/abs/1804.01468). 
+Please refer to `README.md` in that directory for more information regarding running the equivalence checker. 
+   
 
 ### Semantic Coverage Measurement
 
 You can use the interpreter to check what percentages of the semantic rules are covered by the tests that you run. 
-You can take a look at the `coverage` directory for that. For example, to measure coverage for `basic_routing example`, do as follows:
+You can take a look at the `coverage` directory for that. 
+For example, to measure coverage for `basic_routing example`, do as follows:
 
 ```
  script/run.sh test/semantics/basic_routing/basic_routing.p4 2>&1 | grep "p4-semantics.k" > coverage/covered
@@ -170,10 +186,6 @@ You can take a look at the `coverage` directory for that. For example, to measur
  ./extractRules.sh ../src/p4-semantics.k  > rules
  python produceReport.py
  ...
- ___________________________________stats___________________________________
- covered:	98 ( 60.87 %)
- uncovered:	63
- total:		161
 ```
 
 
@@ -190,10 +202,22 @@ So the buffering mechanism can only contain a single packet at a time.
 As a result, the support for cloning a packet into ingress is a bit hacky.   
   
 
-### Language design issues
+#### Language Design/Specification Issues
 
-//TODO
+We have encountered with several language design issues and corner cases in the specification of P4_14. 
+The file `issues.txt` contains some of the issues. 
+I have reported some of the issues to the P4 language specification's repository.
+You may find them [here](https://github.com/p4lang/p4-spec/issues?utf8=%E2%9C%93&q=author%3Akheradmand).
 
+#### Multi-threading (work in progress)
+
+Real world high performance packet processors usually have multiple threads of execution. 
+Although the specification is silent about the concurrency model,
+there is a work in progress in the `multithreaded` directory to provide semantics of multi-threading inside P4 programs.
+Using the K's model checker (i.e the `search` mode), one can explore the state space of concurrent P4 programs and for example check for possible outputs when there is a data races over stateful registers that affects the output (`race.p4` is such an example).
+Even using single threaded programs, it is possible to check the state space of interaction of multiple P4 programs in a network. 
+
+  
 #### Parsing P4 programs into KAST 
 
 If you want to test the syntax only, you can parse P4 programs into KAST (K's AST) without running them.
