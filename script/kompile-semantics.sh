@@ -17,4 +17,4 @@ else
     fi
 fi
 python $dir/add-data.py $DATA
-kompile $dir/../src/p4-semantics.k --syntax-module P4-SYNTAX --main-module P4-SEMANTICS $@
+kompile $dir/../src/p4-semantics.k  --debug  --syntax-module P4-SYNTAX --main-module P4-SEMANTICS $@

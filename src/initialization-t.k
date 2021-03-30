@@ -13,7 +13,7 @@ syntax Criteria
 
 
 syntax Val ::= "@val" "("Int","Int","Bool")" //int,width,signed
-syntax ActionCall ::= "@call" "(" ActionName "," K /* ResolvedArgs */ ")" [strict(2)]
+syntax ActionCall ::= "@call" "(" ActionName "," KItem /* ResolvedArgs */ ")" [strict(2)]
 syntax ActionProfileEntryRef ::= "@apref" "(" Int ")"
 syntax ActionCallOrActionProfileRef ::= ActionCall | ActionProfileEntryRef
 
@@ -40,8 +40,8 @@ syntax Criteria ::= "$ctr" "(" List ")"
 
 syntax PacketData ::= List | String
 syntax Packet ::=
-        "$packet" "(" PacketData "," Int ")"
-      | "$packet" "(" PacketData "," Int "," Map ")"
+        "$packet" "(" PacketData "," K ")"
+      | "$packet" "(" PacketData "," K "," Map ")"
 
 
 syntax Id ::=     "%standard_metadata_t" [token]
@@ -56,18 +56,18 @@ syntax Val ::= "@new_packet"
 rule <k> @init => . ... </k>
      <headers>
                  (.Bag => <header>
-                             <name> %standard_metadata_t </name>
-                             <opts> .Map </opts>
-                             <fields>
-                                ingress_port   :    #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
-                                egress_spec   :    #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
-                                instance_type   :    #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
+                             <h-name> %standard_metadata_t </h-name>
+                             <h-opts> .Map </h-opts>
+                             <h-fields>
+                                ingress_port   :    #token("32","DecimalValueToken") (.FieldMods);
+                                egress_spec   :    #token("32","DecimalValueToken") (.FieldMods);
+                                instance_type   :    #token("32","DecimalValueToken") (.FieldMods);
                                 //TODO
 /*                                String2Id("egress_port") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
                                 String2Id("packet_length") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);
                                 String2Id("instance_type") : #token("32","DecimalValueToken@VALUE-SYNTAX") (.FieldMods);*/
                                  .FieldDecs
-                             </fields>
+                             </h-fields>
                              ...
                          </header>
                  )
@@ -79,7 +79,7 @@ rule <k> @init => . ... </k>
                     <valid> true </valid>
                     <metadata> true </metadata>
                     <typeName>  %standard_metadata_t </typeName>
-                    <name> standard_metadata </name>
+                    <i-name> standard_metadata </i-name>
                     <fieldVals>
                         (ingress_port |-> @undef)
                         (egress_spec |-> @undef)

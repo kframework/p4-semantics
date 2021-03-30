@@ -3,16 +3,17 @@ module VALUE
 endmodule
 
 module VALUE-SYNTAX
+    imports BOOL-SYNTAX
     //syntax None
 // 1.5.1 Value Specifications
     //syntax ConstValue ::= OptionalSign OptionalWidthSpec UnsignedValue
     syntax ConstValue ::=
               UnsignedValue
             | "+" UnsignedValue
-            | "-" UnsignedValue            [klabel(nconstv)] //added this to avoid ambiguity with - Exp
+            | "-" UnsignedValue            [klabel(nconstv), symbol] //added this to avoid ambiguity with - Exp
             | WidthSpec UnsignedValue
             | "+" WidthSpec UnsignedValue
-            | "-" WidthSpec UnsignedValue  [klabel(nwconstv)] //this one too
+            | "-" WidthSpec UnsignedValue  [klabel(nwconstv), symbol] //this one too
 
 
     //syntax OptionalWidthSpec ::= None | WidthSpec

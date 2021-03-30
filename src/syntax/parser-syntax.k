@@ -8,7 +8,6 @@ module PARSER-SYNTAX
 imports HEADER-SYNTAX //only for header reference
 imports VALUE-SYNTAX
     syntax ValueSetName ::= Id
-    syntax InstanceName ::= Id
     syntax ParserStateName ::= Id
     syntax ControlFunctionName ::= Id
     syntax ParserExceptionName ::= Id
@@ -28,12 +27,18 @@ imports VALUE-SYNTAX
     syntax ExtractOrSetStatements ::= List{ExtractOrSetStatement, ""}
     syntax ExtractOrSetStatement ::= ExtractStatement | SetStatement
 
-    syntax ExtractStatement ::= "extract" "(" HeaderExtractRef ")" ";"
+//    syntax ExtractStatement ::= "extract" "(" HeaderExtractRef ")" ";"
+
+     syntax ExtractStatement ::=  "extract" "(" InstanceName ")" ";"
+                                | "extract" "(" InstanceName "[" HeaderExtractIndex "]" ")" ";"
 
 
-    syntax HeaderExtractRef ::=
-                      InstanceName          [klabel(ScalarExtract)]
-                    | InstanceName "[" HeaderExtractIndex "]" [klabel(ArrayExtract)]
+
+//    syntax HeaderExtractRef ::=
+//                      InstanceName          [klabel(ScalarExtract), symbol]
+//                   |  InstanceName "[" HeaderExtractIndex "]" [klabel(ArrayExtract), symbol]
+
+    //syntax priorities InstanceName > ScalarExtract
 
     syntax HeaderExtractIndex ::=
                   ConstValue
@@ -50,7 +55,7 @@ imports VALUE-SYNTAX
 
     syntax ReturnValueType ::=
                   "return" ParserStateName ";"
-                | "return" ControlFunctionName ";"
+                //| "return" ControlFunctionName ";"
                 | "parse_error" ParserExceptionName ";"
 
     syntax CaseEntries ::= NeList{CaseEntry,""}     [klabel('CaseEntries)]

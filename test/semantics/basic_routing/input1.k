@@ -2,7 +2,7 @@
         ...
         <table>
             ...
-            <name> port_mapping </name>
+            <t-name> port_mapping </t-name>
             <rules> .List   => (
                                  ListItem(
                                     $rule(0,
@@ -29,7 +29,7 @@
         </table>
         <table>
             ...
-            <name> bd </name>
+            <t-name> bd </t-name>
             <rules> .List => (
                                  ListItem(
                                     $rule(4,
@@ -46,7 +46,7 @@
         </table>
         <table>
             ...
-            <name> ipv4_fib </name>
+            <t-name> ipv4_fib </t-name>
             <rules> .List => (
                                  ListItem(
                                     $rule(6,
@@ -65,7 +65,7 @@
         </table>
         <table>
             ...
-            <name> nexthop </name>
+            <t-name> nexthop </t-name>
             <rules> .List => (
                                  ListItem(
                                     $rule(8,
@@ -93,7 +93,7 @@
         </table>
         <table>
             ...
-            <name> rewrite_mac </name>
+            <t-name> rewrite_mac </t-name>
             <rules> .List => (
                                  ListItem(
                                     $rule(12,

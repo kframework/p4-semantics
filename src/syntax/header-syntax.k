@@ -6,6 +6,7 @@ endmodule
 
 module HEADER-SYNTAX
 imports VALUE-SYNTAX
+imports ID-SYNTAX
     syntax HeaderTypeName ::= Id
     syntax InstanceName ::= Id
     syntax FieldName ::= Id
@@ -35,14 +36,14 @@ imports VALUE-SYNTAX
     //syntax OptionalMaxLengthDec ::= None | "max_length" ":" ConstValue ";"
     syntax MaxLengthDec ::= "max_length" ":" ConstValue ";"
 
-    syntax FieldDecs ::= NeList{FieldDec,""}                [klabel('FieldDecs)]
+    syntax FieldDecs ::= List{FieldDec,""}                [klabel('FieldDecs)]
     //syntax FieldDec ::= FieldName ":" BitWidth OptionalFieldMods ";"
     syntax FieldDec ::=
               FieldName ":" BitWidth ";"
             | FieldName ":" BitWidth  "(" FieldMods ")" ";"
 
     //syntax OptionalFieldMods ::= None | "(" FieldMods ")"
-    syntax FieldMods ::= NeList{FieldMod, ","}              [klabel('FieldMods)]
+    syntax FieldMods ::= List{FieldMod, ","}              [klabel('FieldMods)]
     syntax FieldMod ::= "signed" | "saturating"
     //syntax LengthBinOp ::= "+" | "-" | "*" | "<<" | ">>" //priorities according to C
     syntax LengthExp ::=
@@ -79,7 +80,7 @@ imports VALUE-SYNTAX
 
     syntax MetadataInitializer ::= "{" FieldValueAssignments "}"
 
-    syntax FieldValueAssignments ::= NeList{FieldValueAssignment,""}    [klabel('FieldValueAssignments)]
+    syntax FieldValueAssignments ::= List{FieldValueAssignment,""}    [klabel('FieldValueAssignments)]
     syntax FieldValueAssignment ::= FieldName ":" FieldValue ";"    [klabel('FieldValAsgn)]
 
 
@@ -105,7 +106,7 @@ imports HEADER-SYNTAX
                 "field_list" FieldListName "{"
                     FieldListEntryItems
                 "}"
-    syntax FieldListEntryItems ::= NeList{FieldListEntryItem,""}        [klabel('FieldListEntryItems)]
+    syntax FieldListEntryItems ::= List{FieldListEntryItem,""}        [klabel('FieldListEntryItems)]
     syntax FieldListEntryItem ::= FieldListEntry ";"                    [klabel('FieldListEntryItem)]
 
     //syntax FieldListEntry ::= ObjectRef | FieldValue
@@ -127,7 +128,7 @@ imports HEADER-SYNTAX
                 "algorithm" ":" StreamFunctionAlgorithmName ";"
                 "output_width" ":" ConstValue ";"
             "}"
-    syntax FieldListNameItems ::= NeList{FieldListNameItem,""}          [klabel('FieldListNameItems)]
+    syntax FieldListNameItems ::= List{FieldListNameItem,""}          [klabel('FieldListNameItems)]
     syntax FieldListNameItem ::= FieldListName ";"                      [klabel('FieldListNameItem)]
 
 
@@ -138,7 +139,7 @@ imports HEADER-SYNTAX
                 UpdateVerifySpecs
             "}"
 
-    syntax UpdateVerifySpecs ::= NeList{UpdateVerifySpec,""}            [klabel('UpdateVerifySpecs)]
+    syntax UpdateVerifySpecs ::= List{UpdateVerifySpec,""}            [klabel('UpdateVerifySpecs)]
 
     //syntax UpdateVerifySpec ::= UpdateOrVerify FieldListCalculationName OptionalIfCond ";"
     syntax UpdateVerifySpec ::=
@@ -150,8 +151,8 @@ imports HEADER-SYNTAX
     syntax UpdateOrVerify ::= "update" | "verify"
     syntax IfCond ::= "if" "(" CalcBoolCond ")"
     syntax CalcBoolCond ::=
-                  "valid" "(" HeaderOrFieldRef ")"  [klabel(CalcBCValid)]
-                | FieldRef "==" FieldValue          [klabel(CalcBCEq)]
+                  "valid" "(" HeaderOrFieldRef ")"  [klabel(CalcBCValid), symbol]
+                | FieldRef "==" FieldValue          [klabel(CalcBCEq), symbol]
 
     syntax HeaderOrFieldRef ::= HeaderRef | FieldRef
 

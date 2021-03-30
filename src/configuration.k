@@ -2,21 +2,24 @@ require "syntax/p4-syntax.k"
 
 module CONFIGURATION
 imports P4-COMMON
+imports DOMAINS
+
 
 syntax KItem ::= "@init" | "@exec" | "@fillInitInstances"
 syntax KItem ::=  "@parseOrder" "(" K ")"
-syntax Id ::= "start" [token]
+syntax KItem ::= "#parserState" "(" ParserStateName ")"
+syntax ParserStateName ::= "start" [token]
 
 
 configuration
 <T>
-    <k>  $PGM:P4Program ~> @parseOrder (start) ~>  @init ~> @fillInitInstances ~> @exec  </k>
+    <k>  $PGM:P4Program ~> @parseOrder (#parserState(start)) ~>  @init ~> @fillInitInstances ~> @exec  </k>
 
     <headers>
-        <header multiplicity="*">
-            <name> .K </name>
-            <opts> .Map </opts>
-            <fields> .K </fields>
+        <header multiplicity="*" type="Set">
+            <h-name> .K </h-name>
+            <h-opts> .Map </h-opts>
+            <h-fields> .K </h-fields>
         </header>
     </headers>
 
@@ -25,15 +28,15 @@ configuration
     </arrays>
 
     <fieldLists>
-        <fieldList multiplicity="*">
-            <name> .K </name>
-            <fields> .K </fields>
+        <fieldList multiplicity="*" type="Set">
+            <fl-name> .K </fl-name>
+            <fl-fields> .K </fl-fields>
         </fieldList>
     </fieldLists>
 
     <fieldListCalcs>
-        <fieldListCalc multiplicity="*">
-            <name> .K </name>
+        <fieldListCalc multiplicity="*" type="Set">
+            <flc-name> .K </flc-name>
             <fLists> .List </fLists>
             <algorithm> .K </algorithm>
             <outWidth> .K </outWidth>
@@ -43,7 +46,7 @@ configuration
     </fieldListCalcs>
 
     <calcFields>
-        <calcField multiplicity="*">
+        <calcField multiplicity="*" type="Set">
             <fieldRef> .K </fieldRef>
             <updates> .List </updates>
             <verifies> .List </verifies>
@@ -51,11 +54,11 @@ configuration
     </calcFields>
 
     <instances>
-        <instance multiplicity="*">
+        <instance multiplicity="*" type="Set">
             <valid> .K </valid>
             <metadata> .K </metadata>
             <typeName> .K </typeName>
-            <name> .K </name>
+            <i-name> .K </i-name>
             <fieldVals> .Map </fieldVals>
         </instance>
     </instances>
@@ -65,23 +68,23 @@ configuration
     <initArrays> .Map </initArrays> //https://github.com/kframework/k/issues/2352
 
     <parserStates>
-        <state multiplicity="*">
-            <name> .K </name>
-            <body> .K </body>
+        <state multiplicity="*" type="Set">
+            <ps-name> .K </ps-name>
+            <ps-body> .K </ps-body>
         </state>
     </parserStates>
 
     <valueSets>
-        <valueSet multiplicity="*">
-            <name> .K </name>
+        <valueSet multiplicity="*" type="Set">
+            <vs-name> .K </vs-name>
             //a run time API to add and remove values from the set.
             <vals> .Set </vals>
         </valueSet>
     </valueSets>
 
     <exceptionHandlers>
-        <exceptionHandler multiplicity="*">
-            <name> .K </name>
+        <exceptionHandler multiplicity="*" type="Set">
+            <eh-name> .K </eh-name>
             <pebody>
                 <setsts> .K </setsts>
                 <return> .K </return>
@@ -94,11 +97,11 @@ configuration
     </handledExceptions>
 
     <statefuls>
-        <stateful multiplicity="*">
+        <stateful multiplicity="*" type="Set">
             <stype> .K </stype>
-            <name> .K </name>
-            <opts> .Map </opts>
-            <vals> .Map </vals>
+            <s-name> .K </s-name>
+            <s-opts> .Map </s-opts>
+            <stfvals> .Map </stfvals>
             //Run time APIs should be provided to indicate the actual width of a given counter.
             <width> .K </width>
         </stateful>
@@ -109,44 +112,44 @@ configuration
     </tableDirects>
 
     <actions>
-        <action multiplicity="*">
-            <name> .K </name>
+        <action multiplicity="*" type="Set">
+            <a-name> .K </a-name>
             <params> .K </params>
-            <body> .K </body>
+            <a-body> .K </a-body>
         </action>
     </actions>
 
     <actionProfiles>
-        <actionProfile multiplicity="*">
-            <name> .K </name>
-            <acts> .K </acts>
-            <opts> .Map </opts>
+        <actionProfile multiplicity="*" type="Set">
+            <ap-name> .K </ap-name>
+            <ap-acts> .K </ap-acts>
+            <ap-opts> .Map </ap-opts>
             <entries> .Map </entries>
         </actionProfile>
     </actionProfiles>
 
     <actionSelectors>
-        <actionSelector multiplicity="*">
-            <name> .K </name>
+        <actionSelector multiplicity="*" type="Set">
+            <as-name> .K </as-name>
             <key> .K </key>
         </actionSelector>
     </actionSelectors>
 
     <tables>
-        <table multiplicity="*">
-            <name> .K </name>
+        <table multiplicity="*" type="Set">
+            <t-name> .K </t-name>
             <reads> .K </reads>
-            <acts> .K </acts>
-            <opts> .K </opts>
+            <t-acts> .K </t-acts>
+            <t-opts> .K </t-opts>
             <rules> .List </rules>
             <default> .K </default>
         </table>
     </tables>
 
     <controlFlows>
-        <control multiplicity="*">
-            <name> .K </name>
-            <body> .K </body>
+        <control multiplicity="*" type="Set">
+            <c-name> .K </c-name>
+            <c-body> .K </c-body>
         </control>
     </controlFlows>
 

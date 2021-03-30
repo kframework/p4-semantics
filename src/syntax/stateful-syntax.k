@@ -37,8 +37,8 @@ imports TABLE-SYNTAX //forst ConstValue TableName FieldRef
 
 
     syntax CounterType ::=
-                          "bytes"       [klabel(CTBytes), token]
-                        | "packets"     [klabel(CTPackets), token]
+                          "bytes"       [klabel(CTBytes), symbol]
+                        | "packets"     [klabel(CTPackets), symbol]
                         | "bytes_and_packets"
     syntax DirectOrStatic ::= DirectAttribute | StaticAttribute
     syntax DirectAttribute ::= "direct" ":" TableName

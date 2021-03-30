@@ -9,6 +9,8 @@ require "control-syntax.k"
 // based on P4 Language Spec Version 1.0.3 Nov. 2016
 
 module P4-COMMON
+    imports DOMAINS-SYNTAX
+
     imports VALUE-SYNTAX
     imports HEADER-SYNTAX
     imports STATEFUL-SYNTAX
@@ -47,8 +49,8 @@ endmodule
 module P4-SYNTAX
     imports P4-COMMON
 
-        syntax BinaryValueToken ::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel('BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
-        syntax DecimalValueToken ::= r"[0-9\\_]+" [token, notInRules, klabel('DecimalValueToken)] //Token{[0-9\\_]+} [notInRules]
-        syntax HexadecimalValueToken ::= r"(0x|0X)[0-9a-fA-F\\_]+" [token, notInRules, klabel('HexadecimalValueToken)] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
+        syntax BinaryValueToken ::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel(BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
+        syntax DecimalValueToken ::= r"[0-9\\_]+" [prec(10), token] //Token{[0-9\\_]+} [notInRules]
+        syntax HexadecimalValueToken ::= r"(0x|0X)[0-9a-fA-F\\_]+" [token, notInRules, klabel(HexadecimalValueToken)] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
 
 endmodule
