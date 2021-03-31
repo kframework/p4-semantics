@@ -6,10 +6,11 @@ imports DOMAINS
 
 
 syntax KItem ::= "@init" | "@exec" | "@fillInitInstances"
-syntax KItem ::=  "@parseOrder" "(" K ")"
+syntax KItem ::=  "@parseOrder" "(" KItem ")"
 syntax KItem ::= "#parserState" "(" ParserStateName ")"
-syntax ParserStateName ::= "start" [token]
+syntax Id ::= "start" [token]
 
+syntax KItem ::= "empty_cell"
 
 configuration
 <T>
@@ -69,8 +70,8 @@ configuration
 
     <parserStates>
         <state multiplicity="*" type="Set">
-            <ps-name> .K </ps-name>
-            <ps-body> .K </ps-body>
+            <ps-name> empty_cell    </ps-name>
+            <ps-body> empty_cell    </ps-body>
         </state>
     </parserStates>
 

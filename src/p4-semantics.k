@@ -167,7 +167,7 @@ rule <k> @initField(N,F,V:Val) => . ...</k>
 rule <k> @processDec(parser Name:ParserStateName { Body:ParserFunctionBody }) => . ... </k>
     <parserStates> (.Bag =>
           <state>
-            <ps-name> Name </ps-name> <ps-body> Body </ps-body> ...
+            <ps-name> Name </ps-name> <ps-body> Body </ps-body>
           </state>
     ) ... </parserStates>
 
@@ -355,9 +355,9 @@ rule <k> @parseOrder(extract(H:InstanceName); Rest:ExtractOrSetStatements Ret:Re
      ...
      </k>
 
-rule <k> @parseOrder(#parserState(C:ParserStateName)) => @if @is_state_marked(C) @then .K @else @mark_state(C) ~> @parseOrder(B) @fi ... </k>
+rule <k> (@parseOrder(#parserState(C:ParserStateName)) => @if @is_state_marked(C) @then .K @else @mark_state(C) ~> @parseOrder(B) @fi) ... </k>
      <parserStates>
-        <state> <ps-name> C </ps-name> <ps-body> B:ParserFunctionBody   </ps-body> </state>
+        <state> <ps-name> C </ps-name> <ps-body> B:ParserFunctionBody </ps-body> ... </state>
         ...
      </parserStates>
 
@@ -568,7 +568,7 @@ syntax KItem ::=    "@selected" "(" Val "," ValueList ")"
                   | "@selected" "(" Val "," Set ")"
 rule @selected(_:Val, default ) => true
 rule @selected(_:Val, .ValueOrMaskeds) => false
-rule @selected(V:Val, F:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
+rule [myrule]: @selected(V:Val, F:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
 rule @selected(V:Val, F:FieldValue mask M:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,@makePair(F,M),ternary) @then true @else @selected(V,Rest) @fi
 rule <k> @selected(V:Val, N:ValueSetName , Rest:ValueOrMaskeds) => @if @selected(V,S) @then true @else @selected(V, Rest) @fi ... </k>
      <valueSets> <valueSet> <vs-name> N </vs-name> <vals> S:Set </vals> ... </valueSet> ... </valueSets>
@@ -653,8 +653,8 @@ rule @extract(N:InstanceName, F:FieldName : CW:ConstValue ( _:FieldMods ) ; Rest
         @extractField(N,F,CW) ~> @extract(N,Rest)
 rule <k> @extract(N:InstanceName, F:FieldName : * (_:FieldMods); Rest:FieldDecs) =>
     @if (@evalLengthExp(LE,N) %<= @val(ML,0,false)) @then
-        @if (@evalLengthExp(LE,N) * @val(8,0,false) %> @val(FW,0,false)) @then  //TODO (minor): it is actually >= but = may be problematic as width of 0 is currently interpreted as infinity
-           @setVarWidth(@evalLengthExp(LE,N) * @val(8,0,false) - @val(FW,0,false)) ~> @extractField(N,F,@getVarWidth) ~> @extract(N,Rest)
+        @if ((@evalLengthExp(LE,N) %* @val(8,0,false)) %> @val(FW,0,false)) @then  //TODO (minor): it is actually >= but = may be problematic as width of 0 is currently interpreted as infinity
+           @setVarWidth((@evalLengthExp(LE,N) %* @val(8,0,false)) %- @val(FW,0,false)) ~> @extractField(N,F,@getVarWidth) ~> @extract(N,Rest)
         @else
            @throw(p4_pe_header_too_short)
         @fi
@@ -678,18 +678,18 @@ syntax KItem ::= "@getVarWidth"
 rule <k> @getVarWidth => V ... </k>
      <parser> <varWidth> V:Val </varWidth> ... </parser>
 
-syntax LengthExp ::= Val
-syntax LengthExp ::= "@evalLengthExp" "(" LengthExp ","  InstanceName ")"
+//syntax LengthExp ::= Val
+syntax KItem ::= "@evalLengthExp" "(" LengthExp ","  InstanceName ")"
 rule @evalLengthExp(CV:ConstValue, _:InstanceName) => CV
 rule <k> @evalLengthExp(F:FieldName, N:InstanceName) => V ... </k>
     <instances>
         <instance> <i-name> N </i-name> <fieldVals> F |-> V:Val _:Map </fieldVals>  ... </instance> ...
     </instances>
-rule @evalLengthExp(LE1:LengthExp * LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) * @evalLengthExp(LE2, N)
-rule @evalLengthExp(LE1:LengthExp + LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) + @evalLengthExp(LE2, N)
-rule @evalLengthExp(LE1:LengthExp - LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) - @evalLengthExp(LE2, N)
-rule @evalLengthExp(LE1:LengthExp << LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) << @evalLengthExp(LE2, N)
-rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) >> @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp * LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) %* @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp + LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) %+ @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp - LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) %- @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp << LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) %<< @evalLengthExp(LE2, N)
+rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLengthExp(LE1, N) %>> @evalLengthExp(LE2, N)
 
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," KItem /* Val */ ")" [strict(3)]
 
@@ -1170,7 +1170,7 @@ rule #in_keys(K1:KItem, (K1 |-> _V:KItem) _:Map) => true
 rule #in_keys(K1:KItem, (K2:KItem |-> _V:KItem) Rest:Map) => #in_keys(K1,Rest) when K1 =/=K K2
 
 //---------------actions----------------------------------
-syntax Arg ::= Val
+//syntax Arg ::= Val
 syntax KItem ::= "@resolveArgs" "(" Args "," ResolvedArgs ")"
 rule @resolveArgs(.Args,R:ResolvedArgs) => R
 rule @resolveArgs((FR:FieldRef , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(FR))))  //we do not evaluate fieldref
@@ -1748,13 +1748,16 @@ syntax Int ::= "Val2Int" "(" Val ")" [function]
 rule Val2Int ( @val(I:Int,_,_) ) => I
 
 
-syntax Id ::= BinaryValueToken | DecimalValueToken | HexadecimalValueToken
+
 syntax Int ::= "USgnVal2Int" "(" ConstValue ")" [function]
 //TODO: change all letters to lower case
-rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0b",""),2)
-rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(Id2String(UV),"_",""))
-rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replaceAll(Id2String(UV),"_",""),"0x",""),16)
+rule USgnVal2Int( UV:BinaryValueToken ) => String2Base(replaceFirst(replaceAll(BinaryValueToken2String(UV),"_",""),"0b",""),2)
+rule USgnVal2Int( UV:DecimalValueToken ) => String2Int(replaceAll(DecimalValueToken2String(UV),"_",""))
+rule USgnVal2Int( UV:HexadecimalValueToken ) => String2Base(replaceFirst(replaceAll(HexadecimalValueToken2String(UV),"_",""),"0x",""),16)
 
+syntax String ::= DecimalValueToken2String      ( DecimalValueToken     )    [function, functional, hook(STRING.token2string)]
+syntax String ::= BinaryValueToken2String       ( BinaryValueToken      )    [function, functional, hook(STRING.token2string)]
+syntax String ::= HexadecimalValueToken2String  ( HexadecimalValueToken )    [function, functional, hook(STRING.token2string)]
 
 syntax KItem ::= "@if" KItem /* Bool */ "@then" K "@else" K "@fi"[strict(1)]
 syntax KResult ::= Bool
@@ -1837,6 +1840,10 @@ syntax KItem ::=   KItem "%==" KItem [seqstrict]
                  | KItem "%&"  KItem [seqstrict]
                  | KItem "%+" KItem [seqstrict]
                  | KItem "%>" KItem [seqstrict]
+                 | KItem "%-" KItem [seqstrict]
+                 | KItem "%*" KItem [seqstrict]
+                 | KItem "%>>" KItem [seqstrict]
+                 | KItem "%<<" KItem [seqstrict]
                  | KItem "%<=" KItem [seqstrict]
 		         | KItem "%|"  KItem [seqstrict]
 
@@ -1844,6 +1851,10 @@ rule V1:Val %== V2:Val => V1 == V2
 rule V1:Val %& V2:Val => V1 & V2
 rule V1:Val %| V2:Val => V1 | V2
 rule V1:Val %+ V2:Val => V1 + V2
+rule V1:Val %- V2:Val => V1 - V2
+rule V1:Val %* V2:Val => V1 * V2
+rule V1:Val %>> V2:Val => V1 >> V2
+rule V1:Val %<< V2:Val => V1 << V2
 rule V1:Val %> V2:Val => V1 > V2
 rule V1:Val %<= V2:Val => V1 <= V2
 rule B1:Bool %&& B2:Bool => B1 andBool B2
@@ -1868,7 +1879,7 @@ rule @makeConcat(@nil, Vs:Vals) => Vs
 rule @makeConcat(@cons(V:Val,Rest:Vals), Vs:Vals) => @makeCons(V,@makeConcat(Rest,Vs))
 
 
-//rule UV:UnsignedValue => @val(USgnVal2Int(UV),0,false)
+rule UV::UnsignedValue => @val(USgnVal2Int(UV),0,false)
 rule + UV:UnsignedValue => UV
 rule nconstv(UV:UnsignedValue) => @negative(UV)
 rule (W:DecimalValueToken' UV:UnsignedValue) => @setWidth(USgnVal2Int(W),UV)

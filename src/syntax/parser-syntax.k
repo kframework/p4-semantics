@@ -68,7 +68,7 @@ imports VALUE-SYNTAX
             | ControlFunctionName
             | "parse_error" ParserExceptionName
 
-    syntax ValueOrMaskeds ::= NeList{ValueOrMasked,","} [klabel('ValueOrMaskeds)]
+    syntax ValueOrMaskeds ::= NeList{ValueOrMasked,","} [klabel(ValueOrMaskeds), symbol]
     syntax ValueOrMasked ::=
                   FieldValue
                 | FieldValue "mask" FieldValue  [strict]
