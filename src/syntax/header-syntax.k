@@ -151,7 +151,7 @@ imports HEADER-SYNTAX
     syntax UpdateOrVerify ::= "update" | "verify"
     syntax IfCond ::= "if" "(" CalcBoolCond ")"
     syntax CalcBoolCond ::=
-                  "valid" "(" HeaderOrFieldRef ")"  [klabel(CalcBCValid), symbol]
+                  "valid" "(" HeaderOrFieldRef ")"  [klabel(CalcBCValid), symbol, prefer]
                 | FieldRef "==" FieldValue          [klabel(CalcBCEq), symbol]
 
     syntax HeaderOrFieldRef ::= HeaderRef | FieldRef

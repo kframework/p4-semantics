@@ -940,7 +940,7 @@ rule @updateCalcField(F:FieldRef, ListItem(update FLC:FieldListCalculationName i
 //----------------control flow-------------------------
 rule .ControlStatements => .                                [structural]
 rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
-rule { B:ControlStatements } => @setCrnt("$action", .K) ~> @setCrnt("$miss", .K) ~> B
+rule { B:ControlStatements } => @setCrnt("$action", "%nothing") ~> @setCrnt("$miss", "%nothing") ~> B
 
 
 //apply
@@ -948,7 +948,7 @@ rule apply (T:TableName) ; => apply (T) { .HitMissCases }   //[macro]
 
 
 //TODO: for now assuming that a snapshot of current rules are taken before matching
-rule <k> apply (T:TableName) { C:CaseList } => @setCrnt("$table", T) ~> @checkNextRule(FM,R) ~> @setCrnt("$table", .K) ~> @checkNextAppSelCase (C) ... </k>
+rule <k> apply (T:TableName) { C:CaseList } => @setCrnt("$table", T) ~> @checkNextRule(FM,R) ~> @setCrnt("$table", "%nothing") ~> @checkNextAppSelCase (C) ... </k>
      <tables>
         <table> <t-name> T </t-name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
      ...
@@ -971,7 +971,7 @@ rule <k> @checkNextAppSelCase(HM:HitOrMiss B:ControlBlock Rest:HitMissCases) =>
 
 rule <k> @checkNextAppSelCase(AD:ActionOrDefault B:ControlBlock Rest:ActionCases) =>
        //#if (@isDefault(AD) orBool A ==K AD) #then  https://github.com/p4lang/p4-spec/issues/447
-       #if ((@isDefault(AD) andBool A =/=K .K)  orBool A ==K AD) #then
+       #if ((@isDefault(AD) andBool A =/=K "%nothing")  orBool A ==K AD) #then
            B
        #else
            @checkNextAppSelCase(Rest)
@@ -1044,7 +1044,7 @@ rule ~ @val(V2,_,_) => @val(~Int V2,0,true)
 //TODO: unify it with @negative
 
 //rule BExpValid( H:HeaderRef )   => @isValid(H)
-//rule valid(H:HeaderRef) =>  @isValid(H)
+rule valid(H:HeaderRef):BoolExpr =>  @isValid(H)
 //rule BExpPar(BE:K) => BE
 rule not B:Bool => notBool B
 
@@ -1061,7 +1061,7 @@ syntax KItem ::= "@checkNextRule" "(" FieldMatchs "," List /*rules*/ ")"
 
 // miss
 //syntax Int ::= "$default_entry_index" [token]
-rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$rule", .K) ~> @setCrnt("$miss", true) ~> @callOrDeref(A) ~> @setCrnt("$rule", .K) ... </k>
+rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$rule", "%nothing") ~> @setCrnt("$miss", true) ~> @callOrDeref(A) ~> @setCrnt("$rule", "%nothing") ... </k>
      <crnt> ("$table" |-> T:TableName) _:Map </crnt>
      <tables> <table> <t-name> T </t-name> <default> A:ActionCallOrActionProfileRef </default> ... </table> ... </tables>
 rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ... </k>
@@ -1070,7 +1070,7 @@ rule <k> @checkNextRule(_:FieldMatchs,.List  ) => @setCrnt("$miss", true) ... </
 
 
 rule @checkNextRule(FM:FieldMatchs, ListItem($rule(Id:Int, $ctr(R:List),CD:ActionCallOrActionProfileRef )) Rest:List)
-    => @if @matchAll(FM,R) @then @setCrnt("$miss", false) ~> @setCrnt("$rule", Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrnt("$rule", .K)  @else @checkNextRule(FM,Rest) @fi
+    => @if @matchAll(FM,R) @then @setCrnt("$miss", false) ~> @setCrnt("$rule", Id) ~> @updateDirectStatefuls ~> @callOrDeref(CD) ~> @setCrnt("$rule", "%nothing")  @else @checkNextRule(FM,Rest) @fi
 
 //rule A:ActionName ~> @setCrntRule(.K) => @setCrntRule(A) ~> A
 
@@ -1103,7 +1103,8 @@ syntax KItem ::= "@BoolToVal" "(" KItem /* Bool */ ")" [strict]
 rule @BoolToVal(true) => @val(1,0,false)
 rule @BoolToVal(false) => @val(0,0,false)
 
-syntax KItem ::= "@setCrnt" "(" KItem "," K ")"
+
+syntax KItem ::= "@setCrnt" "(" KItem "," KItem ")"
 rule <k> @setCrnt(K:KItem, V:KItem) => .K ... </k>
      <crnt> M:Map => M[K <- V] </crnt>
 
@@ -1184,7 +1185,7 @@ rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => List
      <arrays>  (X |-> _:KItem)  _:Map </arrays>
 
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(V)))) ... </k>
-     <frameStack> ListItem((X |-> V:Arg) _:Map) _:List </frameStack>
+     <frameStack> ListItem((X |-> V) _:Map) _:List </frameStack>
 rule <k> @resolveArgs((X:Id , Rest:Args) => Rest,$resolved(_:List (.List => ListItem(X)))) ... </k>
      <instances> <instance> <i-name> X </i-name> ... </instance> ... </instances>
      <frameStack> ListItem(M:Map) _:List </frameStack> when notBool (X in keys(M))
@@ -1205,7 +1206,7 @@ rule <k> @call( A:ActionName , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag
 
 syntax KItem ::= "@bindParams" "(" ParamList "," List ")"
 rule @bindParams(.ParamList, .List) => .
-rule <k> @bindParams((P:ParamName , PR:ParamList), ListItem(A:Arg) AR:List) => @bindParams(PR,AR) ... </k>
+rule [myrule2]: <k> @bindParams((P:ParamName , PR:ParamList), ListItem(A) AR:List) => @bindParams(PR,AR) ... </k>
      <frameStack> ListItem(M:Map => M [P <- A]) _:List  </frameStack>
     //TODO (CHECK): check action does not have same parameters
 
