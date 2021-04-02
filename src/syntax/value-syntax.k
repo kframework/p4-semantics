@@ -25,9 +25,9 @@ module VALUE-SYNTAX
 
     syntax BoolValue ::= Bool//"true" | "false"
 
-    syntax BinaryValueToken //::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel('BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
-    syntax DecimalValueToken //::= r"[0-9\\_]+" [token, notInRules, klabel('DecimalValueToken)] //Token{[0-9\\_]+} [notInRules]
-    syntax HexadecimalValueToken //::= r"(0x|0X)[0-9a-fA-F\\_]+" [token, notInRules, klabel('HexadecimalValueToken)] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
+    syntax BinaryValueToken [token]//::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel('BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
+    syntax DecimalValueToken [token]//::= r"[0-9\\_]+" [token, notInRules, klabel('DecimalValueToken)] //Token{[0-9\\_]+} [notInRules]
+    syntax HexadecimalValueToken [token]//::= r"(0x|0X)[0-9a-fA-F\\_]+" [token, notInRules, klabel('HexadecimalValueToken)] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
 
     syntax BinaryValue ::= BinaryValueToken
     syntax DecimalValue ::= DecimalValueToken

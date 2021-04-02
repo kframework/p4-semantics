@@ -49,7 +49,7 @@ endmodule
 module P4-SYNTAX
     imports P4-COMMON
 
-        syntax BinaryValueToken ::= r"(0b|0B)[0-1\\_]+" [token, notInRules, klabel(BinaryValueToken)] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
+        syntax BinaryValueToken ::= r"(0b|0B)[0-1\\_]+" [prec(5), token] //Token{("0b" | "0B")[0-1\\_]+} [notInRules]
         syntax DecimalValueToken ::= r"[0-9\\_]+" [prec(5), token] //Token{[0-9\\_]+} [notInRules]
         syntax HexadecimalValueToken ::= r"(0x|0X)[0-9a-fA-F\\_]+" [prec(5), token]//[token, notInRules, klabel(HexadecimalValueToken)] //Token{("0x" | "0X")[0-9a-fA-F\\_]+} [notInRules]
 

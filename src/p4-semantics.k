@@ -568,7 +568,7 @@ syntax KItem ::=    "@selected" "(" Val "," ValueList ")"
                   | "@selected" "(" Val "," Set ")"
 rule @selected(_:Val, default ) => true
 rule @selected(_:Val, .ValueOrMaskeds) => false
-rule [myrule]: @selected(V:Val, F:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
+rule @selected(V:Val, F:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,F,exact) @then true @else @selected(V,Rest) @fi
 rule @selected(V:Val, F:FieldValue mask M:FieldValue , Rest:ValueOrMaskeds) => @if @match(V,@makePair(F,M),ternary) @then true @else @selected(V,Rest) @fi
 rule <k> @selected(V:Val, N:ValueSetName , Rest:ValueOrMaskeds) => @if @selected(V,S) @then true @else @selected(V, Rest) @fi ... </k>
      <valueSets> <valueSet> <vs-name> N </vs-name> <vals> S:Set </vals> ... </valueSet> ... </valueSets>
@@ -1206,7 +1206,7 @@ rule <k> @call( A:ActionName , $resolved(Ag) ) => @pushstack ~> @bindParams(P,Ag
 
 syntax KItem ::= "@bindParams" "(" ParamList "," List ")"
 rule @bindParams(.ParamList, .List) => .
-rule [myrule2]: <k> @bindParams((P:ParamName , PR:ParamList), ListItem(A) AR:List) => @bindParams(PR,AR) ... </k>
+rule <k> @bindParams((P:ParamName , PR:ParamList), ListItem(A) AR:List) => @bindParams(PR,AR) ... </k>
      <frameStack> ListItem(M:Map => M [P <- A]) _:List  </frameStack>
     //TODO (CHECK): check action does not have same parameters
 
