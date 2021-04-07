@@ -13,7 +13,7 @@ syntax Id ::= "start" [token]
 syntax KItem ::= "empty_cell"
 
 configuration
-<T>
+<p4>
     <k>  $PGM:P4Program ~> @parseOrder (#parserState(start)) ~>  @init ~> @fillInitInstances ~> @exec  </k>
 
     <headers>
@@ -209,9 +209,7 @@ configuration
         <in> .List </in>
         <out> .List </out>
     </buffer>
-
-</T>
-
+</p4>
 
 //macros
 
