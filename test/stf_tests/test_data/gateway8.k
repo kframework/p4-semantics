@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> test1 </name>
+        <t-name> test1 </t-name>
         <rules> .List => 
         ListItem($rule(0,
                     $ctr(
@@ -23,7 +23,7 @@
         
     <table>
         ...
-        <name> test2 </name>
+        <t-name> test2 </t-name>
         <rules> .List => 
         ListItem($rule(1,
                     $ctr(

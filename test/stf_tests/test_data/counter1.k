@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> tab1 </name>
+        <t-name> tab1 </t-name>
         <rules> .List => 
         ListItem($rule(0,
                     $ctr(

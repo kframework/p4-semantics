@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> index_setter </name>
+        <t-name> index_setter </t-name>
         <rules> .List => 
         ListItem($rule(0,
                     $ctr(

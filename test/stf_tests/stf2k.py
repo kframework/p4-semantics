@@ -825,7 +825,7 @@ def main(argv):
         s = """
     <table>
         ...
-        <name> %s </name>
+        <t-name> %s </t-name>
         <rules> .List => %s </rules>
         <default> .K => %s </default>
     </table>

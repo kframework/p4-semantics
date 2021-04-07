@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> set_egress </name>
+        <t-name> set_egress </t-name>
         <rules> .List => 
         ListItem($rule(4,
                     $ctr(
@@ -36,7 +36,7 @@
         
     <table>
         ...
-        <name> udp_check </name>
+        <t-name> udp_check </t-name>
         <rules> .List => 
         ListItem($rule(7,
                     $ctr(
@@ -55,7 +55,7 @@
         
     <table>
         ...
-        <name> ethertype_match </name>
+        <t-name> ethertype_match </t-name>
         <rules> .List => 
         ListItem($rule(0,
                     $ctr(
@@ -120,7 +120,7 @@
         
     <table>
         ...
-        <name> ipv4_match </name>
+        <t-name> ipv4_match </t-name>
         <rules> .List => 
         ListItem($rule(6,
                     $ctr(

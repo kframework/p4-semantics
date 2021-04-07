@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> bd </name>
+        <t-name> bd </t-name>
         <rules> .List => 
         ListItem($rule(4,
                     $ctr(
@@ -36,7 +36,7 @@
         
     <table>
         ...
-        <name> port_mapping </name>
+        <t-name> port_mapping </t-name>
         <rules> .List => 
         ListItem($rule(0,
                     $ctr(
@@ -94,7 +94,7 @@
         
     <table>
         ...
-        <name> ipv4_fib_lpm </name>
+        <t-name> ipv4_fib_lpm </t-name>
         <rules> .List => 
         ListItem($rule(6,
                     $ctr(
@@ -133,7 +133,7 @@
         
     <table>
         ...
-        <name> ipv4_fib </name>
+        <t-name> ipv4_fib </t-name>
         <rules> .List => .List </rules>
         <default> .K => 
             @call(
@@ -147,7 +147,7 @@
         
     <table>
         ...
-        <name> nexthop </name>
+        <t-name> nexthop </t-name>
         <rules> .List => 
         ListItem($rule(8,
                     $ctr(
@@ -212,7 +212,7 @@
         
     <table>
         ...
-        <name> rewrite_mac </name>
+        <t-name> rewrite_mac </t-name>
         <rules> .List => 
         ListItem($rule(9,
                     $ctr(

@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> test1 </name>
+        <t-name> test1 </t-name>
         <rules> .List => 
         ListItem($rule(0,
                     $ctr(
@@ -36,7 +36,7 @@
         
     <table>
         ...
-        <name> output </name>
+        <t-name> output </t-name>
         <rules> .List => .List </rules>
         <default> .K => 
             @call(

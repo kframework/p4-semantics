@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> mark_check </name>
+        <t-name> mark_check </t-name>
         <rules> .List => .List </rules>
         <default> .K => 
             @call(

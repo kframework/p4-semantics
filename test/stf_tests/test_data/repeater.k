@@ -4,7 +4,7 @@
 
     <table>
         ...
-        <name> repeater </name>
+        <t-name> repeater </t-name>
         <rules> .List => 
         ListItem($rule(0,
                     $ctr(
