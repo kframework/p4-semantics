@@ -12,9 +12,9 @@ For a high level overview of P4K and its applications you can checkout the follo
  
 
 ### Dependencies:
-- JRE 8
-- K Framework
-  + Checkout the `p4k-hacks` branch from K's repository. The branch contains a few bug fixes, edits, and additions necessary for this project. 
+- K Framework (version 4)
+  + Checkout the `p4k-hacks` branch from K's repository. The branch contains a few bug fixes, edits, and additions necessary for this project.
+    - UPDATE: The project is being ported to K version 5. Some of the functionality (e.g. the interpreter) currently work with the latest version of K.   
   + Make sure the executables (kompile, kast, krun) are on PATH.
 - GCC
   + Only needed for preprocessing p4 source files
