@@ -12,6 +12,12 @@ syntax Id ::= "start" [token]
 
 syntax KItem ::= "empty_cell"
 
+
+syntax ExecutionMode ::=
+                          "PREPROCESSING"
+                        | "RUNNING"
+
+
 configuration
 <p4>
     <k>  $PGM:P4Program ~> @parseOrder (#parserState(start)) ~>  @init ~> @fillInitInstances ~> @exec  </k>
@@ -209,6 +215,10 @@ configuration
         <in> .List </in>
         <out> .List </out>
     </buffer>
+
+    <exec-mode>
+        PREPROCESSING
+    </exec-mode>
 </p4>
 
 //macros

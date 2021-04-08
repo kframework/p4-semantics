@@ -1,11 +1,20 @@
-src/p4-semantics-kompiled: $(wildcard src/*.k) $(wildcard src/syntax/*.k)
-	kompile src/p4-semantics.k --syntax-module P4-SYNTAX --main-module P4-SEMANTICS;
+KOMPILE=kompile --debug -ccopt -g
+P4_DIR=src/p4
+STF_DIR=src/stf
+CLI_DIR=src/cli
 
-src/stf/stf-semantics-kompiled: src/p4-semantics-kompiled $(wildcard src/stf/*.k)
-	kompile src/stf/stf-test.k --syntax-module STF-TEST-SYNTAX --main-module STF-TEST-SEMANTICS
+all: cli
 
-stf: src/stf/stf-semantics-kompiled
-p4: src/p4-semantics-kompiled
+$(P4_DIR)/p4-semantics-kompiled: $(wildcard $(P4_DIR)/*.k) $(wildcard $(P4_DIR)/syntax/*.k)
+	$(KOMPILE) $(P4_DIR)/p4-semantics.k --syntax-module P4-SYNTAX --main-module P4-SEMANTICS;
+
+$(CLI_DIR)/cli-semantics-kompiled: $(wildcard $(CLI_DIR)/*.k) $(wildcard $(P4_DIR)/*.k) $(wildcard $(P4_DIR)/syntax/*.k)
+	$(KOMPILE) $(CLI_DIR)/cli.k --syntax-module CLI-SYNTAX --main-module CLI-SEMANTICS
+
+p4: $(P4_DIR)/p4-semantics-kompiled
+cli: $(CLI_DIR)/cli-semantics-kompiled
+
+
 clean:
-	rm -rf src/stf/stf-semantics-kompiled src/p4-semantics-kompiled
+	rm -rf $(CLI_DIR)/cli-semantics-kompiled $(P4_DIR)/p4-semantics-kompiled
 

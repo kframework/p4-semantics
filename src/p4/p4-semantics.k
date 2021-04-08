@@ -435,7 +435,10 @@ rule <k> @fillInitInstances => .K ... </k>
 // --------------------init------------------------------------
 
 // moved to initialization.k
-rule  @exec => @nextPacket
+rule   <k> @exec => @nextPacket ... </k>
+       <exec-mode>
+          _ => RUNNING
+       </exec-mode>
 
 // ------------------------packet to/from buffer-----------------------------
 
