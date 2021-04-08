@@ -91,9 +91,6 @@ rule <k> @init => . ... </k>
         ...
      </instances>
      //maybe instead of doing above, it would be better to add it as a part of the program (p4-prelude)
-//======Hardcoded input packet and table entries=====
-#include_data
-//===================================================
 
 //note: String2Id("port_mapping") does not match, because String2Id is a function and can not be used in LHS
 
