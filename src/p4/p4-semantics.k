@@ -712,7 +712,6 @@ rule <k> @extractField(N:InstanceName, F:FieldName , _:Val ) => @initField(N,F,@
      //when U <Int size(Packet)
      //bug with K's build-in size(List)
 
-
 rule <k> @extractField(N:InstanceName, F:FieldName , @val(W:Int,_,_) ) => @initField(N,F,@extractFieldValFromPacket(@val(String2Base(substrString(Packet, I, I +Int W),2),W,false) , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <i-name> N </i-name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
@@ -1138,8 +1137,8 @@ rule <k> (.K => @updateMeter(N, CR, FR)) ~> @updateDirectStatefuls((SetItem(N:Id
 rule @updateDirectStatefuls(.Set) => .
 
 syntax KItem ::= "@updateCounter" "(" Id "," Int ")"
-rule <k> @updateCounter (C:Id , I:Int) => @writeStatefulAdjusted(C, I, @readStateful(C, I) %+ #if (T ==K #token("packets","CounterType")) #then @val(1,0,false) #else S #fi) ... </k>
-     <statefuls> <stateful> <s-name> C </s-name> <s-opts> "$counter_type" |-> T:CounterType _:Map </s-opts> ... </stateful> ... </statefuls>
+rule <k> @updateCounter (C:Id , I:Int) => @writeStatefulAdjusted(C, I, @readStateful(C, I) %+ #if T ==K packets #then @val(1,0,false) #else S #fi) ... </k>
+     <statefuls> <stateful> <s-name> C </s-name> <s-opts> "$counter_type" |-> T _:Map </s-opts> ... </stateful> ... </statefuls>
      <packetSize> S:Val </packetSize>
 
 syntax KItem ::=  "@updateMeter" "(" Id "," Int "," FieldRef")"

@@ -17,10 +17,13 @@ syntax ExecutionMode ::=
                           "PREPROCESSING"
                         | "RUNNING"
 
+syntax KItem ::= "@runP4Program" "(" P4Program ")"
+rule <k> @runP4Program(Program) => Program ~> @parseOrder (#parserState(start)) ~>  @init ~> @fillInitInstances ~> @exec </k>
 
 configuration
 <p4>
-    <k>  $PGM:P4Program ~> @parseOrder (#parserState(start)) ~>  @init ~> @fillInitInstances ~> @exec  </k>
+    //<k>  $PGM:P4Program ~> @parseOrder (#parserState(start)) ~>  @init ~> @fillInitInstances ~> @exec  </k>
+    <k>  .K </k>
 
     <headers>
         <header multiplicity="*" type="Set">

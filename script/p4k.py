@@ -9,7 +9,7 @@ def run_cli(args):
      -cPGM="`cat {p4}`"                                                 \\
      -pPGM="kast -s P4Program -m P4-SYNTAX --directory src/cli -o kore" \\
      -cCLI="`cat {cli}`"                                                \\
-     -pCLI="kast -s CLIPgm -m CLI-SYNTAX --directory src/cli -o kore"   \\
+     -pCLI="kast -s CLIPgm -m CLI-SYMBOLIC-SYNTAX --directory src/cli -o kore"   \\
      {debugger} {args}                                                 \\
       """
     command = command.format(
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     parser_run_cli = subparsers.add_parser('run-cli', help='Runs P4 code with CLI file')
     parser_run_cli.add_argument('p4', type=str, help='P4 file')
     parser_run_cli.add_argument('cli', type=str, help='CLI file')
-    parser_run_cli.add_argument('--krun-args', type=str, help='Additional arguments to be passed to krun', default="--verbose --save-temps")
+    parser_run_cli.add_argument('--krun-args', type=str, help='Additional arguments to be passed to krun', default="--verbose --save-temps --search ")
     parser_run_cli.add_argument('--debugger', action='store_true', help='Run in debugger mode', default=False)
 
     args = parser.parse_args()

@@ -38,14 +38,19 @@ imports P4-SEMANTICS
     configuration
         <p4/>
         <CLI>
-            <cli-k> $CLI:CLIPgm </cli-k>
+            <cli-k> @loadP4Program($PGM:P4Program) ~> $CLI:CLIPgm </cli-k>
             <cli-out> .List </cli-out>
             <cli-rid> 0 </cli-rid>
         </CLI>
 
+    syntax KItem ::= "@loadP4Program" "(" P4Program ")"
+    rule <cli-k> (@loadP4Program(Program) => .K) ... </cli-k>
+         <k> _ => @runP4Program(Program) </k>
+
+
     syntax List ::= #intList2ValList(CLIIntList) [function]
     rule #intList2ValList(I:Int, R:CLIIntList) => ListItem(@val(I, 0, false)) #intList2ValList(R)
-    rule #intList2ValList(.CLIIntList)         => .List
+    rule     #intList2ValList(.CLIIntList)         => .List
 
     rule    <cli-k> (@setdefault Table:Id Action:Id (Args:CLIIntList)  Rest:CLITestCommands) => Rest </cli-k>
             <p4>
@@ -86,6 +91,12 @@ imports P4-SEMANTICS
                 <in> _:List (.List => ListItem($packet(Payload, Port))) </in>
                 ...
             </p4>
+
+//    rule    <cli-k> (@sympacket Rest:CLITestCommands) => Rest </cli-k>
+//                <p4>
+//                    <in> _:List (.List => ListItem($packet(?L:List, ?I:Int))) </in>
+//                    ...
+//                </p4>
 
     rule    <cli-k> (@expect Rest:CLITestCommands) => Rest </cli-k>
             <cli-out> _:List (.List => ListItem(Packet)) </cli-out>

@@ -37,9 +37,11 @@ imports TABLE-SYNTAX //forst ConstValue TableName FieldRef
 
 
     syntax CounterType ::=
-                          "bytes"       [klabel(CTBytes), symbol]
-                        | "packets"     [klabel(CTPackets), symbol]
+//                          "bytes"       [klabel(CTBytes), symbol]
+//                        | "packets"     [klabel(CTPackets), symbol]
+                          PacketsOrBytes
                         | "bytes_and_packets"
+
     syntax DirectOrStatic ::= DirectAttribute | StaticAttribute
     syntax DirectAttribute ::= "direct" ":" TableName
     syntax StaticAttribute ::= "static" ":" TableName
@@ -76,9 +78,11 @@ imports TABLE-SYNTAX //forst ConstValue TableName FieldRef
 //                        | DirectOrStatic ";"        [klabel('MODirectOrStatic)]
 //                        | InstantCount ";"          [klabel('MOInstanceCount)]
 
+    syntax PacketsOrBytes ::= "packets" | "bytes"
 
-    syntax MeterType ::=  "bytes"       [klabel(MTBytes), token]
-                        | "packets"     [klabel(MTPackets), token]
+    syntax MeterType ::= PacketsOrBytes
+//                          "bytes"       [klabel(MTBytes), symbol]
+//                        | "packets"     [klabel(MTPackets), symbol]
 
 
 // 7.3 Registers
