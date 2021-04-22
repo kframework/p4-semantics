@@ -11,14 +11,13 @@ imports PARSER-SYNTAX //for ControlFunctionName
 // 12 Packet Processing and Control Flow
     syntax ControlFunctionDeclaration ::= "control" ControlFunctionName ControlBlock
     syntax ControlBlock ::= "{" ControlStatements "}"
-    syntax ControlStatements ::= List{ControlStatement,""} [klabel('ControlStatements)]
+    syntax ControlStatements ::= List{ControlStatement,""} [klabel(controlStatements)]
     syntax ControlStatement ::=
                   ApplyTableCall            //[klabel(ContStmApp)]
                 | ApplyAndSelectBlock       //[klabel('ContStmAppSel)]
                 | IfElseStatement           //[klabel('ContStmIf)]
                 | ControlFunctionName "(" ")" ";" //[klabel('ContStmFn)]
                 //| "return" ";"
-
 
     syntax ApplyTableCall ::= "apply" "(" TableName ")" ";"
 

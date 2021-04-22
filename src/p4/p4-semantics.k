@@ -940,17 +940,20 @@ rule @updateCalcField(F:FieldRef, ListItem(update FLC:FieldListCalculationName i
             @updateCalcField(F, Rest, V)
         @fi
 //----------------control flow-------------------------
-rule .ControlStatements => .                                [structural]
-rule S:ControlStatement Rest:ControlStatements => S ~> Rest [structural]
-rule { B:ControlStatements } => @setCrnt("$action", "%nothing") ~> @setCrnt("$miss", "%nothing") ~> B
+rule .ControlStatements => .K
+rule (S:ControlStatement Rest:ControlStatements) => (S ~> Rest)
+//K ISSUE: There is a problem with that was causing haskell backend to branch with conditions like "ControlStatements #Equals apply(x) ; .ControlStatements"
+//For some reason it can not properly distinguish ControlStatements and ControlStatement, so doing it explicitly
 
+rule { B:ControlStatements } => @setCrnt("$action", "%nothing") ~> @setCrnt("$miss", "%nothing") ~> B
+//rule (.ControlStatements ==K (apply(_) ; .ControlStatements)) => false [simplification]
 
 //apply
-rule apply (T:TableName) ; => apply (T) { .HitMissCases }   //[macro]
+rule <k> apply (T:TableName) ; => apply (T) { .HitMissCases }  ... </k>  //[macro]
 
 
 //TODO: for now assuming that a snapshot of current rules are taken before matching
-rule <k> apply (T:TableName) { C:CaseList } => @setCrnt("$table", T) ~> @checkNextRule(FM,R) ~> @setCrnt("$table", "%nothing") ~> @checkNextAppSelCase (C) ... </k>
+rule <k> (apply (T:TableName) { C:CaseList }) => @setCrnt("$table", T) ~> @checkNextRule(FM,R) ~> @setCrnt("$table", "%nothing") ~> @checkNextAppSelCase (C) ... </k>
      <tables>
         <table> <t-name> T </t-name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
      ...
@@ -993,7 +996,9 @@ rule @isDefault(_:ActionName) => false
 */
 
 //if
-rule if ( B:BoolExpr ) C:ControlBlock Rest:ControlStatements => if ( B ) C else { .ControlStatements } Rest  [macro]
+//rule if ( B:BoolExpr ) C:ControlBlock Rest:ControlStatements => if ( B ) C else { .ControlStatements } Rest  [macro]
+//this causes a crash witht he haskell backend https://github.com/kframework/kore/issues/2568
+rule if (B) {C1} => if (B) {C1} else {.ControlStatements}
 rule else I:IfElseStatement => else { I } [macro]
 
 rule if ( B:BoolExpr ) T:ControlBlock else F:ControlBlock =>
@@ -1001,7 +1006,7 @@ rule if ( B:BoolExpr ) T:ControlBlock else F:ControlBlock =>
 
 syntax Id ::= "ingress" [token]
 //call
-rule <k> F:ControlFunctionName () ; => @if (F ==K ingress) andBool T ==K @egress_clone @then . @else Body @fi  ... </k>
+rule <k> F:ControlFunctionName () ; => @if (F ==K ingress) andBool T ==K @egress_clone @then .K @else Body @fi  ... </k>
      <controlFlows>
         <control> <c-name> F </c-name> <c-body> Body </c-body> ... </control>
         ...
