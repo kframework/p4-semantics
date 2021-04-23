@@ -92,11 +92,6 @@ imports P4-SEMANTICS
                 ...
             </p4>
 
-//    rule    <cli-k> (@sympacket Rest:CLITestCommands) => Rest </cli-k>
-//                <p4>
-//                    <in> _:List (.List => ListItem($packet(?L:List, ?I:Int))) </in>
-//                    ...
-//                </p4>
 
     rule    <cli-k> (@expect Rest:CLITestCommands) => Rest </cli-k>
             <cli-out> _:List (.List => ListItem(Packet)) </cli-out>
