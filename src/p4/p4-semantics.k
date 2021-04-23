@@ -697,7 +697,22 @@ rule @evalLengthExp(LE1:LengthExp >> LE2:LengthExp, N:InstanceName) => @evalLeng
 syntax KItem ::= "@extractField" "(" InstanceName "," FieldName "," KItem /* Val */ ")" [strict(3)]
 
 
-rule <k> @extractField(N:InstanceName, F:FieldName , _:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
+//rule <k> @extractField(N:InstanceName, F:FieldName , _:Val ) => @initField(N,F,@extractFieldValFromPacket(@packetAt(Packet, I) , @getAttr(F,Fs))) ... </k>
+//     <instances>
+//        <instance> <i-name> N </i-name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
+//        ...
+//     </instances>
+//     <headers>
+//              <header> <h-name> H </h-name> <h-fields> Fs:FieldDecs </h-fields> ... </header>
+//              ...
+//     </headers>
+//     <packet> Packet:List </packet>
+//     <index> I:Int => I +Int 1 </index>
+//     when I <Int size(Packet)
+//     //when U <Int size(Packet)
+//     //bug with K's build-in size(List)
+
+rule <k> @extractField(N:InstanceName, F:FieldName , _:Val ) => @initField(N,F,@extractFieldValFromPacket(V , @getAttr(F,Fs))) ... </k>
      <instances>
         <instance> <i-name> N </i-name>  <typeName> H:HeaderTypeName </typeName>  ... </instance>
         ...
@@ -706,11 +721,8 @@ rule <k> @extractField(N:InstanceName, F:FieldName , _:Val ) => @initField(N,F,@
               <header> <h-name> H </h-name> <h-fields> Fs:FieldDecs </h-fields> ... </header>
               ...
      </headers>
-     <packet> Packet:List </packet>
-     <index> I:Int => I +Int 1 </index>
-     when I <Int size(Packet)
-     //when U <Int size(Packet)
-     //bug with K's build-in size(List)
+     <packet> (ListItem(V) => .List) _:List </packet>
+
 
 rule <k> @extractField(N:InstanceName, F:FieldName , @val(W:Int,_,_) ) => @initField(N,F,@extractFieldValFromPacket(@val(String2Base(substrString(Packet, I, I +Int W),2),W,false) , @getAttr(F,Fs))) ... </k>
      <instances>
@@ -725,10 +737,14 @@ rule <k> @extractField(N:InstanceName, F:FieldName , @val(W:Int,_,_) ) => @initF
      <index> I:Int => I +Int W </index>
      when I +Int W <=Int lengthString(Packet)
 
+//rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
+//     <packet> Packet:List </packet>
+//     <index> I:Int </index>
+//     when I >=Int size(Packet)
+
 rule <k> @extractField(_:InstanceName, _:FieldName , _:Val ) => @throw(p4_pe_out_of_packet) ... </k>
-     <packet> Packet:List </packet>
-     <index> I:Int </index>
-     when I >=Int size(Packet)
+     <packet> .List </packet>
+
 
 rule <k> @extractField(_:InstanceName, _:FieldName , @val(W:Int,_,_) ) => @throw(p4_pe_out_of_packet) ... </k>
      <packet> Packet:String </packet>
@@ -942,17 +958,14 @@ rule @updateCalcField(F:FieldRef, ListItem(update FLC:FieldListCalculationName i
 //----------------control flow-------------------------
 rule .ControlStatements => .K
 rule (S:ControlStatement Rest:ControlStatements) => (S ~> Rest)
-//K ISSUE: There is a problem with that was causing haskell backend to branch with conditions like "ControlStatements #Equals apply(x) ; .ControlStatements"
-//For some reason it can not properly distinguish ControlStatements and ControlStatement, so doing it explicitly
 
 rule { B:ControlStatements } => @setCrnt("$action", "%nothing") ~> @setCrnt("$miss", "%nothing") ~> B
-//rule (.ControlStatements ==K (apply(_) ; .ControlStatements)) => false [simplification]
 
 //apply
 rule <k> apply (T:TableName) ; => apply (T) { .HitMissCases }  ... </k>  //[macro]
 
 
-//TODO: for now assuming that a snapshot of current rules are taken before matching
+//TODO: For now assuming that a snapshot of current rules are taken before matching
 rule <k> (apply (T:TableName) { C:CaseList }) => @setCrnt("$table", T) ~> @checkNextRule(FM,R) ~> @setCrnt("$table", "%nothing") ~> @checkNextAppSelCase (C) ... </k>
      <tables>
         <table> <t-name> T </t-name> <reads> FM:FieldMatchs </reads> <rules> R:List </rules> ... </table>
@@ -1629,16 +1642,23 @@ syntax KItem /*Val*/ ::= "@isDrop"
 rule <k> @isDrop => V ==K %DROP_PORT ...  </k>
      <instances> <instance> <i-name> standard_metadata </i-name> <fieldVals> egress_spec |-> V:Val _:Map </fieldVals> ... </instance> ... </instances>
 
+//syntax KItem ::= "@addPayload"
+//rule <k> @addPayload => .K ... </k>
+//     <packet> Packet:List  </packet>
+//     <packetout> _:List (.List => range(Packet, I ,0)) </packetout>
+//     <index> I:Int </index>
+//     when I <Int size(Packet)
+//rule <k> @addPayload => .K ... </k>
+//     <packet> Packet:List  </packet>
+//     <index> I:Int </index>
+//     when I >=Int size(Packet)
+
+//haskell backend does not support List.range
 syntax KItem ::= "@addPayload"
 rule <k> @addPayload => .K ... </k>
-     <packet> Packet:List  </packet>
-     <packetout> _:List (.List => range(Packet, I ,0)) </packetout>
-     <index> I:Int </index>
-     when I <Int size(Packet)
-rule <k> @addPayload => .K ... </k>
-     <packet> Packet:List  </packet>
-     <index> I:Int </index>
-     when I >=Int size(Packet)
+     <packet> Payload:List  </packet>
+     <packetout> _:List (.List => Payload) </packetout>
+
 
 rule <k> @addPayload => .K ... </k>
      <packet> Packet:String  </packet>
