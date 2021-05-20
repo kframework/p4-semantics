@@ -38,6 +38,23 @@ def search_cli(args):
     print(command, file=sys.stderr)
     os.system(command)
 
+def p4assert(args):
+    command = """krun                                                 \\
+     --directory src/p4assert                                                \\
+     -cPGM="`cat {p4}`"                                                 \\
+     -pPGM="kast -s P4Program -m P4ASSERT-SYNTAX --directory src/p4assert -o kore" \\
+     -cCLI="`cat {cli}`"                                                \\
+     -pCLI="kast -s CLIPgm -m CLI-SYMBOLIC-SYNTAX --directory src/p4assert -o kore"   \\
+      {args}                                                 \\
+      """
+    command = command.format(
+        p4=args.p4,
+        cli=args.cli,
+        args=args.krun_args
+    )
+    print(command, file=sys.stderr)
+    os.system(command)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='p4k')
     parser.add_argument('--krun-args', type=str, help='Additional arguments to be passed to krun', default="--verbose --save-temps")
@@ -52,12 +69,19 @@ if __name__ == "__main__":
     parser_search_cli.add_argument('p4', type=str, help='P4 file')
     parser_search_cli.add_argument('cli', type=str, help='CLI file')
 
+    parser_p4assert = subparsers.add_parser('p4assert', help='P4 assert')
+    parser_p4assert.add_argument('p4', type=str, help='P4 file')
+    parser_p4assert.add_argument('cli', type=str, help='CLI file')
+
+
 
     args = parser.parse_args()
     if args.command == 'run-cli':
         run_cli(args)
     if args.command == 'search-cli':
         search_cli(args)
+    if args.command == 'p4assert':
+        p4assert(args)
 
 
 

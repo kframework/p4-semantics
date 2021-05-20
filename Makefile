@@ -3,6 +3,7 @@ P4_DIR=src/p4
 STF_DIR=src/stf
 CLI_DIR=src/cli
 NETWORK_DIR=src/network
+P4ASSERT_DIR=src/p4assert
 
 all: cli
 
@@ -18,10 +19,15 @@ $(CLI_DIR)/cli-symbolic-semantics-kompiled: $(wildcard $(CLI_DIR)/*.k) $(wildcar
 $(NETWORK_DIR)/network-semantics-kompiled: $(wildcard $(NETWORK_DIR)/*.k) $(wildcard $(P4_DIR)/*.k) $(wildcard $(P4_DIR)/syntax/*.k)
 	$(KOMPILE) $(NETWORK_DIR)/network.k --syntax-module NETWORK-SYNTAX --main-module NETWORK-SEMANTICS
 
+$(P4ASSERT_DIR)/p4assert-kompiled: $(wildcard $(P4ASSERT_DIR)/*.k) $(wildcard $(CLI_DIR)/*.k) $(wildcard $(P4_DIR)/*.k) $(wildcard $(P4_DIR)/syntax/*.k)
+	kompile --backend haskell $(P4ASSERT_DIR)/p4assert.k \
+	 --syntax-module P4ASSERT-SYNTAX --main-module P4ASSERT-SEMANTICS
+
 p4: $(P4_DIR)/p4-semantics-kompiled
 cli: $(CLI_DIR)/cli-semantics-kompiled
 cli-symbolic: $(CLI_DIR)/cli-symbolic-semantics-kompiled
 network: $(NETWORK_DIR)/network-semantics-kompiled
+p4assert:  $(P4ASSERT_DIR)/p4assert-kompiled
 
 
 clean:

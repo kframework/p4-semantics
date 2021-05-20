@@ -1,5 +1,5 @@
 require "../p4/p4-semantics.k"
-
+require "../cli/cli-symbolic.k"
 
 module P4ASSERT-COMMON
 imports P4-COMMON
@@ -25,6 +25,7 @@ endmodule
 module P4ASSERT-SYNTAX
 imports P4ASSERT-COMMON
 imports P4-SYNTAX
+imports CLI-SYMBOLIC-SYNTAX
 
 endmodule
 
@@ -32,10 +33,12 @@ module P4ASSERT-SEMANTICS
 imports P4ASSERT-COMMON
 imports P4-SEMANTICS
 imports DOMAINS
+imports CLI-SYMBOLIC-SEMANTICS
 
     configuration
-        <p4/>
-        <p4pgm> @loadP4Program($PGM:P4Program) ~> .K </p4pgm>
+        //<p4/>
+        //<p4pgm> @loadP4Program($PGM:P4Program) ~> .K </p4pgm>
+        <CLI/>
         <p4assert>
             <assertions>
                 <assertion multiplicity="*" type="Set">
@@ -49,9 +52,9 @@ imports DOMAINS
 
     syntax EvalMode ::= "FINAL_EVAL" | "PARTIAL_EVAL" | "NO_EVAL"
 
-    syntax KItem ::= "@loadP4Program" "(" P4Program ")"
-    rule <p4pgm> @loadP4Program(Program:P4Program) => .K </p4pgm>
-         <p4> <k> _ => @runP4Program(Program) </k> ... </p4>
+//    syntax KItem ::= "@loadP4Program" "(" P4Program ")"
+//    rule <p4pgm> @loadP4Program(Program:P4Program) => .K </p4pgm>
+//         <p4> <k> _ => @runP4Program(Program) </k> ... </p4>
 
     // -------------------- pre-processing ----------------------
 
@@ -232,15 +235,42 @@ imports DOMAINS
     rule <k> @val(_,_,_) ~> #isUndef(_) => false ...</k>
          <evalMode> FINAL_EVAL </evalMode>
 
-    rule <k> @init ... </k>
-         <in> .List =>
-            ListItem($packet(
-                "00000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000001000000000000100010100000000000000000100010010101101000010110000000000000000010000000001000101110010011100100000101000000000000000000000000100001010000000000000000000000000"
-                , 2))
-         </in>
-    [priority(49)]
+//    rule <k> @init ... </k>
+//         <in> .List =>
+//            ListItem($packet(
+//                "00000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000001000000000000100010100000000000000000100010010101101000010110000000000000000010000000001000101110010011100100000101000000000000000000000000100001010000000000000000000000000"
+//                , 2))
+//         </in>
+//    [priority(49)]
 
-    //    // --------------------------- execution ---------------------------
+endmodule
+
+
+
+
+//module P4ASSERT-CLI-SYMBOLIC-MAINMODULE
+//imports P4ASSERT-CLI-SYMBOLIC-SEMANTICS
+//    configuration <p4/>
+//                  <p4assert/>
+//                  <CLI/>
+//                  <p4assert-cli-semantics-load>
+//                      @loadP4Program($PGM:P4Program) ~> @loadCLIProgram($CLI:CLIPgm)
+//                  </p4assert-cli-semantics-load>
+//
+//
+//    syntax KItem ::= "@loadP4Program" "(" P4Program ")"
+//    syntax KItem ::= "@loadCLIProgram" "(" CLIPgm ")"
+//    rule <p4assert-cli-semantics-load>
+//            (@loadP4Program(Program) ~> @loadCLIProgram(Pgm)) => .K
+//         </p4assert-cli-semantics-load>
+//         <k> _ => @runP4Program(Program) </k>
+//         <cli-k> _ => Pgm </cli-k>
+//endmodule
+
+
+
+
+ //    // --------------------------- execution ---------------------------
     //
     //    rule <k> @assert [I] E ; R:ControlStatements => R ... </k>
     //         <assertion>
@@ -258,4 +288,3 @@ imports DOMAINS
     //    rule #partialEvalAssertExp(#isValid(H:HeaderRef . _:FieldName)) =>  #partialEvalAssertExp(#isValid(H))
     //    rule [[ #partialEvalAssertExp(#isValid(H:HeaderRef)) => V ]]
     //          <instance> <name> H </name> <valid> V:Bool </valid>  ...  </instance>
-endmodule
