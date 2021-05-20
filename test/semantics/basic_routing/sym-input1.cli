@@ -1,0 +1,23 @@
+@add port_mapping 1 set_bd(10)
+@add port_mapping 2 set_bd(10)
+@add port_mapping 3 set_bd(20)
+@add port_mapping 4 set_bd(20)
+
+@add bd 10 set_vrf(30)
+@add bd 20 set_vrf(30)
+
+@add ipv4_fib 30 3232235520 fib_hit_nexthop(1)
+@add ipv4_fib 30 167772160 fib_hit_nexthop(3)
+
+@add nexthop 1 set_egress_details(1)
+@add nexthop 2 set_egress_details(2)
+@add nexthop 3 set_egress_details(3)
+@add nexthop 4 set_egress_details(4)
+
+@add rewrite_mac 1 rewrite_src_dst_mac(1103823438081, 4311810305)
+@add rewrite_mac 2 rewrite_src_dst_mac(1108135248386, 8623620610)
+@add rewrite_mac 3 rewrite_src_dst_mac(1112447058691, 12935430915)
+@add rewrite_mac 4 rewrite_src_dst_mac(1116758868996, 17247241220)
+
+@sympacket
+@expect

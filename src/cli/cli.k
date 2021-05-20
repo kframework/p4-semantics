@@ -36,8 +36,8 @@ imports CLI-COMMON
 imports P4-SEMANTICS
 
     configuration
-        <p4/>
         <CLI>
+            <p4/>
             <cli-k> @loadP4Program($PGM:P4Program) ~> $CLI:CLIPgm </cli-k>
             <cli-out> .List </cli-out>
             <cli-rid> 0 </cli-rid>
@@ -50,7 +50,7 @@ imports P4-SEMANTICS
 
     syntax List ::= #intList2ValList(CLIIntList) [function]
     rule #intList2ValList(I:Int, R:CLIIntList) => ListItem(@val(I, 0, false)) #intList2ValList(R)
-    rule     #intList2ValList(.CLIIntList)         => .List
+    rule #intList2ValList(.CLIIntList)         => .List
 
     rule    <cli-k> (@setdefault Table:Id Action:Id (Args:CLIIntList)  Rest:CLITestCommands) => Rest </cli-k>
             <p4>
@@ -62,6 +62,7 @@ imports P4-SEMANTICS
                 <exec-mode> RUNNING </exec-mode>
                 ...
             </p4>
+            [priority(48)]
 
     syntax List ::= #CLITableMatches2List(CLITableMatches) [function]
     rule #CLITableMatches2List(I:Int           R:CLITableMatches) => ListItem(@val(I, 0, false))                               #CLITableMatches2List(R)
@@ -85,12 +86,14 @@ imports P4-SEMANTICS
                 <exec-mode> RUNNING </exec-mode>
                 ...
             </p4>
+            [priority(48)]
 
     rule    <cli-k> (@packet Port:Int Payload:String Rest:CLITestCommands) => Rest </cli-k>
             <p4>
                 <in> _:List (.List => ListItem($packet(Payload, Port))) </in>
                 ...
             </p4>
+            [priority(48)]
 
 
     rule    <cli-k> (@expect Rest:CLITestCommands) => Rest </cli-k>
@@ -99,6 +102,9 @@ imports P4-SEMANTICS
                 <out>  (ListItem(Packet) => .List) _:List </out>
                 ...
             </p4>
-
-
+            [priority(48)]
 endmodule
+
+
+
+
