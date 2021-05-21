@@ -130,6 +130,7 @@
 - (Done) Registers
   - what is the initial value of a register, 0 or undef?
   - what does a direct register mean? what if instance count is not defined for a register? (solved: one register per each entry)
+    - does default rule has its own register? does it count towards the instance counts? (solved: yes, and direct does not have instnace count)
   - register_read/write does not say anything about what to do if the referenced field is invalid. What should we do ? for register_read it would be  consistent if nothing changes, for register_write it would be consistent if value is undefined
 
 - (Done) Statefuls

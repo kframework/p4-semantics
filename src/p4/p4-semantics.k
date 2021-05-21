@@ -1576,14 +1576,18 @@ rule <k> @call (register_write , $resolved(ListItem(C:Id) ListItem(@val(I:Int,_,
 rule I:Int ~> @writeStatefulAdjusted(C, 0, V) => @writeStatefulAdjusted(C, I, V)
 
 syntax KItem ::= "@getStatefulIndexInActionCall" "(" Id "," Int ")"
-rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then CR #else I #fi   ... </k>
+rule <k> @getStatefulIndexInActionCall(C:Id, I:Int) => #if (B ==K $direct) #then #ruleToInt(CR) #else I #fi   ... </k>
      <statefuls> <stateful> <s-name> C </s-name> <stype> T:StatefulType </stype> <s-opts> "$binding" |-> B:BindingType M:Map </s-opts> ... </stateful> ... </statefuls>
-     <crnt> ("$table" |-> CT:TableName) ("$rule" |-> CR:Int) _:Map </crnt>
+     <crnt> ("$table" |-> CT:TableName) ("$rule" |-> CR:KItem) _:Map </crnt>
      when
         ((B ==K $direct) impliesBool (T =/=K $counter)) andBool
         //((B =/=K $static_global) impliesBool (#in_keys("$table", M) andBool (#castToId(M["$table"]) ==K CT))) andBool //M[$table] evaluates to Bottom it is problematic
         ((B =/=K $static_global) impliesBool #table_matches(M,CT)) andBool
         ((B =/=K $direct) impliesBool (#in_keys("$instant_count", M) andBool (I <Int #get_instant_count(M))))
+
+syntax Int ::= "#ruleToInt" "(" KItem ")" [function]
+rule #ruleToInt(I:Int) => I
+rule #ruleToInt("%nothing") => -1
 
 syntax Int ::= "#get_instant_count" "(" Map ")" [function]
 rule #get_instant_count ("$instant_count" |-> I:Int _:Map) => I

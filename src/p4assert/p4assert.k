@@ -44,9 +44,9 @@ imports CLI-SYMBOLIC-SEMANTICS
                 <assertion multiplicity="*" type="Set">
                     <assertId> .K </assertId>
                     <result> .K </result>
-                    <forwarded> .K </forwarded>
                 </assertion>
             </assertions>
+            <forwarded> .K </forwarded>
             <evalMode> NO_EVAL </evalMode>
         </p4assert>
 
@@ -167,9 +167,11 @@ imports CLI-SYMBOLIC-SEMANTICS
          <evalMode> PARTIAL_EVAL </evalMode>
     rule <k> B1:PartEvalBoolExpr and B2 => $partEval(B1 and B2) ...</k>
          <evalMode> PARTIAL_EVAL </evalMode>
-    rule <k> B1 and B2:PartEvalBoolExpr => $partEval(B1 and B2) ...</k>
+    rule <k> B1:Bool and B2:PartEvalBoolExpr => $partEval(B1 and B2) ...</k>
          <evalMode> PARTIAL_EVAL </evalMode>
     rule <k> B1:PartEvalBoolExpr or B2 => $partEval(B1 or B2) ...</k>
+         <evalMode> PARTIAL_EVAL </evalMode>
+    rule <k> B1:Bool or B2:PartEvalBoolExpr => $partEval(B1 or B2) ...</k>
          <evalMode> PARTIAL_EVAL </evalMode>
 
     rule <k> (E:PartEvalBoolExpr ~> @assert [I] _ ;) => .K ... </k>
@@ -220,11 +222,11 @@ imports CLI-SYMBOLIC-SEMANTICS
          <evalMode> FINAL_EVAL </evalMode>
     rule <k> $partEval(B1) and B2 => B1 and B2 ... </k>
          <evalMode> FINAL_EVAL </evalMode>
-    rule <k> B1 and $partEval(B2) => B1 and B2 ... </k>
+    rule <k> B1:Bool and $partEval(B2) => B1 and B2 ... </k>
          <evalMode> FINAL_EVAL </evalMode>
     rule <k> $partEval(B1) or B2 => B1 or B2 ... </k>
          <evalMode> FINAL_EVAL </evalMode>
-    rule <k> B1 or $partEval(B2) => B1 or B2 ... </k>
+    rule <k> B1:Bool or $partEval(B2) => B1 or B2 ... </k>
          <evalMode> FINAL_EVAL </evalMode>
     rule <k> $partEval(#isConstantExpr(H) == V) => H == V ... </k>
          <evalMode> FINAL_EVAL </evalMode>
@@ -233,6 +235,11 @@ imports CLI-SYMBOLIC-SEMANTICS
     rule <k> @undef ~> #isUndef(_) => true ...</k>
          <evalMode> FINAL_EVAL </evalMode>
     rule <k> @val(_,_,_) ~> #isUndef(_) => false ...</k>
+         <evalMode> FINAL_EVAL </evalMode>
+    rule <k> #isForwarded => F ... </k>
+         <evalMode> FINAL_EVAL </evalMode>
+         <forwarded> F:Bool </forwarded>
+    rule <k> #isReached => false ... </k>
          <evalMode> FINAL_EVAL </evalMode>
 
 //    rule <k> @init ... </k>

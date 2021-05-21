@@ -1,0 +1,12 @@
+@setdefault round_tbl read_round()
+@setdefault drop_tbl _nop()
+@add drop_tbl 1 _drop()
+@add forward_tbl 1 forward(2)
+@add forward_tbl 2 forward(1)
+@setdefault acceptor_tbl _drop()
+@add acceptor_tbl 0 handle_1a(2)
+@add acceptor_tbl 2 handle_2a(2)
+
+@sympacket 1 - ?:48 ?:48 2048:16   ?:4 ?:4 ?:8 ?:16 ?:16 ?:3 ?:13 ?:8 17:8 ?:16 ?:32 ?:32     ?:16 34952:16 ?:16 ?:16     ?:16 ?:32 ?:16 ?:16 ?:16 ?:32 ?:256
+//             eth                  ip                                                       udp                         paxos
+@expect
